@@ -10,5 +10,10 @@ DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 - ClientCommand receiving
 - Unlisted features
 
+Usage;
+
+Open up CoDMP.exe, the server.
+Inject this DLL project
+Load up specified map.
 
 Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 1/2/4 linux memory modification) (https://github.com/kungfooman/libcod)
