@@ -14,6 +14,9 @@ DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 - Playerangles, Model bounding box collision and more.
 - Unlisted features
 
+
+For any questions feel free to ask me on xfire: phpcod
+
 Usage;
 
 Open up CoDMP.exe, the server.
