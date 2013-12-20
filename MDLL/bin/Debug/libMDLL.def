@@ -1,0 +1,82 @@
+EXPORTS
+    ClientCommand @1 DATA
+    Cmd_AddCommand @2 DATA
+    Com_Printf @3 DATA
+    G_LogPrintf @4 DATA
+    Scr_ExecEntThread @5 DATA
+    Scr_ExecThread @6 DATA
+    Scr_FreeThread @7 DATA
+    _Z10phpversionv @8
+    _Z10trap_TraceP7trace_tPKfS2_S2_S2_ii @9
+    _Z11ClientSpawniii @10
+    _Z11PmoveSinglei @11
+    _Z11Sys_LoadDllPKcPcPPFiizES3_ @12
+    _Z11setVelocityiPf @13
+    _Z12dl_whitelistv @14
+    _Z12stackPushInti @15
+    _Z12sub_20018CE0i @16
+    _Z12sub_200198F0i @17
+    _Z12sub_2001E5B0i @18
+    _Z12sub_20032190i @19
+    _Z12sub_200355C0v @20
+    _Z12testCallbackv @21
+    _Z12trap_FS_ReadPvii @22
+    _Z13func_20002FA0iiiiiiii @23
+    _Z13stackPushBooli @24
+    _Z13trap_FS_WritePKvii @25
+    _Z14PatchCvarCheckv @26
+    _Z14getPlayerStatePi @27
+    _Z14trap_FS_RenamePKcS0_ @28
+    _Z15G_SetPlayerSizev @29
+    _Z15getPlayerAnglesi @30
+    _Z15myClientCommandv @31
+    _Z15stackPushStringPc @32
+    _Z15stackPushVectorPf @33
+    _Z15trap_DropClientiPKc @34
+    _Z15trap_LinkEntityPi @35
+    _Z16stackGetParamIntiPi @36
+    _Z16stackPushString2Pc @37
+    _Z16trap_CM_BoxTraceP7trace_tPKfS2_S2_S2_ii @38
+    _Z17trap_FS_FOpenFilePKcPi8fsMode_t @39
+    _Z17trap_UnlinkEntityPi @40
+    _Z18trap_FS_FCloseFilei @41
+    _Z18trap_getClientPingi @42
+    _Z18trap_setBrushModeli @43
+    _Z19stackGetParamStringiPPc @44
+    _Z19stackGetParamVectoriPf @45
+    _Z19trap_AddDebugStringPfS_iPc @46
+    _Z20enableGlobalBunnyhopv @47
+    _Z23GScr_LoadGameTypeScriptv @48
+    _Z4bhopv @49
+    _Z7loadscrv @50
+    _Z8G_DamagePiS_S_PfS0_iii @51
+    _Z8MyThreadPv@4 @52
+    _Z8getStackv @53
+    _Z9entitygscii @54
+    _Z9fDownloadPiS_ @55
+    _Z9fRedirectPiS_ @56
+    _Z9trap_Argcv @57
+    _Z9trap_ArgviPci @58
+    _ZN5cHook4hookEv @59
+    _ZN5cHook6unhookEv @60
+    _ZN5cHookC1Eii @61
+    callbackPlayerDamage @62 DATA
+    callbackTest @63 DATA
+    cracking_hook_call @64
+    cracking_hook_function @65
+    cracking_nop @66
+    cracking_write_hex @67
+    dword_20031760 @68 DATA
+    g_entities @69 DATA
+    g_hModule @70 DATA
+    g_threadID @71 DATA
+    game_mp @72 DATA
+    hG_Damage @73 DATA
+    hexToBuffer @74
+    loadCallback @75 DATA
+    players @76 DATA
+    playerstates @77 DATA
+    singleHexToNumber @78
+    sub_458680 @79 DATA
+    sub_458860 @80 DATA
+    sub_4686D0 @81 DATA

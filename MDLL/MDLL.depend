@@ -1,0 +1,28 @@
+# depslib dependency file v1.0
+1380029807 source:c:\documents and settings\r\my documents\codeblocks\mdll\cracking.cpp
+	"cracking.hpp"
+	"windows.h"
+
+1379674493 c:\documents and settings\r\my documents\codeblocks\mdll\cracking.hpp
+	<string.h>
+
+1382434720 source:c:\documents and settings\r\my documents\codeblocks\mdll\libcod_impl.cpp
+	"libcod.hpp"
+
+1382434733 c:\documents and settings\r\my documents\codeblocks\mdll\libcod.hpp
+	"Windows.h"
+
+1386272477 source:c:\documents and settings\r\my documents\codeblocks\mdll\main.cpp
+	"cracking.hpp"
+	"libcod.hpp"
+	"include.h"
+	<stdio.h>
+	<iostream>
+	<fstream>
+	<string>
+
+1385082665 c:\documents and settings\r\my documents\codeblocks\mdll\include.h
+	"Windows.h"
+	<string>
+	<cctype>
+
