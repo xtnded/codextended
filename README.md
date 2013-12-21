@@ -4,6 +4,7 @@ MDLL
 Call of Duty 1.5 Memory Modification (Windows)
 
 [ Standalone ]
+
 1. Copy Tools/bin into Call of Duty folder (Or just copy MDLL.exe into Tools/bin, which is a directory if you installed the CoD MODTools)
 2. Run your Call of Duty server
 3. Run MDLL.exe (After 5 seconds it'll automatically close)
