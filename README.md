@@ -3,9 +3,21 @@ MDLL
 
 Call of Duty 1.5 Memory Modification (Windows)
 
-Inject it with any injector you like.
+[ Standalone ]
+1. Copy Tools/bin into Call of Duty folder (Or just copy MDLL.exe into Tools/bin, which is a directory if you installed the CoD MODTools)
+2. Run your Call of Duty server
+3. Run MDLL.exe (After 5 seconds it'll automatically close)
+4. Load any map e.g /map mp_carentan
+5. The tool should be now working and you can use it's possibilities.
+
+[ DLL Project ]
+
+- Run the standalone, which creates the DLL which you can inject. (The steps are basically the same)
+
+Or you can create a DLL Project
 DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 
+:: Features
 - GSC Scripting to C++
 - ClientCommand receiving
 - Player Collision (Use setContents(0) on a player-entity)
@@ -17,11 +29,5 @@ DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 
 
 For any questions feel free to ask me on xfire: phpcod
-
-Usage;
-
-Open up CoDMP.exe, the server.
-Inject this DLL project
-Load up specified map.
 
 Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 2/4 linux memory modification) (https://github.com/kungfooman/libcod)
