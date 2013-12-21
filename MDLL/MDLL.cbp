@@ -37,8 +37,6 @@
 				<Linker>
 					<Add option="-s" />
 					<Add library="user32" />
-					<Add library="C:\detours\detours.lib" />
-					<Add directory="C:/detours" />
 				</Linker>
 			</Target>
 		</Build>
@@ -51,7 +49,6 @@
 		</Linker>
 		<Unit filename="cracking.cpp" />
 		<Unit filename="cracking.hpp" />
-		<Unit filename="detours.h" />
 		<Unit filename="include.h" />
 		<Unit filename="libcod.hpp" />
 		<Unit filename="libcod_impl.cpp" />
