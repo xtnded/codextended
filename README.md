@@ -11,8 +11,9 @@ DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 - Player Collision (Use setContents(0) on a player-entity)
   If Player Collision is on and the "bounce" off function isn't patched then you can stand ontop of other people!
 - Velocity
-- Playerangles, Model bounding box collision and more.
-- Unlisted features
+- Entity collision and damage feedback
+- Player angles, extended button usage and more
+- Much more unlisted features
 
 
 For any questions feel free to ask me on xfire: phpcod
