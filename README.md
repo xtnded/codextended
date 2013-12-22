@@ -1,7 +1,7 @@
 MDLL
 ====
 
-Call of Duty 1.5 Memory Modification (Windows)
+Call of Duty 1.5 Memory Modification
 
 [ Standalone ]
 
@@ -14,6 +14,19 @@ Call of Duty 1.5 Memory Modification (Windows)
 [ DLL Project ]
 
 - Run the standalone, which creates the DLL which you can inject. (The steps are basically the same)
+
+[ Linux ] (Unstable) (Less features than Windows version)
+1. Compile the .so
+
+gcc -I. -m32 -fPIC -c mdll.cpp -o mdll.opp
+gcc -m32 -shared -L/lib32 -o mdll.so  mdll.opp -Os -s -ldl -Wall
+
+2. Add this to your starting line (Library path may be not needed)
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=mdll.so ./cod_lnxded
+
+3. Run the server like you would normally
+
 
 Or you can create a DLL Project
 DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
