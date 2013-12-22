@@ -16,6 +16,10 @@ Call of Duty 1.5 Memory Modification
 - Run the standalone, which creates the DLL which you can inject. (The steps are basically the same)
 
 
+Or you can create a DLL Project
+DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
+
+
 [ Linux ] (Unstable) (Less features than Windows version)
 
 1. Compile the .so
@@ -28,11 +32,8 @@ gcc -m32 -shared -L/lib32 -o mdll.so  mdll.opp -Os -s -ldl -Wall
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=mdll.so ./cod_lnxded
 
-3. Run the server like you would normally
+3. Run the server like you normally would
 
-
-Or you can create a DLL Project
-DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 
 :: Features
 - GSC Scripting to C++
