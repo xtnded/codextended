@@ -20,7 +20,7 @@ Or you can create a DLL Project
 DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
 
 
-[ Linux ] (Unstable) (Less features than Windows version)
+:: Linux (Unstable) (Less features than Windows version)
 
 1. Compile the .so
 
