@@ -15,7 +15,8 @@ Call of Duty 1.5 Memory Modification
 
 - Run the standalone, which creates the DLL which you can inject. (The steps are basically the same)
 
-[ Linux ] (Unstable) (Less features than Windows version)
+[ Linux SO ] (Unstable) (Less features than Windows version)
+
 1. Compile the .so
 
 gcc -I. -m32 -fPIC -c mdll.cpp -o mdll.opp
