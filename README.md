@@ -1,7 +1,7 @@
-MDLL
+Call of Duty Extended
 ====
 
-Call of Duty 1 Memory Modification
+Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
 
 [ Standalone ]
 
@@ -10,15 +10,6 @@ Call of Duty 1 Memory Modification
 3. Run MDLL.exe (After 5 seconds it'll automatically close)
 4. Load any map e.g /map mp_carentan
 5. The tool should be now working and you can use it's possibilities.
-
-[ DLL Project ]
-
-- Run the standalone, which creates the DLL which you can inject. (The steps are basically the same)
-
-
-Or you can create a DLL Project
-DLL Project; Compiled with GCC, IDE: Code::Blocks 12.11
-
 
 :: Linux (Unstable) (Less features than Windows version)
 
@@ -36,6 +27,7 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=mdll.so ./cod_lnxded
 
 
 :: Features
+
 - GSC Scripting to C++
 - ClientCommand receiving
 - Player Collision (Use setContents(0) on a player-entity)
