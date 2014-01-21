@@ -5,37 +5,41 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 
 [ Standalone ]
 
-1. Copy Tools/bin into Call of Duty folder (Or just copy MDLL.exe into Tools/bin, which is a directory if you installed the CoD MODTools)
+1. Copy CoDExtended.exe into your Call of Duty folder
 2. Run your Call of Duty server
-3. Run MDLL.exe (After 5 seconds it'll automatically close)
+3. Run CoDExtended.exe (After 5 seconds it'll automatically close)
 4. Load any map e.g /map mp_carentan
 5. The tool should be now working and you can use it's possibilities.
 
-:: Linux (Unstable) (Less features than Windows version)
+[ Linux ] (Unstable) (Less features than Windows version) (Only Patch 1.5 so far)
 
 1. Compile the .so
 
-gcc -I. -m32 -fPIC -c mdll.cpp -o mdll.opp
+gcc -I. -m32 -fPIC -c CoDExtended.cpp -o CoDExtended.opp
 
-gcc -m32 -shared -L/lib32 -o mdll.so  mdll.opp -Os -s -ldl -Wall
+gcc -m32 -shared -L/lib32 -o CoDExtended.so  CoDExtended.opp -Os -s -ldl -Wall
 
 2. Add this to your starting line (Library path may be not needed)
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=mdll.so ./cod_lnxded
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=CoDExtended.so ./cod_lnxded
 
 3. Run the server like you normally would
 
-
 :: Features
 
-- GSC Scripting to C++
-- ClientCommand receiving
-- Player Collision (Use setContents(0) on a player-entity)
-  If Player Collision is on and the "bounce" off function isn't patched then you can stand ontop of other people!
-- Velocity
-- Entity collision and damage feedback
-- Player angles, extended button usage and more
+- GSC > C/C++
+- Extending the functions/methods of the default GSC script
+- Various callbacks e.g ClientCommand
 - Much more unlisted features
+
+:: Player Features
+- Collision (If the collision is turned off then you can stand ontop of other people. ;])
+- Velocity altering
+- Instead of the self.angles > self getplayerangles() which returns better angles
+- Play player-animation(s) with a script
+
+:: Entity features
+- Entity collision and damage feedback
 
 
 For any questions feel free to ask me on xfire: phpcod
