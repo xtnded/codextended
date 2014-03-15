@@ -3,7 +3,7 @@ Call of Duty Extended
 
 Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
 
-[ Windows Standalone ]
+[ Windows Standalone (Patch 1.1 & 1.5 in one binary, altough the older MDLL variant only supports 1.5) ]
 
 1. Copy CoDExtended.exe into your Call of Duty folder
 2. Run your Call of Duty server
@@ -11,7 +11,7 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 4. Load any map e.g /map mp_carentan
 5. The tool should be now working and you can use it's possibilities.
 
-[ Linux ]
+[ Linux (Patch 1.5 Only) ]
 
 1. Compile the .so
 2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
@@ -19,10 +19,6 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 2. Add this to your starting line (Library path may be not needed)
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
-
-So your starting up script/line looks like this;
-
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded +sets gamestartup \"`date +"%m-%d-%y %T "`\" +set ttycon 1 +set net_port 28960 +set sv_punkbuster 0
 
 3. Run the server like you normally would
 
