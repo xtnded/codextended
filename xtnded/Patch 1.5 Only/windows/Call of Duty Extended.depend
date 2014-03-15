@@ -1,0 +1,187 @@
+# depslib dependency file v1.0
+1390298278 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\codpatch.cpp
+	"codpatch.hpp"
+
+1390298269 c:\documents and settings\r\my documents\codeblocks\call of duty extended\codpatch.hpp
+	"Entity.hpp"
+
+1390918540 c:\documents and settings\r\my documents\codeblocks\call of duty extended\entity.hpp
+	"include.hpp"
+
+1393264445 c:\documents and settings\r\my documents\codeblocks\call of duty extended\include.hpp
+	"Windows.h"
+	<string>
+	<cctype>
+	<stdio.h>
+	<iostream>
+	<fstream>
+	<string>
+	<map>
+	<vector>
+	<sstream>
+	"cracking.hpp"
+	"surfaceflags.h"
+	"syscalls.hpp"
+	<mysql.h>
+
+1379674494 c:\documents and settings\r\my documents\codeblocks\call of duty extended\cracking.hpp
+	<string.h>
+
+1388458034 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\cracking.cpp
+	"cracking.hpp"
+	"windows.h"
+
+1390918522 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\entity.cpp
+	"entity.hpp"
+
+1390833288 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\include.cpp
+	"include.hpp"
+
+1387973990 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\libcod_impl.cpp
+
+1392582715 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_entitymethod.cpp
+	"script.hpp"
+
+1390250677 c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_entitymethod.hpp
+	"script.hpp"
+
+1394836272 c:\documents and settings\r\my documents\codeblocks\call of duty extended\script.hpp
+	"cod.hpp"
+
+1390298781 c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_mysql.hpp
+	"script.hpp"
+
+1390250669 c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_file.hpp
+	"script.hpp"
+
+1390250673 c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_playermethod.hpp
+	"script.hpp"
+
+1394820473 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_file.cpp
+	"script.hpp"
+
+1390752338 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_mysql.cpp
+	"script.hpp"
+
+1390944278 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_playermethod.cpp
+	"script.hpp"
+	"server.hpp"
+
+1394815167 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\script.cpp
+	"script.hpp"
+
+1392583500 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\main.cpp
+	"cod.hpp"
+
+1390593014 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\syscalls.cpp
+	"syscalls.hpp"
+
+1390689092 c:\documents and settings\r\my documents\codeblocks\call of duty extended\syscalls.hpp
+	"include.hpp"
+
+1390494558 c:\documents and settings\r\my documents\codeblocks\call of duty extended\cvar.hpp
+
+1390494592 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\cvar.cpp
+	"include.hpp"
+
+1390924196 c:\documents and settings\r\my documents\codeblocks\call of duty extended\server.hpp
+	"include.hpp"
+	"script.hpp"
+
+1391349414 c:\documents and settings\r\my documents\codeblocks\call of duty extended\cod.hpp
+	"entity.hpp"
+	"script.hpp"
+
+1394814589 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\cod.cpp
+	"cod.hpp"
+
+1390577444 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\sv_client.cpp
+	"server.hpp"
+
+1390589598 c:\documents and settings\r\my documents\codeblocks\call of duty extended\surfaceflags.h
+
+1390944390 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\client.cpp
+	"server.hpp"
+
+1390938564 source:c:\documents and settings\r\my documents\codeblocks\call of duty extended\scr_math.cpp
+	"script.hpp"
+
+1390944389 source:c:\users\r\documents\codeblocks\call of duty extended\client.cpp
+	"server.hpp"
+
+1390924195 c:\users\r\documents\codeblocks\call of duty extended\server.hpp
+	"include.hpp"
+	"script.hpp"
+
+1390861791 c:\users\r\documents\codeblocks\call of duty extended\include.hpp
+	"Windows.h"
+	<string>
+	<cctype>
+	<stdio.h>
+	<iostream>
+	<fstream>
+	<string>
+	<map>
+	<vector>
+	<sstream>
+	"cracking.hpp"
+	"surfaceflags.h"
+	"syscalls.hpp"
+	<mysql.h>
+
+1379674493 c:\users\r\documents\codeblocks\call of duty extended\cracking.hpp
+	<string.h>
+
+1390589597 c:\users\r\documents\codeblocks\call of duty extended\surfaceflags.h
+
+1390689091 c:\users\r\documents\codeblocks\call of duty extended\syscalls.hpp
+	"include.hpp"
+
+1390938661 c:\users\r\documents\codeblocks\call of duty extended\script.hpp
+	"cod.hpp"
+
+1391349413 c:\users\r\documents\codeblocks\call of duty extended\cod.hpp
+	"entity.hpp"
+	"script.hpp"
+
+1390918539 c:\users\r\documents\codeblocks\call of duty extended\entity.hpp
+	"include.hpp"
+
+1390942099 source:c:\users\r\documents\codeblocks\call of duty extended\cod.cpp
+	"cod.hpp"
+
+1388458032 source:c:\users\r\documents\codeblocks\call of duty extended\cracking.cpp
+	"cracking.hpp"
+	"windows.h"
+
+1390494591 source:c:\users\r\documents\codeblocks\call of duty extended\cvar.cpp
+	"include.hpp"
+
+1390918520 source:c:\users\r\documents\codeblocks\call of duty extended\entity.cpp
+	"entity.hpp"
+
+1390833287 source:c:\users\r\documents\codeblocks\call of duty extended\include.cpp
+	"include.hpp"
+
+1391347974 source:c:\users\r\documents\codeblocks\call of duty extended\main.cpp
+	"cod.hpp"
+
+1390867204 source:c:\users\r\documents\codeblocks\call of duty extended\scr_entitymethod.cpp
+	"script.hpp"
+
+1390752342 source:c:\users\r\documents\codeblocks\call of duty extended\scr_file.cpp
+	"script.hpp"
+
+1390938562 source:c:\users\r\documents\codeblocks\call of duty extended\scr_math.cpp
+	"script.hpp"
+
+1390752336 source:c:\users\r\documents\codeblocks\call of duty extended\scr_mysql.cpp
+	"script.hpp"
+
+1390944277 source:c:\users\r\documents\codeblocks\call of duty extended\scr_playermethod.cpp
+	"script.hpp"
+	"server.hpp"
+
+1391094365 source:c:\users\r\documents\codeblocks\call of duty extended\script.cpp
+	"script.hpp"
+
