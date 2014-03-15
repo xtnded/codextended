@@ -3,7 +3,7 @@ Call of Duty Extended
 
 Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
 
-[ Standalone ]
+[ Windows Standalone ]
 
 1. Copy CoDExtended.exe into your Call of Duty folder
 2. Run your Call of Duty server
@@ -11,17 +11,18 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 4. Load any map e.g /map mp_carentan
 5. The tool should be now working and you can use it's possibilities.
 
-[ Linux ] (Unstable) (Less features than Windows version) (Only Patch 1.5 so far)
+[ Linux ]
 
 1. Compile the .so
-
-gcc -I. -m32 -fPIC -c CoDExtended.cpp -o CoDExtended.opp
-
-gcc -m32 -shared -L/lib32 -o CoDExtended.so  CoDExtended.opp -Os -s -ldl -Wall
+2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
 
 2. Add this to your starting line (Library path may be not needed)
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=CoDExtended.so ./cod_lnxded
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
+
+So your starting up script/line looks like this;
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded +sets gamestartup \"`date +"%m-%d-%y %T "`\" +set ttycon 1 +set net_port 28960 +set sv_punkbuster 0
 
 3. Run the server like you normally would
 
@@ -30,6 +31,7 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=CoDExtended.so ./cod_lnxded
 - GSC > C/C++
 - Extending the functions/methods of the default GSC script
 - Various callbacks e.g ClientCommand
+- Bugfixes e.g (q3dirtrav)
 - Much more unlisted features
 
 :: Player Features
@@ -40,7 +42,6 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=CoDExtended.so ./cod_lnxded
 
 :: Entity features
 - Entity collision and damage feedback
-
 
 For any questions feel free to ask me on xfire: phpcod
 

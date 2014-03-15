@@ -1,1 +1,190 @@
-#include <stdio.h>#include <iostream>#include <fstream>#include <string>#include <cctype>#include <stdlib.h>#include <string.h>#include <dlfcn.h>#include <sys/mman.h>#include <execinfo.h>using namespace std;int cracking_nop(int from, int to) {    int ovr = to - from;	int i;	for (i=from; i<to; i++)	{		*(unsigned char *)i = 0x90;		//printf("%d ", *(unsigned char *)i);	}	return ovr; // bytes overwritten}void cracking_hook_function(int from, int to) {	mprotect((void *)from, 5, PROT_READ | PROT_WRITE | PROT_EXEC);	int relative = to - (from+5); // +5 is the position of next opcode	memset((void *)from, 0xE9, 1); // JMP-OPCODE	memcpy((void *)(from+1), &relative, 4); // set relative address with endian	mprotect((void *)from, 5, PROT_READ | PROT_EXEC);}void cracking_hook_call(int from, int to){	mprotect((void *)from, 5, PROT_READ | PROT_WRITE | PROT_EXEC);	int relative = to - (from+5); // +5 is the position of next opcode	memcpy((void *)(from+1), &relative, 4); // set relative address with endian	mprotect((void *)from, 5, PROT_READ | PROT_EXEC);}int singleHexToNumber(char hexchar){	switch (hexchar)	{		case '0': return 0;		case '1': return 1;		case '2': return 2;		case '3': return 3;		case '4': return 4;		case '5': return 5;		case '6': return 6;		case '7': return 7;		case '8': return 8;		case '9': return 9;		case 'a':		case 'A': return 10;		case 'b':		case 'B': return 11;		case 'c':		case 'C': return 12;		case 'd':		case 'D': return 13;		case 'e':		case 'E': return 14;		case 'f':		case 'F': return 15;	}	return -1;}int hexToBuffer(char *hex, char *buffer, int bufferLen){	int len, neededBytes, i, padding, first, pos, leftPart, rightPart;	len = strlen(hex); // every byte of hex is taking 4 bits. F=1111	padding = 0; // just for "a", "abc" etc... "a" = 0x0a, "abc" = 0x0abc	// we dont handle 4-bits for one hex-number, so round up to bytes...	// three bytes will not take 12 bits, they will use 16 bits = 2 bytes	if (len % 2 != 0)	{		padding = 1;		len++;	}	neededBytes = len >> 1; // its like dividing by 2	//printf_hide("len=%d neededBytes=%d\n", len, neededBytes);	first = 1;	pos = 0;	for (i=0; i<neededBytes; i++)	{		char twochars[2] = {'0', '0'};		if (first)		{			if (padding) {				twochars[1] = hex[0];				pos++;			} else {				twochars[0] = hex[0];				twochars[1] = hex[1];				pos += 2;			}			first = 0;		} else {			twochars[0] = hex[pos];			twochars[1] = hex[pos+1];			pos += 2;		}		//printf_hide("twochars=%.2s\n", twochars);		leftPart = singleHexToNumber(twochars[0]);		rightPart = singleHexToNumber(twochars[1]);		if (leftPart == -1 || rightPart == -1)			return i;		buffer[i] = (leftPart << 4) + rightPart;		// buffer end:		if (i == bufferLen)			return i;	}	return neededBytes;}int cracking_write_hex(int address, char *hex){	unsigned char *ptr = (unsigned char *)address;	char buffer[128] = {0};	int bytes;	int i;	bytes = hexToBuffer(hex, buffer, 128);	for (i=0; i<bytes; i++)		ptr[i] = buffer[i];	return bytes;}#define PLAYERSTATE_SIZE 0x22cc#define GENTITY_SIZE 0x31c#define PLAYERSTATE_OFFSET 0xCADF4int gentities;void* gamelib;typedef void ( *xcommand_t )( void );//typedef int (*Com_Printf_t)(const char*, ...);//Com_Printf_t Com_Printf = (Com_Printf_t)0x0437C00;typedef void (*sub_80604BE_t)(const char*, xcommand_t);sub_80604BE_t sub_80604BE = (sub_80604BE_t)0x80604BE;#define STACK_UNDEFINED 0#define STACK_STRING 1#define STACK_LOCALIZED_STRING 2#define STACK_VECTOR 3#define STACK_FLOAT 4#define STACK_INT 5#define STACK_CODEPOS 6#define STACK_OBJECT 7#define STACK_KEY_VALUE 8#define STACK_FUNCTION 9#define STACK_STACK 10#define STACK_ANIMATION 11#define STACK_THREAD 12#define STACK_ENTITY 13#define STACK_STRUCT 14#define STACK_ARRAY 15#define STACK_DEAD_THREAD 16#define STACK_DEAD_ENTITY 17#define STACK_DEAD_OBJECT 18typedef struct{	void *offsetData;	int type;} aStackElement;int getStack() {	return 0x830AE88;}int stackGetParamInt(int param, int *value) {	aStackElement *scriptStack = *(aStackElement**)getStack();	aStackElement *arg = scriptStack - param;	if (arg->type != STACK_INT)		return 0;	*value = (int)arg->offsetData;	return 1;}int getStackCount() {    return *(int*)(0x830AE84);}int stackGetParamVector(int param, float value[3]) {	aStackElement *scriptStack = *(aStackElement**)getStack();	aStackElement *arg = scriptStack - param;	if (arg->type != STACK_VECTOR)		return 0;	value[0] = *(float *)((int)(arg->offsetData) + 0);	value[1] = *(float *)((int)(arg->offsetData) + 4);	value[2] = *(float *)((int)(arg->offsetData) + 8);	return 1;}int stackGetParamString(int param, char **value) {	aStackElement *scriptStack = *(aStackElement**)getStack();	aStackElement *arg = scriptStack - param;	if (arg->type != STACK_STRING)		return 0;    *value = (char *)(*(int *)0x081F6940 + 8*(int)arg->offsetData + 4);	return 1;}int stackPushVector(float *ret) {	int (*signature)(float *);	*((int *)(&signature)) = 0x80AF464;	return signature(ret);}int stackPushString(char *str) {	int (*signature)(char*);	*((int *)(&signature)) = 0x80AF3B6;	return signature(str);}int stackPushInt(int i) {	int (*signature)(int);	*((int *)(&signature)) = 0x80AF2A6;	return signature(i);}class cHook{	public:	int from;	int to;	unsigned char oldCode[5];		void load(int from, int to)	{		this->from = from;		this->to = to;	}	void hook()	{		memcpy((void *)oldCode, (void *)from, 5);		cracking_hook_function(from, to);	}	void unhook()	{		memcpy((void *)from, (void *)oldCode, 5);	}};void entitygsc(int cmd, int a1) {    switch(cmd) {        case 11: {            float receiver[3];            stackGetParamVector(2, receiver);            //setVelocity(a1, receiver);            }        break;		        case 16: {            int width, height;            stackGetParamInt(2, &width);            stackGetParamInt(3, &height);            *(float*)(GENTITY_SIZE * a1 + gentities + 280) = height;            *(float*)(GENTITY_SIZE * a1 + gentities + 276) = width;            *(float*)(GENTITY_SIZE * a1 + gentities + 272) = width;            *(float*)(GENTITY_SIZE * a1 + gentities + 264) = -width;            *(float*)(GENTITY_SIZE * a1 + gentities + 260) = -width;            //syscall(53, (int*)(GENTITY_SIZE * a1 + gentities));        }        break;        case 17: {            int in;            stackGetParamInt(2, &in);            *(int*)(GENTITY_SIZE*a1+gentities+357) = in;        }        case 19: {            int in;            stackGetParamInt(2, &in);            *(int*)(GENTITY_SIZE*a1+gentities+373) = in;        }        break;    }}int gsc_closer() {    int a1;    stackGetParamInt(0, &a1);    switch(a1) {        case 10:        case 11:        case 12:        case 15:        case 16:        case 17:        case 18:        case 19:        case 20:        case 22:        case 23:        case 24:        case 25:        case 26:        case 14: {            int num;            stackGetParamInt(1, &num);            entitygsc(a1, num);            }        break;        case 70: {            char* name;            int len;            stackGetParamString(1, &name);            stackGetParamInt(2, &len);            FILE *f = fopen(name, "r");            if(f == NULL) {                stackPushInt(0);            } else {                char txt[len];                fgets(txt, len, f);                puts(txt);                fclose(f);                stackPushString(txt);            }        }        break;        case 71: {            char* name;            char* mode;            char* text;            stackGetParamString(1, &name);            stackGetParamString(2, &mode);            stackGetParamString(3, &text);            FILE *f = fopen(name, mode);            if(f == NULL) {                stackPushInt(0);            } else {                stackPushInt(1);//                fprintf(f, text);                fclose(f);            }        }        break;        case 72: {            char* name;            stackGetParamString(1, &name);            if(FILE *f = fopen(name, "r")) {                fclose(f);                stackPushInt(1);            } else {                stackPushInt(0);            }        }        break;        default: {                stackPushString((char*)"Default Text //php");            }        break;    }    return 0;}extern "C" signed int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11  ) {	printf("vmMain called; %i %i %i %i %i %i %i %i %i %i %i %i %i\n", command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);}void *Sys_LoadDll_80D3DAD(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...));cHook hook_Sys_LoadDll;typedef char * (*Sys_Cwd_80D5E2A_t)();typedef char * (*Cvar_VariableString_80734FC_t)(char *);typedef int (*FS_BuildOSPath_8060D52_t)(char *src, char *, char *, char **dest);typedef int (*Com_Printf_806FC90_t)(const char *format, ...);typedef void (*Com_Error_806FEF4_t)(signed int errorcode, const char *format, ...);typedef char *(*Q_strncpyz_8085EB2_t)(char *dest, const char *src, int destsize);Sys_Cwd_80D5E2A_t Sys_Cwd_80D5E2A = (Sys_Cwd_80D5E2A_t)0x080D5E2A;Cvar_VariableString_80734FC_t Cvar_VariableString_80734FC = (Cvar_VariableString_80734FC_t)0x080734FC;FS_BuildOSPath_8060D52_t FS_BuildOSPath_8060D52 = (FS_BuildOSPath_8060D52_t)0x08060D52;Com_Printf_806FC90_t Com_Printf_806FC90 = (Com_Printf_806FC90_t)0x0806FC90;Com_Error_806FEF4_t Com_Error_806FEF4 = (Com_Error_806FEF4_t)0x0806FEF4;Q_strncpyz_8085EB2_t Q_strncpyz_8085EB2 = (Q_strncpyz_8085EB2_t)0x08085EB2;void *Sys_LoadDll_80D3DAD(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...)){  char *err; // eax@4  char *error; // eax@12  char *fn; // [sp+20h] [bp-228h]@1  char *gamedir; // [sp+120h] [bp-128h]@1  char *basepath; // [sp+124h] [bp-124h]@1  char *homepath; // [sp+128h] [bp-120h]@1  char *pwdpath; // [sp+12Ch] [bp-11Ch]@1  char fname[100]; // [sp+130h] [bp-118h]@1  void *dllEntry; // [sp+238h] [bp-10h]@10  void *libHandle; // [sp+23Ch] [bp-Ch]@1    hook_Sys_LoadDll.unhook();    void *(*Sys_LoadDll_original)(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...));  *(int *)&Sys_LoadDll_original = 0x080D3DAD;  void *ret = Sys_LoadDll_original(name, dest, entryPoint, systemcalls);    hook_Sys_LoadDll.hook();    gamelib = ret;  int *functions = (int *)dlsym(ret, "functions");  int *cc = (int*)dlsym(ret, "ClientCommand");  gentities = (int)dlsym(ret, "g_entities");    //cracking_hook_function((int)dlsym(ret, "vmMain"), (int)vmMain);    printf("cc: %08x\n", (int)cc);  printf("gentities: %08x\n", gentities);  printf("gamelib: %08x\n", (int)gamelib);    for (int i=0; i<110; i++)  {	int *set =  functions + 3*i;		char **functionname = (char **)(set + 0);	void **function = (void **)(set + 1);	int **developer = (int **)(set + 2);	if (strcmp(*functionname, "closer")==0)	{		printf("hooking orig=%08x to my=%08x\n", (unsigned int)*function, (unsigned int)gsc_closer);		*function = (void *)gsc_closer;	}	/*if(*(int*)(set +2) == 1) {		printf("DEVFUNCTION >> %s\n", *functionname);	}*/	//printf("(%s [%p])", *functionname, *function);	//printf("asd %d = %08x/%s func[1]=%08x func[2]=%08x\n", i, *functionname,*functionname, *function, *developer);  }    return ret;}void test() {	printf("Testing out\n");}class MDLL{	public:	MDLL()	{		setbuf(stdout, NULL);				printf("Compiled: " __DATE__ " " __TIME__ "\n");		mprotect((void *)0x08048000, 0x135000, PROT_READ | PROT_WRITE | PROT_EXEC);		hook_Sys_LoadDll.load(0x080D3DAD, (int)Sys_LoadDll_80D3DAD);		hook_Sys_LoadDll.hook();		sub_80604BE("test", test);        printf("MDLL Loaded CoD 1.5\n");        //loaded	}	~MDLL()	{		//unload		printf("MDLL Unloaded\n");	}};MDLL *mdll;extern "C" void __attribute__ ((constructor)) lib_load(void) // will be called when LD_PRELOAD is referencing this .so{    mdll = new MDLL;}extern "C" void __attribute__ ((destructor)) lib_unload(void){    delete mdll;}
+#include "codextended.hpp"
+#include <math.h>
+#include "common/patch.hpp"
+
+/*
+	Call of Duty Extended
+	Patch 1.5 Linux
+	
+	- riicchhaarrd
+*/
+
+cvar_t* player_jumpheight;
+cvar_t* jump_slowdownenable;
+cvar_t* g_steep;
+
+int PM_Jump(float f) {
+	//TODO
+}
+
+int StuckInPlayer(int a1) {
+	int tmp = (int)dlsym(gamelib, "PM_GetEffectiveStance");
+	if(jump_slowdownenable->integer)
+		*(byte*)(tmp+0x106F) = 0x7f;
+	else
+		*(byte*)(tmp+0x106F) = 0xeb;
+	
+	if(g_steep->integer) {
+		//*(byte*)(tmp+0x36D2) = 0xeb;
+		*(byte*)(tmp+0x36D2) = 0x90;
+		*(byte*)(tmp+0x36D3) = 0x90;
+	}
+	
+	*(float*)(tmp+0x10AC) = player_jumpheight->value; //jumpheight
+	return 0;
+}
+
+void G_SetPlayerContents(int a1) {
+}
+
+/*
+	thanks to kung foo man for unprotect_lib
+*/
+int unprotect_lib(char *libname)
+{
+    char buf[512];
+    char flags[4];
+    void *low, *high;
+    FILE *fp;
+    fp = fopen("/proc/self/maps", "r");
+    if ( ! fp)
+        return 0;
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if ( ! strstr(buf, libname))
+            continue;
+        if (sscanf (buf, "%p-%p %4c", &low, &high, flags) != 3)
+            continue;
+        //printf(buf);
+        //printf("%08x %08x diff:%.8p\n", low, high, (int)high-(int)low);
+        mprotect((void *)low, (int)high-(int)low, PROT_READ | PROT_WRITE | PROT_EXEC);
+    }
+    fclose(fp);
+    return 1;
+}
+
+void *zSys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...)) {
+	char *err;
+	char *error;
+	char *fn;
+	char *gamedir;
+	char *basepath;
+	char *homepath;
+	char *pwdpath;
+	char fname[100];
+	void *dllEntry;
+	void *libHandle;
+	
+	void *(*Sys_LoadDllz)(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...));
+	*(int *)&Sys_LoadDllz = 0x080D3DAD;
+	void *ret = Sys_LoadDllz(name, dest, entryPoint, systemcalls);
+	
+	char* libn = "/home/cod/main/game.mp.i386.so";
+	unprotect_lib(libn);
+	
+	//mprotect(ret, 0x8A400, PROT_READ | PROT_WRITE | PROT_EXEC);
+	
+	gamelib = ret;
+	base = (int)dlsym(ret, "vmMain"); //0x4D84C
+	gentities = (int)dlsym(ret, "g_entities");
+	zpml = (char (*)[140])dlsym(ret, "pml");
+	zpm = (int)dlsym(ret, "pm");
+	for(int i = 0; i < MAX_ENTITY_SIZE; i++) {
+		game->entities[i].index = i;
+		game->entities[i].base = gentities + GENTITY_SIZE * i;
+		game->entities[i].ptr = gentities + GENTITY_SIZE * i;
+	}
+	scriptInitializing();
+	
+	//cracking_hook_function(((int)dlsym(ret, "PM_GetEffectiveStance")+0xEDD), (int)PM_Jump);
+	
+	int stuck = (int)dlsym(ret, "StuckInClient");
+	cracking_hook_function(stuck, (int)StuckInPlayer);
+	
+	int cont = (int)dlsym(ret, "G_SetClientContents");
+	cracking_hook_function(cont, (int)G_SetPlayerContents);
+	
+	/*
+	int tmp = (int)dlsym(ret, "PmoveSingle");
+	int calls[6] = {0x78e,0x7c9,0x7ff,0x88f,0x924,0x967};
+	for(unsigned short i = 0; i < 6; i++) {
+		int loc = tmp + calls[i];
+		cracking_nop(loc, loc+5);
+	}*/
+	//printf("LAZY[%d] NOW[%d] GLOBAL[%d] LOCAL[%d]\n", RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL);
+	
+	
+	/*
+	====
+	CLIENT
+	====
+	*/
+	/*
+	byte s[5] = {0xe8, 0xdf, 0x71, 0xfc, 0xff};
+	int b = GAME("vmMain");
+	int result = search_memory(b, b+0x244, &s[0], sizeof(s));
+	printf("result = %x\n", result);
+	cracking_hook_call(result, (int)myClientCommand);
+	*/
+	/*
+	====
+	EFLAG
+	====
+	*/
+	/*byte flagBytes[8] = {0x74,0x1A,0x8B,0x45,0xBC,0x8B,0x55,0xBC};
+	int flagStart = GAME("ClientEndFrame");
+	if(flagStart != 0) {
+		printf("not null\n");
+		byte* flagMemory = (byte*)search_memory(flagStart, flagStart + 0x3AB2, &flagBytes[0], 8);
+		if(flagMemory != 0) {
+			*flagMemory = 0xeb;
+			printf("flagMemory = %x\n", *flagMemory);
+		}
+	}*/
+	return ret;
+}
+
+void Info_Out() {
+	int argc = Cmd_Argc();
+	if(argc < 2) {
+		printf("Usage: out <hexadecimal offset>\n");
+		printf("Return: <integer>\n");
+		return;
+	}
+	
+	int* off = (int*)atoi(Cmd_Argv(1));
+	if(off) {
+		printf("%x = %xh = %d\n", off, *off, *off);
+	}
+}
+
+CODEXTENDED::CODEXTENDED() {
+	setbuf(stdout, NULL);
+	mprotect((void *)0x08048000, 0x135000, PROT_READ | PROT_WRITE | PROT_EXEC);
+	printf("Compiled: " __DATE__ " " __TIME__ "\n");
+	/*hook_Sys_LoadDll.load(0x080D3DAD, (int)Sys_LoadDll_80D3DAD);
+	hook_Sys_LoadDll.hook();*/
+	
+	cracking_hook_call(0x809D975, (int)Script_GetCustomFunction);
+	cracking_hook_call(0x809DBB1, (int)Script_GetCustomMethod);
+	cracking_hook_call(0x809AEA8, (int)zSys_LoadDll);
+	SV_AddOperatorCommands();
+	
+	Cvar_Set("sv_hostname", "^7CoDHost");
+	player_jumpheight = Cvar_Get("player_jumpheight", "39", 0);
+	jump_slowdownenable = Cvar_Get("jump_slowdownenable", "1", 0);
+	g_steep = Cvar_Get("g_steep", "0", 0);
+	//*(byte*)0x804b61c = 0x2f; //patch bsp version 0x2f = 47
+	Cmd_AddCommand("out", Info_Out);
+	clientInit();
+}
+
+ENTITY* CODEXTENDED::getEntities() {
+    return entities;
+}
+
+ENTITY* CODEXTENDED::getEntity(unsigned short index) {
+    return &entities[index];
+}
+
+CODEXTENDED* game;
