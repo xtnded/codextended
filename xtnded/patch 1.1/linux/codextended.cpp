@@ -158,6 +158,7 @@ void *zSys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*s
 	cracking_hook_call((GAME("ClientSpawn")+0x3e9), (int)myClientEndFrame);
 	cracking_hook_call((GAME("G_RunFrame")+0x645), (int)myClientEndFrame);
 	
+	#if 0
 	int gk1 = GAME("G_InitGame")+0x2E4;
 	int gk2 = GAME("G_InitGame")+0x2B8;
 	printf("GK1 = %d\n", *(byte*)gk1);
@@ -171,7 +172,7 @@ void *zSys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*s
 	int bec = GAME("ScriptEntCmd_MoveTo")+0x2E;
 	*(byte*)bec = 0xeb;
 	//because fuck you limiting to script_*
-	
+	#endif
 	//int b5 = GAME("PmoveSingle");
 	//cracking_hook_function(b5+0x404, b5+0x3ea);
 	
