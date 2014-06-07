@@ -13,10 +13,15 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 
 [ Linux ]
 
+Binary releases;
+http://cod1.eu/xtnded/codextended_no_mysql.so
+http://cod1.eu/xtnded/codextended.so
+
 1. Compile the .so
 2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
-
-2. Add this to your starting line (Library path may be not needed)
+3. Download the xtnded_server.pk3 and modify it to your needs (it's for the callbacks) [http://cod1.eu/xtnded/xtnded_server.pk3]
+4. 
+4. Add this to your starting line (Library path may be not needed)
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
 
