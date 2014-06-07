@@ -283,23 +283,6 @@ char* Cvar_InfoString(int bit) {
 	return ret;
 }
 
-void info_setvalueforkey( char *s, const char *key, const char *value) {
-	/*
-	0D 0A //newline
-	*/
-	if(!strcmp(key, "sv_maxclients")) {
-		//Info_SetValueForKey(s, key, "1000"); //don't be a faggot
-	/*} else if(!strcmp(key, "hostname")) {
-		//const char hostname[] = {'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa,'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa,'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa};
-		const char hostname[] = {'^','2','w','w', 'w','.','c','o', 'd','1','.','e', 'u',' ','!','!', 0xd, 0xa,'^','2','@','@', '@','@','@','@', '@','@','@','@', '@','@','@','@', 0xd, 0xa,'@','@','@','@', '@','@','@','@', '@','@','@','@', '@','@','@','@'};
-		Info_SetValueForKey(s, key, hostname);
-	/*} else if(!strcmp(key, "mapname")) {
-		//Info_SetValueForKey(s, key, "mp_nuketown");*/
-	} else {
-		Info_SetValueForKey(s, key, value);
-	}
-}
-
 void Cmd_Dummy() {
 	char* (*callee)(int);
 	*((int*)(&callee)) = 0x806FC30;
@@ -330,8 +313,6 @@ CODEXTENDED::CODEXTENDED() {
 	*(byte*)0x80852B3 = 0x90;
 	*(byte*)0x80852B4 = 0x90;
 	*(byte*)0x80854FF = 0xeb;
-	
-	cracking_hook_function(0x80827D4, (int)info_setvalueforkey);
 	
 	//cracking_hook_function(0x0808C05F, (int)mid_statushook);
 	
