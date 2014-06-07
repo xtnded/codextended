@@ -27,9 +27,6 @@ echo "[SCRIPT]"
 $compiler $params -c game/script/scr_method_player.cpp -o obj/scr_method_player.opp
 $compiler $params -c game/script/scr_method_entity.cpp -o obj/scr_method_entity.opp
 $compiler $params -c game/script/scr_mysql.cpp -o obj/scr_mysql.opp
-#echo "[ECMASCRIPT]"
-#$compiler $params -c game/js.cpp -o obj/js.opp
-#$compiler $params -c duktape/duktape.c -o obj/duktape.opp
 obj="$(ls obj/*.opp)"
 $compiler -m32 -shared -L/lib32 -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -L./lib -o ./bin/codextended.so $obj -Os -s -ldl -lm -Wall
 rm -rf ./obj
