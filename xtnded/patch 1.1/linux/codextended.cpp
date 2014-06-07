@@ -259,30 +259,6 @@ void COD_Destructor() {
 	call();
 }
 
-char* Cvar_InfoString(int bit) {
-	/*static char info[MAX_INFO_STRING];
-	cvar_t  *var;
-
-	info[0] = 0;
-	
-	cvar_t *cvar_vars = (cvar_t*)0x834A0E0;
-	
-	for ( var = cvar_vars ; var ; var = var->next ) {
-		if ( var->flags & bit ) {
-			printf("%s, ", var->name);
-			Info_SetValueForKey( info, var->name, var->string );
-		}
-	}
-	printf("\n");
-	return info;*/
-	char* (*call)(int);
-	*((int*)(&call)) = 0x806FC30;
-	char* ret = call(bit);
-	Info_SetValueForKey(ret, "sv_maxclients", "2147");
-	printf("ret = %s\n", ret);
-	return ret;
-}
-
 void Cmd_Dummy() {
 	char* (*callee)(int);
 	*((int*)(&callee)) = 0x806FC30;
