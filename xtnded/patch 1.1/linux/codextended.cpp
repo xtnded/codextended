@@ -288,7 +288,7 @@ void info_setvalueforkey( char *s, const char *key, const char *value) {
 	0D 0A //newline
 	*/
 	if(!strcmp(key, "sv_maxclients")) {
-		Info_SetValueForKey(s, key, "1000");
+		//Info_SetValueForKey(s, key, "1000"); //don't be a faggot
 	/*} else if(!strcmp(key, "hostname")) {
 		//const char hostname[] = {'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa,'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa,'#','#','#','#', '#','#','#','#', '#','#','#','#', '#','#','#','#', 0xd, 0xa};
 		const char hostname[] = {'^','2','w','w', 'w','.','c','o', 'd','1','.','e', 'u',' ','!','!', 0xd, 0xa,'^','2','@','@', '@','@','@','@', '@','@','@','@', '@','@','@','@', 0xd, 0xa,'@','@','@','@', '@','@','@','@', '@','@','@','@', '@','@','@','@'};
