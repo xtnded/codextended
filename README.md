@@ -11,7 +11,7 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 4. Load any map e.g /map mp_carentan
 5. The tool should be now working and you can use it's possibilities.
 
-[ Linux (Patch 1.5 Only) ]
+[ Linux ]
 
 1. Compile the .so
 2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
