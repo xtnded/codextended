@@ -1,4 +1,4 @@
-init() {
+init() { //should be called on main every gametype
     level.CONTENTS_SOLID = 1;
     level.CONTENTS_LIGHTGRID = 4;
     level.CONTENTS_LAVA = 8;
