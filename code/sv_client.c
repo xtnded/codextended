@@ -714,6 +714,15 @@ void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *msg) {
 		line[j++] = msg[i];
 	}
 	
+	if(callbackPlayerCommand) {
+		Script_AddString(line);
+		Script_AddInt(clientNum);
+		int result = Script_ExecEntThread(clientNum, 0, callbackPlayerCommand, 2);
+		Script_FreeThread(result);
+	}
+	
+	if(!Scr_Continue())
+		return;
 	
 	G_Say(ent, NULL, mode, line);
 }
@@ -778,12 +787,6 @@ qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 			
 			//long long timestamp = current_timestamp();
 	
-			if(callbackPlayerCommand) {
-				Script_AddInt(clientNum);
-				int result = Script_ExecEntThread(clientNum, 0, callbackPlayerCommand, 1);
-				Script_FreeThread(result);
-			}
-			
 			#define JS_PLAYERCOMMAND "player_command"
 			
 			#ifdef BUILD_ECMASCRIPT
@@ -801,8 +804,6 @@ qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 			}
 			#endif
 		
-			if(!Scr_Continue())
-				return;
 				
 			VM_Call(*(int*)0x80E30C4, 6, get_client_number( cl ));
 			//VM_Call(gvm, GAME_CLIENT_COMMAND, get_client_number( cl ));

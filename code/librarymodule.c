@@ -217,10 +217,10 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	int cont = (int)dlsym(ret, "G_SetClientContents");
 	cracking_hook_function(cont, (int)G_SetPlayerContents);
 	
-	/*
+	
 	int h66 = (int)dlsym(ret, "ClientEndFrame") + 0x173; //patch contents
 	cracking_nop(h66, h66+0xa);
-	*/
+	
 	
 	//int h93 = GAME("PM_Weapon")+0x63;
 	//cracking_nop(h93,h93+5);
