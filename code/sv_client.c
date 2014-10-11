@@ -716,8 +716,7 @@ void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *msg) {
 	
 	if(callbackPlayerCommand) {
 		Script_AddString(line);
-		Script_AddInt(clientNum);
-		int result = Script_ExecEntThread(clientNum, 0, callbackPlayerCommand, 2);
+		int result = Script_ExecEntThread(*ent, 0, callbackPlayerCommand, 1);
 		Script_FreeThread(result);
 	}
 	
