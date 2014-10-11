@@ -1,19 +1,3 @@
-/*
-	This file is part of CoDExtended.
-
-    CoDExtended is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CoDExtended is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
-*/
 #include "script.h"
 /*
 	:: Scr_GetFunction/GetMethod ::
@@ -711,7 +695,7 @@ void QDECL gscr_loadgametypescript( void ) { //bleh
     }
 }
 
-static int x_localized_string_index = 0;
+static int x_localized_string_index = 128;
 
 int X_SetLocalizedStringIndex(int index, const char* str) {
 	int i = index;
@@ -746,18 +730,18 @@ int X_ModelIndex(int index, const char* name) {
 	
 	return i;
 }
-/*
+
+
 int X_LocalizedStringIndex(const char* str) {
 	int i;
 	char s[MAX_STRING_CHARS];
 	
 	if(x_localized_string_index >= 256)
-		x_localized_string_index = 0;
+		x_localized_string_index = 128;
 	
 	if(!str || !*str)
 		return 0;
 	
-	#if 0
 	int start = 1244;
 	
 	for(i = 1; i < 256; i++) {
@@ -769,14 +753,15 @@ int X_LocalizedStringIndex(const char* str) {
 	}
 	
 	if(i == 256) { //idea to add ignoring strings, maybe first bit. or use half/half 128 for tmp storage
-		i = 2047;
+		//overflow
+		//i = 2047;
+		i = x_localized_string_index;
 	}
-	#endif
 	
-	SV_SetConfigstring(x_localized_string_index + 1244, str); //would require to call the precacheString(..) each time you use that string so let's just make a new function
-	x_localized_string_index++;
+	SV_SetConfigstring(i + 1244, str); //would require to call the precacheString(..) each time you use that string so let's just make a new function
+	++x_localized_string_index;
 	return i;
-}*/
+}
 
 /*
 	//TODO
@@ -939,7 +924,7 @@ void scriptInitializing() {
 	
 	g_clients = (unsigned char*)GAME("g_clients");
 	hudelems = (unsigned char*)GAME("g_hudelems");
-	//cracking_hook_function(GAME("G_LocalizedStringIndex"), (int)X_LocalizedStringIndex);
+	cracking_hook_function(GAME("G_LocalizedStringIndex"), (int)X_LocalizedStringIndex);
 	
 	_bg_itemlist = (gitem_t*)GAME("bg_itemlist");
 	
