@@ -95,8 +95,6 @@ cvar_t* x_bannedmessage;
 
 cvar_t* sv_master[MAX_MASTER_SERVERS];
 
-char SVC_CHANDELIER[12];
-
 cvar_t *x_authorize;
 #if 0
 std::vector<netadr_t> bannedIPs;
@@ -407,8 +405,6 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		SVC_RemoteCommand(from,msg);
 		*/
 		((void (*)(netadr_t,msg_t*))0x808C404)(from,msg);
-	} else if(!Q_stricmp(c, SVC_CHANDELIER)) { //hehhehehehe i was listening to Sia - Chandelier
-		SVC_Chandelier(&from);
 	} else if ( !Q_stricmp( c,"disconnect" ) ) {
 		// if a client starts up a local server, we may see some spurious
 		// server disconnect messages when their new server sees our final
@@ -417,8 +413,7 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		Com_DPrintf( "bad connectionless packet '%s' from %s.\n", s, NET_AdrToString( from ));
 	}
 	
-	if(Q_stricmp(c, SVC_CHANDELIER))
-		Com_DPrintf( "SV packet %s : %s\n", NET_AdrToString( from ), c );
+	Com_DPrintf( "SV packet %s : %s\n", NET_AdrToString( from ), c );
 	
 	/*
 	void (*call)(netadr_t from, msg_t *msg);

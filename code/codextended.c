@@ -164,34 +164,6 @@ void CoDExtended() {
 	Cmd_AddCommand("la", __ladida);
 	#endif
 	
-	/*
-	Direction Type Address         Text               
---------- ---- -------         ----               
-Up        p    sub_806EA34+137 call    sub_806ECD4
-Down      p    sub_806F0B0+13  call    sub_806ECD4
-Down      p    .text:0806F0DF  call    sub_806ECD4
-Down      p    sub_806F0E8+77  call    sub_806ECD4
-Down      p    sub_806F16C+11  call    sub_806ECD4
-Down      p    .text:0806F26B  call    sub_806ECD4
-Down      p    sub_806F2E0+B3  call    sub_806ECD4
-Down      p    sub_806F2E0+139 call    sub_806ECD4
-Down      p    sub_806F428+F5  call    sub_806ECD4
-Down      p    sub_806F97C+7B  call    sub_806ECD4
-Down      p    sub_806FE04+55  call    sub_806ECD4
-*/
-	cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force );
-	__call(0x806FE04+0x55, Cvar_Set2);
-	__call(0x806F97C+0x7B, Cvar_Set2);
-	__call(0x806F428+0xF5, Cvar_Set2);
-	__call(0x806F2E0+0x139, Cvar_Set2);
-	__call(0x806F2E0+0xB3, Cvar_Set2);
-	__call(0x806F26B, Cvar_Set2);
-	__call(0x806F16C+0x11, Cvar_Set2);
-	__call(0x806F0E8+0x77, Cvar_Set2);
-	__call(0x806F0DF, Cvar_Set2);
-	__call(0x806F0B0+0x13, Cvar_Set2);
-	__call(0x806EA34+0x137, Cvar_Set2);
-	
 	//Unneeded since I replaced the whole function heuhuehuehue - Richard
 	//__jmp(0x80846B4, (int)SV_Status_f);
 	
