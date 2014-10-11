@@ -1,0 +1,399 @@
+
+void myClientEndFrame(int* a1) { //gentity
+	if(!call_clientendframe)
+		call_clientendframe = GAME("ClientEndFrame");
+	void (*call)(int*);
+	*((int*)(&call)) = call_clientendframe;
+	call(a1);
+	
+	#if 0
+	duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "ClientEndFrame");
+
+    duk_push_int(ctx, *a1);
+    duk_call(ctx, 1);
+    //char* result = (char*)duk_to_string(ctx, -1);
+    duk_pop(ctx);
+	#endif
+	/*ENTITY* ent = game->getEntity(a1);
+	if(ent) {
+		int a = 0;
+		ent->set(EOFF_CONTROLLER, &a, sizeof(a));
+		ent->toPlayerState();
+		ent->set(8396, &a, sizeof(a));
+		ent->get(8428, &a, sizeof(a));
+		if(a == 2) {
+			ent->get(POFF_SESSIONSTATE, &a, sizeof(a));
+			if(a == SS_INTERMISSION) {
+				ent->toEntityState();
+				a = 0;
+				ent->set(EOFF_TAKEDAMAGE, &a, sizeof(a));
+				ent->set(EOFF_CONTENTS, &a, sizeof(a));
+				byte svflags;
+				ent->get(EOFF_S_SVFLAGS, &svflags, sizeof(svflags));
+				svflags = svflags & 0xFD | 1;
+				ent->set(EOFF_S_SVFLAGS, &svflags, sizeof(svflags));
+				a = ET_MOVER;
+				ent->set(POFF_PM_TYPE, &a, sizeof(a));
+				*(_DWORD *)(v3 + 188) = 0;
+				*(_BYTE *)(v3 + 14) &= 0xFBu;
+				*(_DWORD *)(v3 + 128) &= 0xFFFBFBFFu;
+			}
+		}
+	}*/
+}
+
+char* myClientConnect(int a1, int a2) {
+	if(!call_clientconnect)
+		call_clientconnect = GAME("ClientConnect");
+
+	char* (*call)(int,int);
+	*((int*)(&call)) = call_clientconnect;
+	char* ret = call(a1,a2);
+	
+	//Setting up xtnded_client extra variables
+	xtnded_clients[a1].chattimer=0;
+	xtnded_clients[a1].commandtimer=0;
+	xtnded_clients[a1].uid = 0;
+	xtnded_clients[a1].pure = 0;
+	
+    /*duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "ClientConnect");
+
+    int obj_idx = duk_push_object(ctx);
+    for(int i=0; playerfields[i].name; i++) {
+        playerfields[i].func(a1, &playerfields[i]);
+        duk_put_prop_string(ctx, obj_idx, playerfields[i].name);
+    }
+    duk_call(ctx, 1);
+    char* result = (char*)duk_to_string(ctx, -1);
+    duk_pop(ctx);*/
+	/*FILE *f = fopen("/var/www/html/cod_log.txt", "a");
+    if(f != NULL) {
+		char userinfo[MAX_STRING_CHARS];
+		getuserinfo(a1, userinfo, sizeof(userinfo));
+	
+		char* playername = Info_ValueForKey(userinfo, "name");
+        fprintf(f, "Player %s connected with id %d\n", playername, a1);
+        fclose(f);
+    }*/
+	//if(!strcmp(result,""))
+        return ret;
+    //return result;
+}
+
+
+void myClientBegin(int clientNum2) {
+	int clientNum = last_client_number;
+	if(!call_clientbegin)
+		call_clientbegin = GAME("ClientBegin");
+
+	void (*call)(int);
+	*((int*)(&call)) = call_clientbegin;
+	call(clientNum);
+	
+	
+	//SV_SendServerCommand(getclient(clientNum), 0, va("e \"^2This server is running ^7CoDExtended build %d by riicchhaarrd\nA lot of thanks to kungfooman and libcod\"", CURRENTBUILD));
+	//SV_SendServerCommand(getclient(clientNum), 0, va("e \"^2This server is running ^7CoDExtended build %d\"", CURRENTBUILD));
+}
+
+void myClientUserinfoChanged( int clientNum2 ) {	
+	int clientNum = last_client_number;
+	/*int* g_client = (int*)(g_clients + clientNum * 8900);
+	char* netname = (char*)(g_client + 2157);
+	*/
+	
+	if(!call_clientuserinfochanged)
+		call_clientuserinfochanged = GAME("ClientUserinfoChanged");
+	
+	if(!x_namespam->integer) {
+		if(current_timestamp() - xtnded_clients[clientNum].chattimer < 5000 && xtnded_clients[clientNum].chattimer != 0) {
+			return;
+		}
+	}
+	xtnded_clients[clientNum].chattimer = current_timestamp();
+	void (*call)(int);
+	*((int*)(&call)) = call_clientuserinfochanged;
+	call(clientNum);
+}
+
+#ifdef xDEBUG
+void GScr_GetAnimIndex(int a1) {
+	char* animstr = Script_GetString(0);
+	printf("animstr = %s\n", animstr);
+	int index = oBG_AnimationIndexForString("pb_climbdown");
+	printf("anim index = %d\n", index);
+	Script_AddInt(index);
+}
+#endif
+
+#ifdef xDEBUG
+void GScr_SpawnAnimEnt(int a1) {
+  vec3_t org;
+  Script_GetVector(0, org);
+  int reference = Script_GetInt(1);
+  int spawnflags = 0;
+  if(Script_GetNumParam() > 2)
+	spawnflags = Script_GetInt(2);
+  gentity_t* ent = oSpawn();
+  int* v1 = (int*)(*(int*)(ent+374));
+  //Script_SetString(v1, *(int*)&script_const[44]); //entity
+  
+  *(float *)(ent + 308) = org[0];
+  *(float *)(ent + 312) = org[1];
+  *(float *)(ent + 316) = org[2];
+  *(int*)(ent + 376) = spawnflags;
+  *(int*)(ent + 332) = reference;
+  *(int*)(ent + 384) = 0;
+  *(int*)(ent + 388) = 0;
+  *(byte*)(ent + 352) = 1;
+  Script_AddEntity(ent);
+}
+
+void GScr_callspawn(int a1) {
+	int index = Script_GetConstString(0);
+	gentity_t* ent = oSpawn();
+	
+	int* v1 = (int*)(*(int*)(ent+374));
+	Script_SetString(v1, index);
+	Script_AddEntity(ent);
+}
+
+void GScr_GetEntity(int a1) {
+	int index = Script_GetInt(0);
+	gentity_t* ent = (gentity_t*)(gentities + GENTITY_SIZE * index);
+	oInitGentity(ent);
+	Script_AddEntity(ent);
+}
+
+gentity_t* mySpawnPlayerClone() {
+  gentity_t* ent = oSpawn();
+  *(byte*)(ent+352) = 1;
+  //int* v1 = (int*)(*(int*)(ent+374));
+  //Script_SetString(v1, *(int*)&script_const[86]);
+  *(int*)(ent+332)=1023;
+  *(int*)(ent+384)=0;
+  *(int*)(ent+388)=0;
+  *(int*)(ent+8)=0;
+  return ent;
+}
+#endif
+
+void Info_Out() {
+	int argc = Cmd_Argc();
+	if(argc < 2) {
+		printf("Usage: out <hexadecimal offset>\n");
+		printf("Return: <integer>\n");
+		return;
+	}
+	
+	int* off = (int*)strtoll(Cmd_Argv(1), NULL, 16);
+	if(off) {
+		printf("%d\n", *off);
+	}
+}
+
+void Info_Set() {
+	int argc = Cmd_Argc();
+	if(argc < 3) {
+		return;
+	}
+	
+	int* off = (int*)strtoll(Cmd_Argv(1), NULL, 16);
+	int value = atoi(Cmd_Argv(2));
+	if(off) {
+		int old = *off;
+		*off = value; 
+		printf("%d > %d\n", old, *off);
+	}
+}
+
+/*
+
+//small javascript snippet to get addresses
+
+function get(a, i) {
+tmp = (0xaea77f80 + 788*a)+i;
+return tmp.toString(16);
+}
+
+*/
+
+void Info_Get() {
+	int argc = Cmd_Argc();
+	if(argc<2){
+		printf("Error\n");
+		return;
+	}
+	char* str = Cmd_Argv(1);
+	int* p = (int*)dlsym(gamelib,str);
+	if(p) {
+		printf("%s was found at %x (%d)\n", str, (int)p);
+	}
+}
+
+#ifdef xDEBUG
+void Cmd_Dummy() {
+	char* (*callee)(int);
+	*((int*)(&callee)) = 0x806FC30;
+	char* ret = callee(4);
+	printf("ret = %s\n", ret);
+}
+#endif
+
+
+/*
+int __cdecl Cmd_God_f(int a1)
+{
+  int result; // eax@1
+  int v2; // eax@6
+  int v3; // [sp+10h] [bp-8h]@4
+
+  result = CheatsOk(a1);
+  if ( result )
+  {
+    *(_DWORD *)(a1 + 388) ^= 1u;
+    if ( *(_DWORD *)(a1 + 388) & 1 )
+      v3 = (int)"GAME_GODMODEON";
+    else
+      v3 = (int)"GAME_GODMODEOFF";
+    v2 = va("e \"%s\"", v3);
+    result = trap_SendServerCommand(-280575753 * ((a1 - (_DWORD)g_entities) >> 2), 0, v2);
+  }
+  return result;
+}
+*/
+
+void Cmd_God(ENTITY* ent) {
+	int flag;
+	ent->get(EOFF_FLAGS, &flag, sizeof(int));
+	flag ^= 1;
+	ent->set(EOFF_FLAGS, &flag, sizeof(int));
+    SV_SendServerCommand(getclient(ent->index), 0, "e \"^2GODMODE ^7toggled\"");
+}
+
+
+void QDECL myClientCommand(int num_unused) {
+	int num = last_client_number;
+	client_t* cl = getclient(num);
+	
+	long long timestamp = current_timestamp();
+	
+	if(callbackPlayerCommand) {
+		Script_AddInt(num);
+		int result = Script_ExecEntThread(num, 0, callbackPlayerCommand, 1);
+		Script_FreeThread(result);
+	}
+	
+	int argc = Cmd_Argc();
+    char cmd[MAX_STRING_CHARS];
+    Cmd_ArgvBuffer(0, cmd, sizeof(cmd));
+	//printf("%d[%s]\n", num, cmd);
+    ENTITY* ent = game->getEntity(num);
+	
+	#define JS_PLAYERCOMMAND "player_command"
+	
+	#ifdef BUILD_ECMASCRIPT
+	if(strcmp(cmd,"codextended")) {
+        duk_push_global_object(ctx);
+		if(duk_has_prop_string(ctx, -1, JS_PLAYERCOMMAND)) {
+			duk_get_prop_string(ctx, -1, JS_PLAYERCOMMAND);
+			duk_push_int(ctx, num);
+			duk_call(ctx, 1);
+			int duk_ret_val = duk_to_int(ctx, -1);
+			if(duk_ret_val)
+				return;
+		}
+        duk_pop(ctx);
+	}
+	#endif
+	
+	if(!strcmp(cmd, "gc")) { //let's block abusing it to crash the server
+		return;
+	#ifdef xDEBUG
+	} else if(!strcmp(cmd, "checkname")) {
+		SV_SendServerCommand(cl, 0, va("e \"[%s]\"", cl->name));
+	} else if(!strcmp(cmd,"md5")) {
+		/*if(Cmd_Argc() < 2)
+			return;
+		char* str = Cmd_Argv(1);
+		char* hash = get_md5(str);
+		SV_SendServerCommand(getclient(num),1,va("e \"MD5: %s\"", hash));
+		return;*/
+	} else if(!strcmp(cmd,"argv")) {
+		/*int argc = Cmd_Argc();
+		if(argc > 10)
+			return;
+		for(int i = 0; i < argc; i++)
+		printf("arg %d = %s\n", i, Cmd_Argv(i));//SV_SendServerCommand(getclient(num), 0, va("e \"arg %d = %s\"", i, Cmd_Argv(i)));
+		return;*/
+	/*} else if(!strcmp(cmd, "login")) {
+		if(argc < 3) {
+			//SV_SendServerCommand(getclient(num),1,"e \"Usage /login <name> <password>\"");
+			return;
+		}
+		char* username = Cmd_Argv(1);
+		char* password = Cmd_Argv(2);
+		char* safe_name = new char[(strlen(username) * 2) + 1];
+		mysql_real_escape_string(db, safe_name, username, strlen(username));
+		mysql_query(db, va("SELECT * FROM mybb_users WHERE username='%s' LIMIT 1", safe_name));
+		delete[] safe_name;
+		MYSQL_RES* result = mysql_store_result(db);
+		int num_fields = mysql_num_fields(result);
+		if(num_fields<=0)
+		return;
+		MYSQL_ROW row;
+		bool loggedin = false;
+		row = mysql_fetch_row(result);
+			
+		MYSQL_FIELD field;
+		while((field = mysql_fetch_field(result))
+		char* hash;
+		if(!row[0])
+			goto end;
+		hash = get_pass_hash(password, row[3]);
+		if(!strcmp(hash,row[2])) {
+			loggedin=true;
+			xtnded_clients[num].uid=atoi(row[0]);
+			SV_SendServerCommand(0, 1, va("e \"^2Welcome %s!\"", row[1]));
+		}
+		end:
+		mysql_free_result(result);
+		return;*/
+	#endif
+	} else if(strcmp(cmd, "say") == 0) {
+        //char* saidn = ConcatArgs(1);
+		if(timestamp - xtnded_clients[num].chattimer < 1200 && xtnded_clients[num].chattimer != 0)
+			return;
+		xtnded_clients[num].chattimer = timestamp;
+	} else if(!strcasecmp(cmd, "callvote")) {
+		Cmd_CallVote(cl);
+		return;
+    } else if(strcmp(cmd, "codextended") == 0) {
+		if(timestamp - xtnded_clients[num].chattimer < 1200 && xtnded_clients[num].chattimer != 0)
+			return;
+		xtnded_clients[num].chattimer = timestamp;
+		SV_SendServerCommand(getclient(num), 0, "e \"This server is running Call of Duty Extended\"");
+        return;
+    } 
+	#ifdef xDEBUG
+	else if(!strcmp(cmd, "god")) {
+		//Cmd_God(ent);
+		//return;
+	}
+	#endif
+	if(!Scr_Continue())
+		return;
+	
+	if(!call_clientcommand)
+		call_clientcommand = GAME("ClientCommand");
+	
+	void (*call)(int);
+	*((int*)(&call)) = call_clientcommand;
+	/*
+	__asm__ __volatile__("movl %0, %%ebx;"
+		:: "m"(num) :);
+
+	__asm__ __volatile__("push %ebx;");*/
+	call(last_client_number);
+}

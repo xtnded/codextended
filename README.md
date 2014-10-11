@@ -1,4 +1,7 @@
 Call of Duty Extended
+
+CoDExtended is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
 ====
 
 Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
@@ -14,14 +17,13 @@ Call of Duty Extended is a modification for Call of Duty 1, which does what it s
 [ Linux ]
 
 Binary releases;
-http://cod1.eu/xtnded/codextended_no_mysql.so
-http://cod1.eu/xtnded/codextended.so
+http://cod1.eu/codextended.so
 
 1. Compile the .so
 2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
-3. Download the xtnded_server.pk3 and modify it to your needs (it's for the callbacks) [http://cod1.eu/xtnded/xtnded_server.pk3]
-4. 
+*3. Download the xtnded_server.pk3 and modify it to your needs (it's for the callbacks) [http://cod1.eu/xtnded/xtnded_server.pk3] 
 4. Add this to your starting line (Library path may be not needed)
+* may not be needed.
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
 
@@ -31,6 +33,7 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
 
 - GSC > C/C++
 - Extending the functions/methods of the default GSC script
+- New memberfields additions
 - Various callbacks e.g ClientCommand
 - Bugfixes e.g (q3dirtrav)
 - Much more unlisted features
@@ -44,6 +47,6 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
 :: Entity features
 - Entity collision and damage feedback
 
-For any questions feel free to ask me on xfire: phpcod
+For any questions feel free to ask me on xfire: phpcod or steam: riicchhaarrd
 
 Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 2/4 linux memory modification) (https://github.com/kungfooman/libcod)
