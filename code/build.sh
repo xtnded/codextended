@@ -97,7 +97,7 @@ fi
 compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 
 if [ $DEBUG = true ]; then
-compiler="$cc -g -w -Wl,--exclude-libs,ALL"
+compiler="$cc -DxDEBUG -g -w -Wl,--exclude-libs,ALL"
 #compiler="$cc -DxDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 fi
 
