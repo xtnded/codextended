@@ -1335,17 +1335,18 @@ void php() {
 */
 
 #if 0
+
 void clientInit() {
-	/*
+	
 	ucmd_t  *u;
 	for ( u = ucmds ; u->name ; u++ ) {
 		if(!strcmp("download", u->name)) {
 			u->func = SV_BeginDownload;
-		} else if(!strcmp("cp", u->name)) {
+		}/* else if(!strcmp("cp", u->name)) {
 			u->func = SV_VerifyPaks_f;
-		}
+		}*/
 		printf("ucmd: %s [%x]\n", u->name, (int)u->func);
-	}*/
+	}
 	
 	//*(int*)0x80EE704 = (int)SV_BeginDownload;
 	#ifdef xDEBUG
@@ -1353,4 +1354,5 @@ void clientInit() {
 	Cmd_AddCommand("dclient", Cmd_DumpClient_f);
 	#endif
 }
+
 #endif
