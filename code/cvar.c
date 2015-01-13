@@ -16,9 +16,15 @@
 */
 #include "shared.h"
 
+#if PATCH == 1
 static Cvar_FindVar_t Cvar_FindVar = (Cvar_FindVar_t)0x806E9B4;
 Cvar_Set_t Cvar_Set = (Cvar_Set_t)0x806ECD4;
 Cvar_Get_t Cvar_Get = (Cvar_Get_t)0x806EA34;
+#else 
+static Cvar_FindVar_t Cvar_FindVar = (Cvar_FindVar_t)0x8072916;
+Cvar_Set_t Cvar_Set = (Cvar_Set_t)0x8073100;
+Cvar_Get_t Cvar_Get = (Cvar_Get_t)0x8072A7C;
+#endif
 
 /*
 ============
@@ -102,4 +108,51 @@ void Cvar_LatchedVariableStringBuffer( const char *var_name, char *buffer, int b
 			Q_strncpyz( buffer, var->string, bufsize );
 		}
 	}
+}
+
+qboolean is_in_set(char c) {
+	const char annoy[] = {
+	'.', ',', '_', '-', ' '
+	};
+	
+	int i ;
+	
+	for(i = 0; i < sizeof(annoy); i++)
+		if(c==annoy[i])
+			return qtrue;
+	return qfalse;
+}
+
+cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force ) {
+	cvar_t * (*ret)();
+	*(int*)&ret = 0x806ECD4;
+	/*
+	// for hostname clean on propose of rafi but it's useless if it's opensource..
+	char tmp [ MAX_STRING_TOKENS ] = {0};
+	
+	int i, j;
+	
+	j = 0;
+	
+	int lastchar = 0;
+	
+	qboolean n_ws = 0;
+	
+	for(i = 0; i < strlen(value); i++) {
+		if(i >= (MAX_STRING_TOKENS - 1) )
+			break;
+		if(value[i] < 32 || value[i] > 126)
+			continue;
+		
+		if(is_in_set(lastchar) && is_in_set(value[i]) && !n_ws)
+			continue;
+		
+		if(!is_in_set(value[i]))
+			n_ws = 1;
+		
+		lastchar = value[i];
+		tmp[j++] = value[i];
+	}
+	*/
+	return ret(var_name, value, force);
 }

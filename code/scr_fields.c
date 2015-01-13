@@ -17,6 +17,6 @@
 #include "script.h"
 
 /*
-	Unused
-		for memberfields look in script.c
+	//TODO
+	* Move gsc fields from script to here.
 */

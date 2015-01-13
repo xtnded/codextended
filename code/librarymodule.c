@@ -14,33 +14,33 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "codextended.h"
 #include "surfaceflags.h"
-
-extern cvar_t* xtnded_contents;
+#include "server.h"
 
 //hardcode patching it to 0x20 = 32 = CONTENTS_WATER
 //which takes damage (from game without having to alter the way it works and you have no annoying blockers
+//uhm might have to set 256 etc too
 void G_SetPlayerContents(int a1) {
-  /*int result = *(int*)(a1 + 344);
-  if ( *(int*)(result + 8664) || *(int*)(result + 8668) || *(int*)(result + 8400) == 1 )
-    *(int*)(a1 + 280) = 0;
-  else
-  */
-  
-	if(!strcmp(xtnded_contents->string, "manual"))
-		return;
-	if(xtnded_contents->integer==-1)
-		*(int*)(a1 + 280) = MASK_PLAYERSOLID;
+	/*int result = *(int*)(a1 + 344);
+	if ( *(int*)(result + 8664) || *(int*)(result + 8668) || *(int*)(result + 8400) == 1 )
+		*(int*)(a1 + 280) = 0;
 	else
-		*(int*)(a1 + 280) = xtnded_contents->integer;
+	*/
+  
+	
+	if(!strcmp(x_contents->string, "manual"))
+		return;
+	if(x_contents->integer == -1)
+		*(int*)(a1 + 280) = CONTENTS_BODY;
+	else
+		*(int*)(a1 + 280) = x_contents->integer;
+	
 }
 
 int StuckInPlayer(int a1) {
 	return 0;
 }
 
-extern void Entity_setFuncPointers(ENTITY* ent);
 gentity_t* mySpawnPlayerClone();
 
 extern int bodyqueindex;
@@ -49,66 +49,11 @@ void myClientBegin(int);
 void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *chatText);
 void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *message );
 
-int __cdecl _PM_CheckJump();
-
-void test(a)
-int a; {
-//idk?
-}
-
-void CODPatch_CheckJump(void);
-
-#ifdef xDEBUG
-
-typedef struct {
-	int cmdtime;
-	int pm_type;
-	int flag;
-	int pm_flags;
-} qps;
-
-typedef struct {
-	qps *ps;
-	usercmd_t cmd, oldcmd;
-	int tracemask;//??
-} qpmove_t;
-
-void dumpstuff(int *base, int end, const char *fn) {
-	
-	unsigned int result;
-	float rf;
-	char* rstr;
-	
-	char pth[100];
-	
-	snprintf(pth, 99, "/home/ext/tmp/%s.txt", fn);
-	
-	FILE* f = fopen(pth, "wb");
-	if(f) {
-		fprintf(f, "DUMP\n");
-		for(unsigned int i = 0; i < end; i++) {
-			result = *(unsigned int*)(base + i);
-			rf = *(float*)(base + i);
-			rstr = (char*)(base + i);
-			fprintf(f, "%d: Hex: %x, Decimal: %d, Float: %f, String: %s\n", i, result, result, rf, rstr);
-		}
-		fclose(f);
-	}
-	
-	printf("Successfully dumped\n");
-}
-
-void __ladida() {
-	dumpstuff(zpm, 500, "pm");
-	dumpstuff(*(int*)zpm, 500, "playerstate");
-}
-#endif
-
 #if xDEBUG
 
 void _PM_ClearAimDownSightFlag() {
 	/*
-	qpmove_t *pp = (qpmove_t*)zpm;
+	qpmove_t *pp = (qpmove_t*)pm;
 	qps *ps = pp->ps;
 	
 	ps->pm_flags &= 0xDFu;
@@ -120,7 +65,7 @@ void QDECL _PM_UpdateAimDownSightFlag() {
 	void (*_BG_UpdateConditionValue)(int,int,int,qboolean);
 	*(int*)&_BG_UpdateConditionValue = GAME("BG_UpdateConditionValue");
 	
-	qpmove_t *pp = (qpmove_t*)zpm;
+	qpmove_t *pp = (qpmove_t*)pm;
 	qps *ps = pp->ps;
 	
 	int v3 = *(int*)(&ps->cmdtime + 180);
@@ -147,7 +92,7 @@ void QDECL _PM_UpdateAimDownSightFlag() {
 		_BG_UpdateConditionValue(*(int*)(ps + 172), 7, 0, 1);
 	#endif
 	
-	int *pp = (int*)zpm;
+	int *pp = (int*)pm;
 	int *ps = *pp;
 	int *gclient = *ps;
 	
@@ -155,7 +100,7 @@ void QDECL _PM_UpdateAimDownSightFlag() {
 	
 	int val = *(int*)(gclient + 21); //336? 84*4=336 /84/4=21??
 	
-	Com_DPrintf("val = %d\n", val);
+	//Com_DPrintf("val = %d\n", val);
 	
 	if (val == 1023) {
 		*v4 |= 0x20;
@@ -199,33 +144,44 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	//mprotect(ret, 0x8A400, PROT_READ | PROT_WRITE | PROT_EXEC);
 	gamelib = ret;
 	base = (int)dlsym(ret, "vmMain"); //0x4D84C
-	gentities = (int)dlsym(ret, "g_entities");
-	zpml = (char (*)[140])dlsym(ret, "pml");
-	zpm = dlsym(ret, "pm");
-	for(int i = 0; i < MAX_ENTITY_SIZE; i++) {
-		game->entities[i].index = i;
-		game->entities[i].base = gentities + GENTITY_SIZE * i;
-		game->entities[i].ptr = gentities + GENTITY_SIZE * i;
-		Entity_setFuncPointers(&game->entities[i]);
-	}
+	g_entities = (gentity_t*)dlsym(ret, "g_entities");
+	level = (level_locals_t*)GAME("level");
+	pml = (char (*)[140])dlsym(ret, "pml");
+	pm = (pmove_t*)dlsym(ret, "pm");
 	
+	void BG_Link();
+	BG_Link();
+	set_trap_func_ptr();
 	scriptInitializing();
 	
 	int stuck = (int)dlsym(ret, "StuckInClient");
-	cracking_hook_function(stuck, (int)StuckInPlayer);
+	__jmp(stuck, (int)StuckInPlayer);
 	
 	int cont = (int)dlsym(ret, "G_SetClientContents");
-	cracking_hook_function(cont, (int)G_SetPlayerContents);
+	__jmp(cont, (int)G_SetPlayerContents);
 	
 	
 	int h66 = (int)dlsym(ret, "ClientEndFrame") + 0x173; //patch contents
-	cracking_nop(h66, h66+0xa);
+	__nop(h66, h66+0xa);
 	
+	#if 0
+	{
+		//ClientCommand+54F  24FC                mov     eax, [esi+158h]
+		unsigned off = (unsigned)(dlsym(gamelib, "ClientCommand") + 0x54f);
+		unsigned end = (unsigned)(dlsym(gamelib, "ClientCommand") + 0x5B4 + 2);
+		
+		__nop(off, end - off);
+		__call(off, 
+	}
+	#endif
 	
 	//int h93 = GAME("PM_Weapon")+0x63;
-	//cracking_nop(h93,h93+5);
+	//__nop(h93,h93+5);
 	
 	__call(GAME("ClientCommand")+0x62D, (int)Cmd_CallVote);
+	
+	void ClientBegin(int);
+	__call(GAME("vmMain")+0xA0, (int)ClientBegin);
 	
 	#if xDEBUG
 	/*
@@ -250,13 +206,13 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	
 	int clientcommand_off = GAME("ClientCommand");
 	
-	cracking_hook_call(clientcommand_off + 0x6EE, (int)hG_Say);
-	cracking_hook_call(clientcommand_off + 0x6FE, (int)hG_Say);
+	__call(clientcommand_off + 0x6EE, (int)hG_Say);
+	__call(clientcommand_off + 0x6FE, (int)hG_Say);
 	
 	int g_say_off = GAME("G_Say");
-	cracking_hook_call(g_say_off + 0x5EA, (int)hG_Say);
-	cracking_hook_call(g_say_off + 0x791, (int)hG_Say);
-	cracking_hook_call(g_say_off + 0x77D, (int)hG_Say);
+	__call(g_say_off + 0x5EA, (int)hG_Say);
+	__call(g_say_off + 0x791, (int)hG_Say);
+	__call(g_say_off + 0x77D, (int)hG_Say);
 	
 	/*
 		only one left to patch should be 
@@ -285,20 +241,16 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 		end of fix
 	*/
 	
-	cvar_t* x_deadchat = Cvar_Get("x_deadchat", "1", 0);
+	x_deadchat = Cvar_Get("x_deadchat", "1", 0);
 	
-	if(x_deadchat->integer) {
+	//deadchat fix
+	int b2 = GAME("G_SayTo")+0x70;
+	__nop(b2, b2+2);
 	
-		//deadchat fix
-		int b2 = GAME("G_SayTo")+0x70;
-		cracking_nop(b2, b2+2);
-		
-		int b3 = GAME("G_Say")+0x3B6;
-		int b4 = GAME("G_Say")+0x2B3;
-		*(byte*)b3 = 0xeb;
-		*(byte*)b4 = 0xeb;
-	
-	}
+	int b3 = GAME("G_Say")+0x3B6;
+	int b4 = GAME("G_Say")+0x2B3;
+	*(byte*)b3 = 0xeb;
+	*(byte*)b4 = 0xeb;
 	
 	//end deadchat fix
 	
@@ -324,15 +276,14 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	
 	int bec = GAME("ScriptEntCmd_MoveTo")+0x2E;
 	*(byte*)bec = 0xeb;
-	//because fuck you limiting to script_*
 	#endif
 	
 	//int b5 = GAME("PmoveSingle");
-	//cracking_hook_function(b5+0x404, b5+0x3ea);
+	//__jmp(b5+0x404, b5+0x3ea);
 	
 	#if 0
 	#define DB_SERVER "localhost"
-	#define DB_USER "user"
+	#define DB_USER "root"
 	#define DB_DATABASE "cod1"
 	#endif
 	cvar_t* db_password = Cvar_Get("db_password","",0);
@@ -341,13 +292,19 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	cvar_t* db_server = Cvar_Get("db_server","localhost",0);
 	
 	#ifdef uMYSQL
-	if(mysql_real_connect(db,db_server->string,db_username->string,db_password->string,db_database->string,0,NULL,0) == NULL) {
-		printf("Could not connect to the MySQL Database. [Error: %s]\n", mysql_error(db));
-		//COD_Destructor();
-		mysql_close(db);
-	} else {
-		printf("Connected to the MySQL Database.\n");
+	static int sql_do_once = 0;
+	
+	if(!sql_do_once) {
+		if(mysql_real_connect(db,db_server->string,db_username->string,db_password->string,db_database->string,0,NULL,0) == NULL) {
+			printf("Could not connect to the MySQL Database. [Error: %s]\n", mysql_error(db));
+			//COD_Destructor();
+			mysql_close(db);
+		} else {
+			printf("Connected to the MySQL Database.\n");
+		}
+		sql_do_once = 1;
 	}
 	#endif
+	
 	return ret;
 }

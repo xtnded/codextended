@@ -1,3 +1,19 @@
+/*
+	This file is part of CoDExtended.
+
+    CoDExtended is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    CoDExtended is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "script.h"
 /*
 	:: Scr_GetFunction/GetMethod ::
@@ -32,13 +48,13 @@ typedef struct {
 */
 
 void scr_field_awesome(int a1) {
-	int argc = Script_GetNumParam();
+	int argc = Scr_GetNumParam();
 	
 	if(argc == 0) {
-		Script_AddString("Laughing With");
+		Scr_AddString("Laughing With");
 		//works - Richard
 	} else {
-		char *s = Script_GetString(0);
+		char *s = Scr_GetString(0);
 		printf("char *s = %s\n", s);
 		/*
 			throw error()
@@ -80,6 +96,7 @@ static scr_memberfield scr_client_memberfields[] = {
 */
 
 void GScr_SendServerCommand(int a1);
+void PlayerCmd_SendConnectionlessPacket(int a1);
 void GScr_killserver(int);
 void GScr_typeof(int);
 
@@ -87,10 +104,10 @@ void Scr_fuckPrecacheString(int a1);
 
 void GScr_getSite(int a1) {
 	#if 0
-	char* url = Script_GetString(0);
+	char* url = Scr_GetString(0);
 	
 	std::string result = get_site_result(url);
-	Script_AddString((char*)result.c_str());
+	Scr_AddString((char*)result.c_str());
 	#endif
 }
 
@@ -98,23 +115,70 @@ long long current_timestamp();
 
 void GScr_seconds(int a1) {
 	int s = (int)(current_timestamp()/1000);
-	Script_AddInt(s);
+	Scr_AddInt(s);
 }
+
+#ifdef xDEBUG
+void MakeTrail(int self) {
+	
+	vec3_t start, end;
+	Scr_GetVector(0, start);
+	Scr_GetVector(1, end);
+	gentity_t *tent = G_TempEntity(start, EV_RAILTRAIL);
+	VectorCopy(end, tent->s.origin2);
+	tent->s.otherEntityNum2 = 0;
+}
+#endif
+
+#if 0
+
+gentity_t *FindEntity( const char *key, const char *value ) {
+	gentity_t *ent = NULL;
+	for(int i = 0; i < level.num_entities; i++) {
+		ent = &g_entities[i];
+		if(!ent->inuse) {
+			//dostuff
+		}
+	}
+}
+
+void ___test_debug_dont_really_blah(int a) {
+	short classname = Scr_GetOffset(*(short *)&g_scr_data[420], "classname");
+	
+	if(classname >= 0) {
+		
+	}
+}
+#endif
 
 void GScr_xtnded_anim(int a1) {
 	/*int index = 0;
 	int b = *(int*)0x82F5948;
 	int v1 = *(int *)(b - 8 * index);*/
 	
-	//Script_GetAnim((int)&v1, 0, 0);
-	const char* str_anim = Script_GetString(0);
+	//Scr_GetAnim((int)&v1, 0, 0);
+	const char* str_anim = Scr_GetString(0);
 	int anim_index = oBG_AnimationIndexForString(str_anim);
 	//printf("anim = %d\n", anim_index);
 	if(anim_index==-1)
-		Script_AddInt(0);
+		Scr_AddInt(0);
 	else
-		Script_AddInt(anim_index);
+		Scr_AddInt(anim_index);
 }
+
+#ifdef xDEBUG
+void scr_newzombie(int);
+void scr_spawnbrushmodel( int a1 ) ;
+#endif
+
+void Math_Scr_sqrt(int a) {
+	float f = Scr_GetFloat(0);
+	Scr_AddFloat( sqrt(f) );
+}
+
+#ifdef xDEBUG
+void trace_For_me(int);
+#endif
 
 SCRIPTFUNCTION scriptFunctions[] = {
 	//name, function, developer
@@ -140,6 +204,12 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	#endif
 	
 	/*
+		MATH
+	*/
+	
+	{"sqrt", Math_Scr_sqrt, 0},
+	
+	/*
 		STRING
 	*/
 	{"strtok", Scr_StrTok, 0},
@@ -148,16 +218,27 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	{"toupper", Scr_ToUpper, 0},
 	{"ucfirst", Scr_ucfirst, 0},
 	{"trim", Scr_trim, 0},
+	#ifdef xDEBUG
+	{"maketrail", MakeTrail, 0},
+	#endif
 	{"convert_string", Scr_convertToIString, 0},
+	#ifdef xDEBUG
 	{"xprecachestring", Scr_fuckPrecacheString, 0},
-	
-    {"printconsole", GScr_printconsole, 0},
+	#endif
+	#ifdef xDEBUG
+    {"spawn_zombie", scr_newzombie, 0},
+    {"spawn_brushmodel", scr_spawnbrushmodel, 0},
+    #endif
+	{"printconsole", GScr_printconsole, 0},
     {"getsite", GScr_getSite, 0},
     {"seconds", GScr_seconds, 0},
     {"get_animation_index", GScr_xtnded_anim, 0},
     {"typeof", GScr_typeof, 0},
     {"sendservercommand", GScr_SendServerCommand, 0},
     {"trace", GScr_Trace, 0},
+	#ifdef xDEBUG
+    {"debugtrace", trace_For_me, 0},
+	#endif
     {"md5", GScr_md5, 0},
     {"creturn", GScr_return, 0},
     {"cmd_argc", GScr_Cmd_Argc, 0},
@@ -176,8 +257,29 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	{NULL, NULL, 0}
 };
 
+void PlayerCmd_IsUsingClient(int a1) {
+	//Scr_AddInt(xtnded_clients[a1].clientusage);
+	client_t *cl = getclient(a1);
+	
+	int clientbuild = atoi( Info_ValueForKey(cl->userinfo, "xtndedbuild") );
+	
+	if(clientbuild != x_requireclient->integer) {
+		Scr_AddBool(false);
+		return;
+	}
+	Scr_AddBool(true);
+}
+
+void array_test(int self) {
+printf("self = %d { %x }\n", self, self);
+
+Scr_AddInt(1337);
+}
+
 SCRIPTFUNCTION scriptMethods[] = {
 	//name, function, developer
+	
+	{"test", array_test, 0},
 	
 	/*
 	======
@@ -185,34 +287,39 @@ SCRIPTFUNCTION scriptMethods[] = {
 	======
 	*/
 	
-	{"setbounds", EntCmd_setBounds, 0},
-	{"setboundcorners", EntCmd_setBoundCorners, 0},
-	{"setsize", EntCmd_setBoundCorners, 0},
-	{"settakedamage", EntCmd_setTakeDamage, 0},
-	{"callback", EntCmd_callback, 0},
-	{"nextthink", EntCmd_nextthink, 0},
+	{"setbounds", ScriptEnt_SetBounds, 0},
+	{"setsize", ScriptEnt_SetBounds, 0},
+	{"settakedamage", ScriptEnt_SetTakeDamage, 0},
+	{"setmaxs", ScriptEnt_SetMaxs, 0},
+	{"setmins", ScriptEnt_SetMins, 0},
+	{"setabsmins", ScriptEnt_SetAbsMin, 0},
+	{"setabsmaxs", ScriptEnt_SetAbsMax, 0},
+	{"setlight", ScriptEnt_SetLight, 0},
 	
 	/*
 	======
 	PLAYER
 	======
 	*/
-    {"usebuttonpressedx", PlayerCmd_useButtonPressedX, 0},
     {"getguid", PlayerCmd_GetGuid, 0},
-	{"setvelocity", PlayerCmd_setVelocity, 0},
-	{"getvelocity", PlayerCmd_getVelocity, 0},
+	{"setvelocity", PlayerCmd_SetVelocity, 0},
+	{"getvelocity", PlayerCmd_GetVelocity, 0},
 	{"getplayerangles", PlayerCmd_getPlayerAngles, 0},
 	{"getip", PlayerCmd_getip, 0},
 	{"ispure", PlayerCmd_ispure, 0},
+	{"sendconnectionlesspacket", PlayerCmd_SendConnectionlessPacket, 0},
 	{"sendservercommand", PlayerCmd_SendServerCommand, 0},
+	{"sendgamestate", PlayerCmd_SendGamestate, 0},
+	{"isusingclient", PlayerCmd_IsUsingClient, 0},
 	{"get_ip", PlayerCmd_getip, 0},
-	{"getint", PlayerCmd_getInt, 0},
-	{"setint", PlayerCmd_setInt, 0},
-	{"getbyte", PlayerCmd_getbyte, 0},
-	{"getfloat", PlayerCmd_getfloat, 0},
-	{"setfloat", PlayerCmd_setfloat, 0},
-	{"setbyte", PlayerCmd_setbyte, 0},
+	{"getint", PlayerCmd_GetInt, 0},
+	{"setint", PlayerCmd_SetInt, 0},
+	{"getbyte", PlayerCmd_GetByte, 0},
+	{"getfloat", PlayerCmd_GetFloat, 0},
+	{"setfloat", PlayerCmd_SetFloat, 0},
+	{"setbyte", PlayerCmd_SetByte, 0},
 	{"getuserinfokey", PlayerCmd_GetUserInfoKey, 0},
+	{"getuserinfo", PlayerCmd_GetUserInfo, 0},
 	{"dropclient", PlayerCmd_DropClient, 0},
 	{"kickbot", PlayerCmd_kickbot, 0},
 	{"renamebot", PlayerCmd_renamebot, 0},
@@ -227,58 +334,59 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"reloadbuttonpressed", PlayerCmd_reloadButtonPressed, 0},
 	{"leanleftbuttonpressed", PlayerCmd_leanLeftButtonPressed, 0},
 	{"leanrightbuttonpressed", PlayerCmd_leanRightButtonPressed, 0},
+	{"hasperk", PlayerCmd_HasPerk, 0},
+	{"setperk", PlayerCmd_SetPerk, 0},
+	{"unsetperk", PlayerCmd_UnsetPerk, 0},
 	{NULL, NULL, 0}
 };
 
-char* g_script_data;
-char* script_const;
+game_script_data* g_scr_data;
+scr_const_t* scr_const;
+xscr_const_t xscr_const;
+
 unsigned char* g_clients;
 unsigned char* hudelems;
 
 int callbackTest;
 int callbackPlayerCommand;
-int callbackEntityDamage;
-int callbackEntityThink;
-int callbackEntityUse;
-int callbackEntityKilled;
-int callbackEntityTouch;
-int callbackfunctionmain;
 
 bool scr_return = 0;
 
-Script_LoadScript_t Script_LoadScript;
-Script_GetFunctionHandle_t Script_GetFunctionHandle;
+Scr_LoadScr_t Scr_LoadScript;
+Scr_GetFunctionHandle_t Scr_GetFunctionHandle;
 
 #ifdef _WIN32
 Scr_ExecThread_t Scr_ExecThread = (Scr_ExecThread_t)0x481E10;
 Scr_ExecEntThread_t Scr_ExecEntThread = (Scr_ExecEntThread_t)0x481EC0;
 Scr_FreeThread_t Scr_FreeThread = (Scr_FreeThread_t)0x482070;
-ScriptL_ConvertToString_t ScriptL_ConvertToString = (ScriptL_ConvertToString_t)0x474EE0;
+SL_ConvertToString_t SL_ConvertToString = (SL_ConvertToString_t)0x474EE0;
 #else
-Script_ExecThread_t Script_ExecThread;
-Script_ExecEntThread_t Script_ExecEntThread;
-Script_FreeThread_t Script_FreeThread;
-ScriptL_ConvertToString_t ScriptL_ConvertToString;
+Scr_ExecThread_t Scr_ExecThread = (Scr_ExecThread_t)0x80A95EC;
+Scr_ExecEntThread_t Scr_ExecEntThread = (Scr_ExecEntThread_t)0x80a9674; //actually is Scr_ExecEntThreadNum
+Scr_FreeThread_t Scr_FreeThread = (Scr_FreeThread_t)0x80A97D4; //RemoveRefToObject__FUs
+SL_ConvertToString_t SL_ConvertToString;
 #endif
 
-_SL_GetString_t _SL_GetString;
+SL_GetString_t SL_GetString;
 
 /*
 	Can't use Scr_GetMethod/Scr_GetFunction because those names already exists and aren't mangled.
 */
 
-Script_GetFunction_t Script_GetFunction;
-Script_GetMethod_t Script_GetMethod;
+Scr_GetFunction_t Scr_GetFunction;
+Scr_GetMethod_t Scr_GetMethod;
 
 #ifdef _WIN32
 Scr_MakeArray_t Scr_MakeArray = (Scr_MakeArray_t)0x483330;
 Scr_AddArray_t Scr_AddArray = (Scr_AddArray_t)0x483380;
 Scr_Error_t Scr_Error = (Scr_Error_t)0x483470;
 #else
-Script_MakeArray_t Script_MakeArray;
-Script_AddArray_t Script_AddArray;
-Script_Error_t Script_Error;
+Scr_MakeArray_t Scr_MakeArray;
+Scr_AddArray_t Scr_AddArray;
+Scr_Error_t Scr_Error;
 #endif
+
+Scr_AddArrayStringIndexed_t Scr_AddArrayStringIndexed;
 
 #ifdef _WIN32
 Scr_GetNumParam_t Scr_GetNumParam = (Scr_GetNumParam_t)0x483060;
@@ -291,39 +399,38 @@ Scr_AddVector_t Scr_AddVector = (Scr_AddVector_t)0x4832E0;
 Scr_AddUndefined_t Scr_AddUndefined = (Scr_AddUndefined_t)0x4830F0;
 Scr_AddEntity_t Scr_AddEntity = (Scr_AddEntity_t)0x483140;
 #else
-Script_GetNumParam_t Script_GetNumParam;
-Script_GetPointerType_t Script_GetPointerType;
-Script_GetType_t Script_GetType;
-Script_AddFloat_t Script_AddFloat;
-Script_AddInt_t Script_AddInt;
-Script_AddBool_t Script_AddBool;
-Script_AddString_t Script_AddString;
-Script_AddIString_t Script_AddIString;
-Script_AddVector_t Script_AddVector;
-Script_AddUndefined_t Script_AddUndefined;
-Script_AddEntity_t Script_AddEntity;
+Scr_GetNumParam_t Scr_GetNumParam;
+Scr_GetPointerType_t Scr_GetPointerType;
+Scr_GetType_t Scr_GetType;
+Scr_AddFloat_t Scr_AddFloat;
+Scr_AddInt_t Scr_AddInt;
+Scr_AddBool_t Scr_AddBool;
+Scr_AddString_t Scr_AddString;
+Scr_AddIString_t Scr_AddIString;
+Scr_AddVector_t Scr_AddVector;
+Scr_AddUndefined_t Scr_AddUndefined;
+Scr_AddEntity_t Scr_AddEntity;
 #endif
 
-Script_SetString_t Script_SetString;
-Script_GetConstString_t Script_GetConstString;
-oSpawn_t oSpawn;
-oInitGentity_t oInitGentity;
-oFreeEntity_t oFreeEntity;
+Scr_AllocString_t Scr_AllocString;
+Scr_SetString_t Scr_SetString;
+Scr_GetConstString_t Scr_GetConstString;
 
 oBG_AnimationIndexForString_t oBG_AnimationIndexForString;
 CallSpawnEntity_t CallSpawnEntity;
 
-Script_GetBool_t Script_GetBool;
-Script_GetInt_t Script_GetInt;
-Script_GetAnim_t Script_GetAnim = (Script_GetAnim_t)0x80A7FAC;
-Script_GetAnimsIndex_t Script_GetAnimsIndex;
-Script_GetFloat_t Script_GetFloat;
-Script_GetVector_t Script_GetVector;
-Script_GetString_t Script_GetString;
-Script_GetFunc_t Script_GetFunc;
+Scr_GetBool_t Scr_GetBool;
+Scr_GetInt_t Scr_GetInt;
+Scr_GetAnim_t Scr_GetAnim = (Scr_GetAnim_t)0x80A7FAC;
+Scr_GetAnimsIndex_t Scr_GetAnimsIndex;
+Scr_GetFloat_t Scr_GetFloat;
+Scr_GetVector_t Scr_GetVector;
+Scr_GetString_t Scr_GetString;
+Scr_GetFunc_t Scr_GetFunc;
+Scr_GetOffset_t Scr_GetOffset;
 
-SCRIPTFUNCTIONCALL Script_GetCustomFunction(const char** fname, int* fdev) {
-    SCRIPTFUNCTIONCALL m = Script_GetFunction(fname, fdev);
+SCRIPTFUNCTIONCALL Scr_GetCustomFunction(const char** fname, int* fdev) {
+    SCRIPTFUNCTIONCALL m = Scr_GetFunction(fname, fdev);
     void (*fc)(int);
     *(int*)&fc = (int)m;
     if(!m) {
@@ -339,8 +446,8 @@ SCRIPTFUNCTIONCALL Script_GetCustomFunction(const char** fname, int* fdev) {
 	return fc;
 }
 
-SCRIPTFUNCTIONCALL Script_GetCustomMethod(const char** fname, int* fdev) {
-    SCRIPTFUNCTIONCALL m = Script_GetMethod(fname, fdev);
+SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char** fname, int* fdev) {
+    SCRIPTFUNCTIONCALL m = Scr_GetMethod(fname, fdev);
     void (*fc)(int);
     *(int*)&fc = (int)m;
     if(!m) {
@@ -356,11 +463,11 @@ SCRIPTFUNCTIONCALL Script_GetCustomMethod(const char** fname, int* fdev) {
 	return fc;
 }
 
-int load_callback(const char* file, const char* functionname, bool flag) {
-    if(!Script_LoadScript(file) && !flag)
+static int load_callback(const char* file, const char* functionname, bool flag) {
+    if(!Scr_LoadScript(file) && !flag)
         Com_Error(ERR_DROP, "Could not find script '%s'.", file);
 
-    int v4 = Script_GetFunctionHandle(file, functionname);
+    int v4 = Scr_GetFunctionHandle(file, functionname);
     if(!v4 && !flag)
         Com_Error(ERR_DROP, "Could not find label '%s'.", functionname, file);
 	if(!flag || v4)
@@ -369,8 +476,8 @@ int load_callback(const char* file, const char* functionname, bool flag) {
 }
 
 void GScr_typeof(int a1) {
-	int type = Script_GetType(0);
-	Script_AddString(Scr_GetVariableType(type));
+	int type = Scr_GetType(0);
+	Scr_AddString(Scr_GetVariableType(type));
 }
 
 char* Scr_GetVariableType(int type) {
@@ -418,119 +525,132 @@ FUNCTIONS
 */
 
 void GScr_printconsole(int entityIndex) { //if this was a method the index would be the entity's number
-	const char* txt = Script_GetString(0);
+	const char* txt = Scr_GetString(0);
 	printf(txt);
 }
 
 void GScr_salt_password(int a1) {
-	char* password = Script_GetString(0);
-	char* salt = Script_GetString(1);
-	Script_AddString(get_pass_hash(password, salt));
+	char* password = Scr_GetString(0);
+	char* salt = Scr_GetString(1);
+	Scr_AddString(get_pass_hash(password, salt));
 }
 
 void GScr_strpos(int a1) {
-	char* haystack = Script_GetString(0);
-	char* needle = Script_GetString(1);
+	char* haystack = Scr_GetString(0);
+	char* needle = Scr_GetString(1);
 	char* p = strstr(haystack, needle);
 	if(p)
-		Script_AddInt(((int)p-(int)haystack));
+		Scr_AddInt(((int)p-(int)haystack));
 	else
-		Script_AddInt(-1);
+		Scr_AddInt(-1);
 }
 
 void GScr_SendServerCommand(int a1) {
-	char* cmd = Script_GetString(0);
+	char* cmd = Scr_GetString(0);
 	SV_SendServerCommand(NULL, 1, cmd);
 }
 
+void PlayerCmd_SendConnectionlessPacket(int a1) {
+	char *msg = Scr_GetString(0);
+	for(char *i = msg; *i != '\0'; *i++)
+		if(*i == '\'')
+			*i = '"';
+			
+	client_t *cl = getclient(a1);
+	if(cl)
+	NET_OutOfBandPrint(NS_SERVER, cl->remoteAddress, "%s", msg);
+}
+
 void GScr_Trace(int a1) {
-    trace_t trace;
-    vec3_t start, endl, mins, maxs;
-    int ignore = Script_GetInt(4);
-    int contentmask = Script_GetInt(5);
-    Script_GetVector(0, start);
-    Script_GetVector(1, endl);
-    Script_GetVector(2, mins);
-    Script_GetVector(3, maxs);
-    //printf("trap_Trace called; start: (%f %f %f) end: (%f %f %f)\n", start[0], start[1], start[2], endl[0], endl[1], endl[2]);
-    SV_Trace(&trace, start, mins, maxs, endl, ignore, contentmask);
-    //printf("finished trap_trace\n");
-    //printf("::output %f %f %f\n", trace.endpos[0], trace.endpos[1], trace.endpos[2]);
-    Script_MakeArray();
-    /*
-        0 = endpos
-        1 = surfaceflags
-        2 = entityNum
-        3 = fraction
-        4 = startsolid
-        5 = allsolid
-        6 = normal
-        7 = contents
-    */
-    Script_AddVector(trace.endpos); Script_AddArray();
-    Script_AddInt(trace.surfaceFlags); Script_AddArray();
-    Script_AddInt(trace.entityNum); Script_AddArray();
-    Script_AddFloat(trace.fraction); Script_AddArray();
-    Script_AddBool(trace.startsolid); Script_AddArray();
-    Script_AddBool(trace.allsolid); Script_AddArray();
-    Script_AddVector(trace.plane.normal); Script_AddArray();
-    Script_AddInt(trace.contents); Script_AddArray();
+    trace_t tr;
+    vec3_t start, end, mins, maxs;
+	Scr_GetVector(0, start);
+	Scr_GetVector(1, mins);
+	Scr_GetVector(2, maxs);
+	Scr_GetVector(3, end);
+	int ignore = Scr_GetInt(4);
+	int mask = Scr_GetInt(5);
+	int locational = 0;
+	int staticmodels = 0;
+	if(Scr_GetNumParam() > 6)
+		locational = Scr_GetInt(6);
+	if(Scr_GetNumParam() > 7)
+		staticmodels = Scr_GetInt(7);
+    
+	void (*trace)(void*,float*,float*,float*,float*,int ignore,int contentmask,int locational,char *priorityMap,int staticmodels);
+	*(int*)&trace = 0x80916F4;
+	
+	trace(&tr,start,mins,maxs,end,-1,mask,locational,NULL,staticmodels);
+    Scr_MakeArray();
+	
+    Scr_AddVector(tr.endpos); Scr_AddArrayStringIndexed(scr_const->position);
+    if((tr.entityNum - 1022) > 1)
+	Scr_AddInt(tr.entityNum);//Scr_AddEntity(&g_entities[tr.entityNum]); //scr_addentity crashed sometime cba
+	else
+	Scr_AddUndefined();
+	Scr_AddArrayStringIndexed(scr_const->entity);
+	
+    Scr_AddFloat(tr.fraction); Scr_AddArrayStringIndexed(scr_const->fraction);
+    Scr_AddVector(tr.normal); Scr_AddArrayStringIndexed(scr_const->normal);
+    Scr_AddInt(tr.contents); Scr_AddArrayStringIndexed(xscr_const.contents);
+    Scr_AddInt(tr.surfaceFlags); Scr_AddArrayStringIndexed(scr_const->surfacetype);
+    Scr_AddInt(tr.textureName); Scr_AddArrayStringIndexed(xscr_const.texturename);
 }
 
 
 void GScr_Cmd_Argc(int a1) {
-    Script_AddInt(Cmd_Argc());
+    Scr_AddInt(Cmd_Argc());
 }
 
 void GScr_Cmd_Argv(int a1) {
-    unsigned int idx = Script_GetInt(0);
+    unsigned int idx = Scr_GetInt(0);
     if(idx > Cmd_Argc()) {
-        Script_AddString("");
+        Scr_AddString("");
         return;
     }
-    Script_AddString(Cmd_Argv(idx));
+    Scr_AddString(Cmd_Argv(idx));
 }
 
 void GScr_trap_Argv(int a1) {
-    unsigned int idx = Script_GetInt(0);
+    unsigned int idx = Scr_GetInt(0);
     if(idx > Cmd_Argc()) {
-        Script_AddString("");
+        Scr_AddString("");
         return;
     }
     char buf[MAX_STRING_CHARS];
     Cmd_ArgvBuffer(idx, buf, sizeof(buf));
-    Script_AddString(buf);
+    Scr_AddString(buf);
 }
 
 void GScr_ConcatArgs(int a1) {
-    unsigned int idx = Script_GetInt(0);
+    unsigned int idx = Scr_GetInt(0);
     if(idx > Cmd_Argc()) {
-        Script_AddString("");
+        Scr_AddString("");
         return;
     }
-    Script_AddString(ConcatArgs(idx));
+    Scr_AddString(ConcatArgs(idx));
 }
 
 void GScr_md5(int a1) {
-	char* str = Script_GetString(0);
-	Script_AddString(get_md5(str));
+	char* str = Scr_GetString(0);
+	Scr_AddString(get_md5(str));
 }
 
 void GScr_getChat(int a1) {
-    unsigned int idx = Script_GetInt(0);
+    unsigned int idx = Scr_GetInt(0);
     if(idx > Cmd_Argc()) {
-        Script_AddString("");
+        Scr_AddString("");
         return;
     }
 	char* chat = ConcatArgs(idx);
 	if(strlen(chat) == 0 || (chat[0] == 0x15 && strlen(chat)==1)) {
-		Script_AddString("");
+		Scr_AddString("");
 		return;
 	}
 	if(chat[0] == 0x15)
-		Script_AddString(&chat[1]);
+		Scr_AddString(&chat[1]);
 	else
-		Script_AddString(chat);
+		Scr_AddString(chat);
 }
 
 void GScr_return(int a1) {
@@ -545,154 +665,109 @@ bool Scr_Continue() {
 
 /*
 =============
-PLAYER METHODS
-=============
-*/
-
-void PlayerCmd_useButtonPressedX(int entityIndex) {
-	if(entityIndex > 1023) {
-		Script_Error(va("%i is not a valid entity number", entityIndex));
-		return;
-	}
-	
-	ENTITY* ent = game->getEntity(entityIndex);
-	if(ent) {
-		if(!ent->isPlayer()) {
-			Script_Error(va("entity %i is not a player", entityIndex));
-			return;
-		}
-		ent->toPlayerState();
-		int press;
-		ent->get(8688, &press, sizeof(press));
-		if(press & 0x40)
-			Script_AddInt(1);
-		else
-			Script_AddInt(0);
-		ent->toEntityState();
-	}
-	
-}
-
-/*
-=============
 FILE FUNCTIONS
 =============
 */
 
 void GScr_fopen(int entityIndex) {
-    char* name = Script_GetString(0);
-    char* mode = Script_GetString(1);
+    char* name = Scr_GetString(0);
+    char* mode = Scr_GetString(1);
     FILE* f = fopen(name, mode);
     if(f)
-        Script_AddInt((int)(f));
+        Scr_AddInt((int)(f));
     else
-        Script_AddInt(-1);
+        Scr_AddInt(-1);
 }
 
 void GScr_fexists(int entityIndex) {
-    char* name = Script_GetString(0);
+    char* name = Scr_GetString(0);
 	FILE* f;
     if((f = fopen(name, "r"))) {
         fclose(f);
-        Script_AddBool(true);
+        Scr_AddBool(true);
     } else {
-        Script_AddBool(false);
+        Scr_AddBool(false);
     }
 }
 
 void GScr_fread(int entityIndex) {
-    int len = Script_GetInt(0);
-    FILE *f = (FILE*)(Script_GetInt(1));
-    if(f == NULL) {
-        Script_AddInt(-1);
+	char *buf = NULL;
+	size_t size = 0;
+	
+    int len = Scr_GetInt(0);
+    FILE *f = (FILE*)(Scr_GetInt(1));
+    
+	if(f == NULL) {
+        Scr_AddUndefined();
     } else {
-        char txt[len+1];
-        size_t txt_c = 0;
-        int c;
-        while((c = fgetc(f)) != EOF)
-            txt[txt_c++] = c;
-        Script_AddString(txt);
+		fseek(f, 0, SEEK_END);
+        size = ftell(f);
+		rewind(f);
+        buf = (char *) malloc(size);
+		fread(buf, size, 1, f);
+        Scr_AddString(buf);
+		free(buf);
     }
 }
 
 void GScr_fwrite(int entityIndex) {
-    char* text = Script_GetString(0);
-    FILE *f = (FILE*)(Script_GetInt(1));
+    char* text = Scr_GetString(0);
+    FILE *f = (FILE*)(Scr_GetInt(1));
     if(f == NULL) {
-        Script_AddBool(false);
+        Scr_AddBool(false);
     } else {
-        Script_AddBool(true);
+        Scr_AddBool(true);
         fprintf(f, text);
     }
 }
 
 void GScr_fsize(int entityIndex) {
-    char* name = Script_GetString(0);
+    char* name = Scr_GetString(0);
     FILE *f = fopen(name, "r");
     size_t len;
     if(f) {
         fseek(f, 0, SEEK_END);
         len = ftell(f);
         rewind(f);
-        Script_AddInt((int)len);
+        Scr_AddInt((int)len);
     } else {
-        Script_AddInt(-1);
+        Scr_AddInt(-1);
     }
 }
 
 void GScr_fclose(int entityIndex) {
-    FILE *f = (FILE*)(Script_GetInt(0));
+    FILE *f = (FILE*)(Scr_GetInt(0));
     if(f) {
-        Script_AddBool(true);
+        Scr_AddBool(true);
         fclose(f);
     } else {
-        Script_AddBool(false);
+        Scr_AddBool(false);
     }
 }
 
-void QDECL gscr_loadgametypescript( void ) { //bleh
+void Scr_LoadConsts() {
+	xscr_const.texturename = Scr_AllocString("texturename", 1);
+	xscr_const.contents = Scr_AllocString("contents", 1);
+	xscr_const.perks[PERK_QUICK_RELOAD] = Scr_AllocString("sleight_of_hand", 1);
+}
+
+void GScr_LoadGametypeScript( void ) { //bleh
 	char v1[64];
 	snprintf(v1, 64, "maps/mp/gametypes/%s", g_gametype->string);
-	printf("g_scr_data is located at %x\n", (int)&g_script_data);
-	printf("//////////////////////////////////////////////////////////\nLoading gametype %s\n", v1);
-	*(int*)&g_script_data[8] = load_callback(v1, "main", 0);
-	*(int*)&g_script_data[12] = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_StartGameType", 0);
-	*(int*)&g_script_data[16] = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerConnect", 0);
-	*(int*)&g_script_data[20] = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerDisconnect", 0);
-	*(int*)&g_script_data[24] = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerDamage", 0);
-	*(int*)&g_script_data[28] = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerKilled", 0);
-	
-	/*callbackfunctionmain = load_callback("xtnded", "main");
-
-    int result = Script_ExecThread(callbackfunctionmain, 0);
-    Script_FreeThread(result);
-	*/
+	g_scr_data->gametype_main = load_callback(v1, "main", 0);
+	g_scr_data->startgametype = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_StartGameType", 0);
+	g_scr_data->playerconnect = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerConnect", 0);
+	g_scr_data->playerdisconnect = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerDisconnect", 0);
+	g_scr_data->playerdamage = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerDamage", 0);
+	g_scr_data->playerkilled = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerKilled", 0);
 	
 	callbackPlayerCommand = load_callback("callback", "CodeCallback_PlayerCommand", 1);
-	/*
-	callbackEntityDamage = load_callback("callback", "CodeCallback_EntityDamage");
-	callbackEntityKilled = load_callback("callback", "CodeCallback_EntityKilled");
-	callbackEntityUse = load_callback("callback", "CodeCallback_EntityUse");
-	callbackEntityThink = load_callback("callback", "CodeCallback_EntityThink");
-	callbackEntityTouch = load_callback("callback", "CodeCallback_EntityTouch");
-	*/
 	
-    /*callbackTest = load_callback("callback", "test");
-    Com_Printf("callbackTest: %d\n", callbackTest);
-    Cmd_AddCommand("loadscript", loadScript);
-    Cmd_AddCommand("callscript", callScript);*/
-
-    for(size_t i = 0; i < MAX_ENTITY_SIZE; i++) {
-        ENTITY *ent = game->getEntity(i);
-        if(ent) {
-            ent->nextthink = 0;
-            ent->pain = 0;
-            ent->die = 0;
-            ent->think = 0;
-            ent->use = 0;
-            ent->touch = 0;
-        }
-    }
+	extern int callbackEntityDamage, callbackEntityKilled;
+	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
+	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);
+	
+	Scr_LoadConsts();
 }
 
 static int x_localized_string_index = 128;
@@ -773,20 +848,20 @@ int X_LocalizedStringIndex(const char* str) {
 */
 
 void Scr_fuckPrecacheString(int a1) {
-	int argc = Script_GetNumParam();
+	int argc = Scr_GetNumParam();
 	char* str;
 	int index = 256;
 	
 	if(argc == 1) {
-		str = Script_GetString(0);
+		str = Scr_GetString(0);
 	} else {
-		index = Script_GetInt(0);
-		str = Script_GetString(1);
+		index = Scr_GetInt(0);
+		str = Scr_GetString(1);
 	}
 	
 	int idx = X_SetLocalizedStringIndex(index, str);
 	
-	Script_AddInt(idx);
+	Scr_AddInt(idx);
 }
 
 /*
@@ -823,13 +898,14 @@ signed int __cdecl G_LocalizedStringIndex(const char *s2)
   return i;
 }
 */
+#if 0
 
 void _GScr_AddFieldsForEntity() {
 	void (*o)( void );
 	*(int*)&o = GAME("GScr_AddFieldsForEntity");
 	o();
 	
-	int class = *(int*)&g_script_data[420];
+	int class = *(int*)&g_scr_data[420];
 	int field_len = 0x21;
 	
 	void (*add)(int16_t,const char*,int16_t);
@@ -840,6 +916,7 @@ void _GScr_AddFieldsForEntity() {
 	for(; it->var != NULL; it++)
 		add(class, it->var, ++field_len);
 }
+#endif
 
 void _Scr_GetObjectField(int a1, int entNum, int a3) {
 	/*
@@ -874,7 +951,7 @@ void _Scr_SetObjectField(int a1, int entNum, int a3) {
 			if(a3 > 0x21) {
 				field = &scr_entity_memberfields[a3 - 0x22];
 				
-				field->set( entNum /* maybe additional parameters? like flag for set/get */ );
+				field->set( entNum  ); /* maybe additional parameters? like flag for set/get */
 			}
 		}
 	}
@@ -885,17 +962,505 @@ void _Scr_SetObjectField(int a1, int entNum, int a3) {
 	o(a1,entNum,a3);
 }
 
+static long BG_StringHashValue( const char *fname ) {
+	int i;
+	long hash;
+	char letter;
+
+	hash = 0;
+	i = 0;
+	while ( fname[i] != '\0' ) {
+		letter = tolower( fname[i] );
+		hash += (long)( letter ) * ( i + 119 );
+		i++;
+	}
+	if ( hash == -1 ) {
+		hash = 0;   // never return -1
+	}
+	return hash;
+}
+
+int _fire_rocket(gentity_t *self, vec3_t start, vec3_t dir) {
+	int (*getinfo)(int);
+	*(int*)&getinfo = GAME("BG_GetInfoForWeapon");
+	
+	int info = getinfo(self->s.weapon);
+	printf("weaponinfo = %x\n", info);
+	gentity_t *ent = G_Spawn();
+	
+	_VectorNormalize(dir);
+	ent->classname = scr_const->rocket;
+	
+	*(int *)((int)ent + 508) = LEVELTIME + 30000;
+	*(int *)((int)ent + 512) = GAME("G_ExplodeMissile");
+	ent->s.eType = 4;
+	ent->s.eFlags |= 1u;
+	ent->svFlags = 136;
+	ent->s.weapon = self->s.weapon;
+	ent->ownerNum = self->s.number;
+	ent->parent = self;
+	//undere here probably death info etc sMeansOfDeath
+	*(int *)((int)ent + 568) = *(int *)(info + 448); //damage?
+	*(int *)((int)ent + 572) = *(int *)(info + 780); //radius?
+	*(int *)((int)ent + 576) = *(int *)(info + 784);
+	*(int *)((int)ent + 580) = *(int *)(info + 776);
+	*(int *)((int)ent + 584) = 5;
+	*(int *)((int)ent + 588) = 6;
+	ent->clipmask = 41951377;
+	ent->s.pos.trType = 2;
+	ent->s.pos.trTime = LEVELTIME - 50;
+	
+	VectorCopy(start, ent->s.pos.trBase);
+	
+	cvar_t *speed = Cvar_Get("rocket_speed", "1", 0);
+	
+	VectorScale(dir, speed->integer, ent->s.pos.trDelta);
+	
+	VectorCopy(start, ent->currentOrigin);
+	
+	_vectoangles((int)ent + 36, (int)ent + 320);
+	
+	G_SetAngle(ent, ent->currentAngles);
+	
+	return ent;
+}
+
 gitem_t *_bg_itemlist;
 
+#ifdef xDEBUG
+void __db() {
+	if(Cmd_Argc()<3)
+	return;
+	
+	int state = atoi(Cmd_Argv(1));
+	int anim = atoi(Cmd_Argv(2));
+	gentity_t *ent = (gentity_t*)( (int)g_entities );
+	gclient_t *gclient = ent->client;
+	
+	*(int*)((int)gclient + 180) = state;
+	*(int*)((int)gclient + 980) = anim;
+	
+	/*
+	#define PR_OFF(x) printf(#x " offset is %d\n", ( (int)x - (int)ent ));
+	PR_OFF(&ent->number)
+	PR_OFF(&ent->eType)
+	PR_OFF(&ent->eFlags)
+	PR_OFF(&ent->pos)
+	PR_OFF(&ent->apos)
+	PR_OFF(&ent->unk[0])
+	PR_OFF(&ent->groundEntityNum)
+	PR_OFF(&ent->constantLight)
+	PR_OFF(&ent->loopSound)
+	PR_OFF(&ent->surfaceFlags)
+	PR_OFF(&ent->modelindex)
+	PR_OFF(&ent->clientNum)
+	PR_OFF(&ent->weapon)
+	PR_OFF(&ent->legsAnim)
+	PR_OFF(&ent->torsoAnim)
+	PR_OFF(&ent->leanf)
+	PR_OFF(&ent->loopfxid)
+	PR_OFF(&ent->hintstring)
+	PR_OFF(&ent->animMovetype)
+	PR_OFF(&ent->linked)
+	PR_OFF(&ent->svFlags)
+	PR_OFF(&ent->mins)
+	PR_OFF(&ent->maxs)
+	PR_OFF(&ent->contents)
+	PR_OFF(&ent->absmin)
+	PR_OFF(&ent->absmax)
+	PR_OFF(&ent->currentOrigin)
+	PR_OFF(&ent->currentAngles)
+	PR_OFF(&ent->ownerNum)
+	PR_OFF(&ent->r_eventTime)
+	PR_OFF(&ent->client)
+	PR_OFF(&ent->inuse)
+	PR_OFF(&ent->physicsObject)
+	PR_OFF(&ent->takedamage)
+	PR_OFF(&ent->active)
+	PR_OFF(&ent->moverState)
+	PR_OFF(&ent->modelindex2)
+	PR_OFF(&ent->classname)
+	PR_OFF(&ent->spawnflags)
+	PR_OFF(&ent->flags)
+	PR_OFF(&ent->eventTime)
+	PR_OFF(&ent->freeAfterEvent)
+	PR_OFF(&ent->unlinkAfterEvent)
+	PR_OFF(&ent->physicsBounce)
+	PR_OFF(&ent->clipmask)
+	PR_OFF(&ent->framenum)
+	PR_OFF(&ent->parent)
+	PR_OFF(&ent->nextTrain)
+	printf("sizeof trajectory_t = %d\n", sizeof(trajectory_t));
+	*/
+	
+	/*
+	int a = *(int*)(GAME("BG_AnimationIndexForString")+0xa);
+
+	void dumpstuff(int *base, int end, const char *fn);
+	dumpstuff(a, 92*500, "ngt");
+	*/
+	
+	
+	//void *q = *(void**)( GAME("GScr_LoadScripts")+0xcd );
+	
+	/*
+	animation_t *a = (animation_t*)GAME("bgs");
+	int c = *(int*)( GAME("bgs") + 47104 );
+	
+	FILE *fp = fopen("/home/ext/tmp/anims.txt", "w");
+	if(!fp)
+	return;
+	for(int i = 0; i < c; i++) {
+		fprintf(fp, "%d : {\"%s\", %d, %d, %d, %d, %d, %d, %d}\n", i, a[i].name, a[i].a, a[i].b, a[i].c, a[i].d, a[i].e, a[i].f, a[i].g);
+	}
+	fclose(fp);
+	*/
+}
+
+char* xanim_getname(int a) {
+	printf("a = %d [%x]\n", a, a);
+	return "pb_stand_alert";
+}
+
+void Prop_Check_Ground( gentity_t *self ) {
+	vec3_t mins, maxs;
+	vec3_t start, end;
+	trace_t tr;
+
+	VectorCopy( self->currentOrigin, start );
+	VectorCopy( self->currentOrigin, end );
+
+	end[2] -= 4;
+
+	VectorCopy( self->mins, mins );
+	VectorCopy( self->maxs, maxs );
+
+	SV_Trace( &tr, start, mins, maxs, end, self->s.number, -1 );
+	
+	if ( tr.fraction == 1 ) {
+		self->s.groundEntityNum = ENTITYNUM_NONE;
+	} else {
+		self->s.groundEntityNum = tr.entityNum;
+	}
+
+}
+
+void zombie_think(gentity_t *self);
+
+void prop_thr(gentity_t *self) {
+	if(self->s.groundEntityNum == ENTITYNUM_NONE) {
+		
+		return;
+	}
+	
+	*(int*)((int)self + EOFF_THINK) = zombie_think;
+}
+
+void zombie_think(gentity_t *self) {
+	trace_t tr;
+	
+	void (*linkentity)(gentity_t*);
+	*(int*)&linkentity = GAME("trap_LinkEntity");
+	void (*unlinkentity)(gentity_t*);
+	*(int*)&unlinkentity = GAME("trap_UnlinkEntity");
+	
+	unlinkentity(self);
+	
+	_BG_EvaluateTrajectory(&self->s.pos, LEVELTIME, self->s.pos.trBase);
+	
+	if ( LEVELTIME > self->s.pos.trDuration ) {
+		VectorClear( self->s.pos.trDelta );
+		self->s.pos.trDuration = 0;
+		self->s.pos.trType = TR_STATIONARY;
+	} else
+	{
+		vec3_t mins, maxs;
+
+		VectorCopy( self->mins, mins );
+		VectorCopy( self->maxs, maxs );
+
+		mins[2] += 1;
+
+		SV_Trace( &tr, self->currentOrigin, mins, maxs, self->s.pos.trBase, self->s.number, 1);
+
+		if ( tr.fraction == 1 ) {
+			VectorCopy( self->s.pos.trBase, self->currentOrigin );
+		} else
+		{
+			VectorCopy( self->currentOrigin, self->s.pos.trBase );
+			VectorClear( self->s.pos.trDelta );
+			self->s.pos.trDuration = 0;
+			self->s.pos.trType = TR_STATIONARY;
+		}
+
+	}
+	
+	if(self->s.groundEntityNum == ENTITYNUM_NONE) {
+		self->physicsObject = qtrue;
+		self->physicsBounce = 0.5;
+		
+		self->s.pos.trDelta[2] -= 200;
+		self->s.pos.trType = TR_GRAVITY;
+		self->s.pos.trTime = LEVELTIME;
+		*(int*)((int)self + EOFF_THINK) = prop_thr;
+		
+	}
+	
+	Prop_Check_Ground(self);
+	
+	*(int*)((int)self + EOFF_NEXTTHINK) = LEVELTIME + 50;
+	
+	linkentity(self);
+}
+
+void moveit( gentity_t *ent, float yaw, float dist ) {
+	void (*linkentity)(gentity_t*);
+	*(int*)&linkentity = GAME("trap_LinkEntity");
+	void (*unlinkentity)(gentity_t*);
+	*(int*)&unlinkentity = GAME("trap_UnlinkEntity");
+	vec3_t move;
+	vec3_t origin;
+	trace_t tr;
+	vec3_t mins, maxs;
+
+	yaw = yaw * M_PI * 2 / 360;
+
+	move[0] = cos( yaw ) * dist;
+	move[1] = sin( yaw ) * dist;
+	move[2] = 0;
+
+	VectorAdd( ent->currentOrigin, move, origin );
+
+	mins[0] = ent->mins[0];
+	mins[1] = ent->mins[1];
+	mins[2] = ent->mins[2] + .01;
+
+	maxs[0] = ent->maxs[0];
+	maxs[1] = ent->maxs[1];
+	maxs[2] = ent->maxs[2] - .01;
+
+	SV_Trace( &tr, ent->currentOrigin, mins, maxs, origin, ent->s.number, -1 );
+
+	if ( ( tr.endpos[0] != origin[0] ) || ( tr.endpos[1] != origin[1] ) ) {
+		mins[0] = ent->mins[0] - 2.0;
+		mins[1] = ent->mins[1] - 2.0;
+		maxs[0] = ent->maxs[0] + 2.0;
+		maxs[1] = ent->maxs[1] + 2.0;
+
+		SV_Trace( &tr, ent->currentOrigin, mins, maxs, origin, ent->s.number, -1 );
+	}
+
+	VectorCopy( tr.endpos, ent->currentOrigin );
+
+	VectorCopy( ent->currentOrigin, ent->s.pos.trBase );
+
+	linkentity( ent );
+
+	//DropToFloor( ent );
+}
+
+void prop_touch( gentity_t *self, gentity_t *other ) {
+	void (*linkentity)(gentity_t*);
+	*(int*)&linkentity = GAME("trap_LinkEntity");
+	void (*unlinkentity)(gentity_t*);
+	*(int*)&unlinkentity = GAME("trap_UnlinkEntity");
+	
+	if(self->physicsObject)
+		return;
+	
+	unlinkentity(self);
+	
+	float ratio;
+	vec3_t v;
+
+	if ( other->currentOrigin[2] > ( self->currentOrigin[2] + 10 + 15 ) ) {
+		return;
+	}
+
+	ratio = 8;
+	VectorSubtract( self->currentOrigin, other->currentOrigin, v );
+	moveit( self, _vectoyaw( v ), ( 20 * ratio * 50 ) * .001 );
+	
+	//*(int*)((int)self + EOFF_NEXTTHINK) = LEVELTIME + 1500;
+	T_LinkEntity(self);
+}
+
+void scr_newzombie(int a1) {
+	vec3_t org;
+	Scr_GetVector(0, org);
+	int model = Scr_GetInt(1);
+	void (*linkentity)(gentity_t*);
+	*(int*)&linkentity = GAME("trap_LinkEntity");
+	void (*dobju)(gentity_t*);
+	*(int*)&dobju = GAME("G_DObjUpdate");
+	void (*inite)(gentity_t*);
+	*(int*)&inite = GAME("SP_script_brushmodel");
+	
+	gentity_t *ent = (gentity_t*)oSpawn();
+	xentity_t *xent = &xentities[ent->s.number];
+	
+	ent->classname = scr_const->rocket;
+	
+	ent->spawnflags = 0;
+	VectorCopy( org, ent->currentOrigin );
+	
+	ent->s.modelindex = model;
+	
+	inite(ent);
+	
+	/*
+	*(int*)((int)ent + 512) = (int)zombie_think;
+	*(int*)((int)ent + 508) = *(int *)&level[488] + 50;
+	*(int*)((int)ent + 524) = prop_touch;
+	
+	ent->clipmask = -1;
+	ent->contents = 1081868552;
+	
+	VectorSet( ent->mins, -12, -12, 0 );
+	VectorSet( ent->maxs, 12, 12, 48 );
+	*/
+	
+	Scr_AddEntity(ent);
+}
+
+void _SP_script_brushmodel( gentity_t *self ) {
+	printf("self->modelindex = %d, self->modelindex2 = %d\n", self->s.modelindex, self->modelindex2);
+	
+	T_SetBrushModel(self);
+	void (*initscriptmover)(gentity_t*);
+	*(int*)&initscriptmover=GAME("InitScriptMover");
+	
+	initscriptmover(self);
+	
+	self->contents = 1;
+	
+	T_LinkEntity(self);
+}
+
+void scr_spawnbrushmodel( int a1 ) {
+	gentity_t *ent;
+	vec3_t org;
+	int model;
+	Scr_GetVector(0, &org);
+	model = Scr_GetInt(1);
+	
+	ent = _G_Spawn();
+	
+	ent->classname = scr_const->script_brushmodel;
+	
+	ent->s.modelindex = model;
+	_G_SetOrigin( ent, org );
+	
+	_SP_script_brushmodel( ent );
+	
+	ent->contents = CONTENTS_BODY;
+	
+	T_LinkEntity( ent );
+}
+
+typedef struct {
+	char    *name;
+	void ( *spawn )( gentity_t *ent );
+} spawn_t;
+#endif
+
+void test_debug() {
+}
+
+#ifdef xDEBUG
+
+static unsigned char trace_buf[0x30];
+#include <signal.h>
+void trace_For_me(int a) {
+	vec3_t start, end, mins, maxs;
+	Scr_GetVector(0,start);
+	Scr_GetVector(3,end);
+	Scr_GetVector(1,mins);
+	Scr_GetVector(2,maxs);
+	
+	int contentmask = Scr_GetInt(4);
+	
+	void (*trace)(void*,float*,float*,float*,float*,int ignore,int contentmask,int locational,char *priorityMap,int staticmodels);
+	*(int*)&trace = 0x80916F4;
+	
+	trace(&trace_buf[0],start,mins,maxs,end,-1,contentmask,0,NULL,1);
+	
+	printf("trace_buf = %x\n", &trace_buf[0]);
+	
+	raise(SIGINT);
+}
+#endif
+
+#if 0
+
+gentity_t *fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWPID) {
+	gentity_t *bolt;
+	bolt = G_Spawn();
+	
+	if(self->
+	
+	*(int*)((int)bolt + EOFF_NEXTTHINK) =
+	//TODO
+}
+
+#endif
+
 void scriptInitializing() {
-	__jmp((int)GAME("GScr_LoadGameTypeScript"), (int)gscr_loadgametypescript);
+	void CoDExtended();
+	printf("void CoDExtended(); is located at {0x%x}\n", (int)CoDExtended);
 	
-	__call(GAME("GScr_LoadScripts")+0xab, _GScr_AddFieldsForEntity);
+	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
+	//printf("Patched developer functions:\n");
+	for(int i = 0; i != 0x69; i++, it++) {
+		if(!it->developer)
+			continue;
+		//printf("%s, ", it->name);
+		it->developer = 0;
+	}
+	//printf("\n");
 	
-	//080AA35A                 call    sub_809A090 (Scr_GetObjectField)
-	__call(0x80AA35A, _Scr_GetObjectField);
-	//.text:080AA2E8                 call    sub_809A070
-	__call(0x80AA2E8, _Scr_SetObjectField);
+	#ifdef xDEBUG2
+		__call(GAME("PmoveSingle") + 0x455, _PM_Weapon);
+		__call(GAME("PmoveSingle") + 0x535, _PM_Weapon);
+		
+		spawn_t *sp = (spawn_t*)GAME("spawns");
+		
+		for(;sp->name!=NULL;sp++) {
+			if(!strcmp(sp->name, "script_brushmodel")) {
+				sp->spawn = _SP_script_brushmodel;
+				printf("Patched script_brushmodel...\n");
+			}
+		}
+		
+		//__jmp(GAME("trap_XAnimGetAnimName"), xanim_getname);
+		
+		//__nop( GAME("BG_FinalizePlayerAnims")+0xe1, 13);
+		//*(unsigned char*)( GAME("BG_FinalizePlayerAnims")+0xD8 ) = 0xeb;
+		Cmd_AddCommand("db", __db);
+		/*animation_t *anim ;
+		int tmp ;
+		for(int i = 0; i < 255; i++) {
+			tmp = ( GAME("bgs") + 92 * i);
+			anim = (animation_t*)&tmp;
+			printf("{%s, %d, %d, %d, %d, %d, %d, %d}\n", anim->name, anim->unknown, anim->firstFrame,
+			anim->unknown2, anim->unknown3, anim->unknown4, anim->flags, anim->unknown5);
+		}*/
+		
+	#endif
+	#ifdef xDEBUG
+	__jmp(GAME("fire_rocket"), _fire_rocket); //worked neatly but not sure after I changed everything to gentity_t offset structures due to naming.
+	#endif
+	
+	__jmp((int)GAME("GScr_LoadGameTypeScript"), (int)GScr_LoadGametypeScript);
+	
+	#if 0
+		__call(GAME("GScr_LoadScripts")+0xab, _GScr_AddFieldsForEntity);
+		
+		//080AA35A                 call    sub_809A090 (Scr_GetObjectField)
+		__call(0x80AA35A, _Scr_GetObjectField);
+		//.text:080AA2E8                 call    sub_809A070
+		__call(0x80AA2E8, _Scr_SetObjectField);
+	#endif
 	
 	//__jmp(GAME("GScr_AddFieldsForClient"), _GScr_AddFieldsForClient);
 	
@@ -918,63 +1483,60 @@ void scriptInitializing() {
 	*(int*)(GAME("GScr_AddFieldsForClient")+0xd) = &scr_client_memberfields[0];
 	*/
 	
-	g_script_data = (char*)dlsym(gamelib, "g_scr_data");
+	g_scr_data = (game_script_data*)dlsym(gamelib, "g_scr_data");
 	
-	script_const = (char*)GAME("scr_const");
+	scr_const = (scr_const_t*)GAME("scr_const");
 	
 	g_clients = (unsigned char*)GAME("g_clients");
 	hudelems = (unsigned char*)GAME("g_hudelems");
-	cracking_hook_function(GAME("G_LocalizedStringIndex"), (int)X_LocalizedStringIndex);
+	__jmp(GAME("G_LocalizedStringIndex"), (int)X_LocalizedStringIndex);
 	
 	_bg_itemlist = (gitem_t*)GAME("bg_itemlist");
 	
 	CallSpawnEntity = (CallSpawnEntity_t)GAME("G_CallSpawnEntity");
 	
-	_SL_GetString = (_SL_GetString_t)GAME("SL_GetString");
+	SL_GetString = (SL_GetString_t)GAME("SL_GetString");
 	
-	Script_GetFunction = (Script_GetFunction_t)GAME("Scr_GetFunction");
-	Script_GetMethod = (Script_GetMethod_t)GAME("Scr_GetMethod");
-	Script_GetString = (Script_GetString_t)dlsym(gamelib, "Scr_GetString");
-	Script_GetConstString = (Script_GetConstString_t)GAME("Scr_GetConstString");
-	Script_SetString = (Script_SetString_t)GAME("Scr_SetString");
-	oSpawn = (oSpawn_t)GAME("G_Spawn");
-	oInitGentity = (oInitGentity_t)GAME("G_InitGentity");
-	oFreeEntity = (oFreeEntity_t)GAME("G_FreeEntity");
-	level = (level_locals_t)GAME("level");
+	Scr_GetFunction = (Scr_GetFunction_t)GAME("Scr_GetFunction");
+	Scr_GetMethod = (Scr_GetMethod_t)GAME("Scr_GetMethod");
+	Scr_GetString = (Scr_GetString_t)dlsym(gamelib, "Scr_GetString");
+	Scr_GetConstString = (Scr_GetConstString_t)GAME("Scr_GetConstString");
+	Scr_SetString = (Scr_SetString_t)GAME("Scr_SetString");
+	Scr_AllocString = (Scr_AllocString_t)GAME("Scr_AllocString");
+	
 	oBG_AnimationIndexForString = (oBG_AnimationIndexForString_t)GAME("BG_AnimationIndexForString");
 	
 	/*printf("gamelib: %.2x\n", (int)gamelib);
 	printf("base: %.2x\n", (int)base);
-	printf("Scr_GetString in memory: %.2x\n", (int)Script_GetString);
-	printf("Scr_GetString without base: %.2x\n", ((int)Script_GetString - (int)gamelib));*/
-	Script_GetInt = (Script_GetInt_t)dlsym(gamelib, "Scr_GetInt");
-	//Script_GetAnim = (Script_GetAnim_t)dlsym(gamelib, "Scr_GetAnim");
-	Script_GetAnimsIndex = (Script_GetAnimsIndex_t)dlsym(gamelib, "Scr_GetAnimsIndex");
-	Script_GetFloat = (Script_GetFloat_t)dlsym(gamelib, "Scr_GetFloat");
-	Script_GetVector = (Script_GetVector_t)dlsym(gamelib, "Scr_GetVector");
-	Script_GetNumParam = (Script_GetNumParam_t)dlsym(gamelib, "Scr_GetNumParam");
-	Script_GetBool = (Script_GetBool_t)dlsym(gamelib, "Scr_GetBool");
-	Script_GetFunc = (Script_GetFunc_t)dlsym(gamelib, "Scr_GetFunc");
-	Script_GetType = (Script_GetType_t)dlsym(gamelib, "Scr_GetType");
-	Script_GetPointerType = (Script_GetPointerType_t)dlsym(gamelib, "Scr_GetPointerType");
+	printf("Scr_GetString in memory: %.2x\n", (int)Scr_GetString);
+	printf("Scr_GetString without base: %.2x\n", ((int)Scr_GetString - (int)gamelib));*/
+	Scr_GetInt = (Scr_GetInt_t)dlsym(gamelib, "Scr_GetInt");
+	//Scr_GetAnim = (Scr_GetAnim_t)dlsym(gamelib, "Scr_GetAnim");
+	Scr_GetAnimsIndex = (Scr_GetAnimsIndex_t)dlsym(gamelib, "Scr_GetAnimsIndex");
+	Scr_GetFloat = (Scr_GetFloat_t)dlsym(gamelib, "Scr_GetFloat");
+	Scr_GetVector = (Scr_GetVector_t)dlsym(gamelib, "Scr_GetVector");
+	Scr_GetNumParam = (Scr_GetNumParam_t)dlsym(gamelib, "Scr_GetNumParam");
+	Scr_GetBool = (Scr_GetBool_t)dlsym(gamelib, "Scr_GetBool");
+	Scr_GetFunc = (Scr_GetFunc_t)dlsym(gamelib, "Scr_GetFunc");
+	Scr_GetOffset = (Scr_GetOffset_t)GAME("Scr_GetOffset");
+	Scr_GetType = (Scr_GetType_t)dlsym(gamelib, "Scr_GetType");
+	Scr_GetPointerType = (Scr_GetPointerType_t)dlsym(gamelib, "Scr_GetPointerType");
 	
-	Script_AddInt = (Script_AddInt_t)dlsym(gamelib, "Scr_AddInt");
-	Script_AddFloat = (Script_AddFloat_t)dlsym(gamelib, "Scr_AddFloat");
-	Script_AddVector = (Script_AddVector_t)dlsym(gamelib, "Scr_AddVector");
-	Script_AddString = (Script_AddString_t)dlsym(gamelib, "Scr_AddString");
-	Script_AddIString = (Script_AddIString_t)dlsym(gamelib, "Scr_AddIString");
-	Script_AddEntity = (Script_AddEntity_t)dlsym(gamelib, "Scr_AddEntity");
-	Script_AddUndefined = (Script_AddUndefined_t)dlsym(gamelib, "Scr_AddUndefined");
-	Script_AddBool = (Script_AddBool_t)dlsym(gamelib, "Scr_AddBool");
+	Scr_AddInt = (Scr_AddInt_t)dlsym(gamelib, "Scr_AddInt");
+	Scr_AddFloat = (Scr_AddFloat_t)dlsym(gamelib, "Scr_AddFloat");
+	Scr_AddVector = (Scr_AddVector_t)dlsym(gamelib, "Scr_AddVector");
+	Scr_AddString = (Scr_AddString_t)dlsym(gamelib, "Scr_AddString");
+	Scr_AddIString = (Scr_AddIString_t)dlsym(gamelib, "Scr_AddIString");
+	Scr_AddEntity = (Scr_AddEntity_t)dlsym(gamelib, "Scr_AddEntity");
+	Scr_AddUndefined = (Scr_AddUndefined_t)dlsym(gamelib, "Scr_AddUndefined");
+	Scr_AddBool = (Scr_AddBool_t)dlsym(gamelib, "Scr_AddBool");
 	
-	Script_MakeArray = (Script_MakeArray_t)dlsym(gamelib, "Scr_MakeArray");
-	Script_AddArray = (Script_AddArray_t)dlsym(gamelib, "Scr_AddArray");
-	Script_Error = (Script_Error_t)dlsym(gamelib, "Scr_Error");
+	Scr_MakeArray = (Scr_MakeArray_t)dlsym(gamelib, "Scr_MakeArray");
+	Scr_AddArray = (Scr_AddArray_t)dlsym(gamelib, "Scr_AddArray");
+	Scr_AddArrayStringIndexed = (Scr_AddArrayStringIndexed_t)dlsym(gamelib, "Scr_AddArrayStringIndexed");
+	Scr_Error = (Scr_Error_t)dlsym(gamelib, "Scr_Error");
 	
-	Script_ExecThread = (Script_ExecThread_t)GAME("Scr_ExecThread");
-	Script_ExecEntThread = (Script_ExecEntThread_t)GAME("Scr_ExecEntThreadNum");
-	Script_FreeThread = (Script_FreeThread_t)GAME("Scr_FreeThread");
-	ScriptL_ConvertToString = (ScriptL_ConvertToString_t)GAME("SL_ConvertToString");
-	Script_GetFunctionHandle = (Script_GetFunctionHandle_t)GAME("Scr_GetFunctionHandle");
-	Script_LoadScript = (Script_LoadScript_t)GAME("Scr_LoadScript");
+	SL_ConvertToString = (SL_ConvertToString_t)GAME("SL_ConvertToString");
+	Scr_GetFunctionHandle = (Scr_GetFunctionHandle_t)GAME("Scr_GetFunctionHandle");
+	Scr_LoadScript = (Scr_LoadScr_t)GAME("Scr_LoadScript");
 }

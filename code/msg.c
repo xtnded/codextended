@@ -16,9 +16,15 @@
 */
 #include "shared.h"
 
+#if PATCH == 1
 MSG_BeginReading_t MSG_BeginReading = (MSG_BeginReading_t)0x807F174;
 MSG_ReadLong_t MSG_ReadLong = (MSG_ReadLong_t)0x807F2F0;
 MSG_ReadStringLine_t MSG_ReadStringLine = (MSG_ReadStringLine_t)0x807F3FC;
+#else
+MSG_BeginReading_t MSG_BeginReading = (MSG_BeginReading_t)0x807F96B;
+MSG_ReadLong_t MSG_ReadLong = (MSG_ReadLong_t)0x80800E8;
+MSG_ReadStringLine_t MSG_ReadStringLine = (MSG_ReadStringLine_t)0x8080212;
+#endif
 MSG_ReadString_t MSG_ReadString = (MSG_ReadString_t)0x807F320;
 
 /*

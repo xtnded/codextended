@@ -16,12 +16,15 @@
 */
 #include "shared.h"
 
+xentity_t xentities[1024];
+
 void* gamelib;
 int base;
-char (*zpml)[140];
-void *zpm;
+char (*pml)[140];
 
-level_locals_t level;
+level_locals_t *level;
+
+gentity_t *g_entities;
 
 char* modNames[] = {
     "MOD_UNKNOWN",
@@ -51,19 +54,88 @@ char* modNames[] = {
     "MOD_EXPLOSIVE"
 };
 
+#if PATCH == 1
 Cmd_AddCommand_t Cmd_AddCommand = (Cmd_AddCommand_t)0x805AEF8;
-Com_Printf_t Com_Printf = (Com_Printf_t)0x806B760;
-Com_DPrintf_t Com_DPrintf = (Com_DPrintf_t)0x806B79C;
-Com_Error_t Com_Error = (Com_Error_t)0x806B93C;
-
+Com_Printf_t _STRIP Com_Printf = (Com_Printf_t)0x806B760;
+Com_DPrintf_t _STRIP Com_DPrintf = (Com_DPrintf_t)0x806B79C;
+Com_Error_t _STRIP Com_Error = (Com_Error_t)0x806B93C;
 Cmd_Argv_t Cmd_Argv = (Cmd_Argv_t)0x805B258;
 Cmd_Argc_t Cmd_Argc = (Cmd_Argc_t)0x805B24C;
 Cmd_ArgvBuffer_t Cmd_ArgvBuffer = (Cmd_ArgvBuffer_t)0x805B27C;
 Cmd_TokenizeString_t Cmd_TokenizeString = (Cmd_TokenizeString_t)0x805B398;
+VM_Call_t VM_Call = (VM_Call_t)0x8092158;
+#else 
+Cmd_AddCommand_t Cmd_AddCommand = (Cmd_AddCommand_t)0x806043E;
+Com_Printf_t Com_Printf = (Com_Printf_t)0x806FC10;
+Com_DPrintf_t Com_DPrintf = (Com_DPrintf_t)0x806FC5F;
+Com_Error_t Com_Error = (Com_Error_t)0x806FE74;
+Cmd_Argv_t Cmd_Argv = (Cmd_Argv_t)0x80600F4;
+Cmd_Argc_t Cmd_Argc = (Cmd_Argc_t)0x80600EA;
+Cmd_ArgvBuffer_t Cmd_ArgvBuffer = (Cmd_ArgvBuffer_t)0x806014B;
+Cmd_TokenizeString_t Cmd_TokenizeString = (Cmd_TokenizeString_t)0x8060423;
+
+VM_Call_t VM_Call = (VM_Call_t)0x809AFBC;
+#endif
 
 //Info_SetValueForKey_t Info_SetValueForKey = (Info_SetValueForKey_t)0x80827D4;
 
-VM_Call_t VM_Call = (VM_Call_t)0x8092158;
+//============================================================================
+/*
+==================
+COM_BitCheck
+
+  Allows bit-wise checks on arrays with more than one item (> 32 bits)
+==================
+*/
+qboolean COM_BitCheck( const int array[], int bitNum ) {
+	int i;
+
+	i = 0;
+	while ( bitNum > 31 ) {
+		i++;
+		bitNum -= 32;
+	}
+
+	return ( ( array[i] & ( 1 << bitNum ) ) != 0 );  // (SA) heh, whoops. :)
+}
+
+/*
+==================
+COM_BitSet
+
+  Allows bit-wise SETS on arrays with more than one item (> 32 bits)
+==================
+*/
+void COM_BitSet( int array[], int bitNum ) {
+	int i;
+
+	i = 0;
+	while ( bitNum > 31 ) {
+		i++;
+		bitNum -= 32;
+	}
+
+	array[i] |= ( 1 << bitNum );
+}
+
+/*
+==================
+COM_BitClear
+
+  Allows bit-wise CLEAR on arrays with more than one item (> 32 bits)
+==================
+*/
+void COM_BitClear( int array[], int bitNum ) {
+	int i;
+
+	i = 0;
+	while ( bitNum > 31 ) {
+		i++;
+		bitNum -= 32;
+	}
+
+	array[i] &= ~( 1 << bitNum );
+}
 
 /*
 ============================================================================
@@ -73,42 +145,42 @@ VM_Call_t VM_Call = (VM_Call_t)0x8092158;
 ============================================================================
 */
 
-int Q_isprint( int c ) {
+int _STRIP Q_isprint( int c ) {
 	if ( c >= 0x20 && c <= 0x7E ) {
 		return ( 1 );
 	}
 	return ( 0 );
 }
 
-int Q_islower( int c ) {
+int _STRIP Q_islower( int c ) {
 	if ( c >= 'a' && c <= 'z' ) {
 		return ( 1 );
 	}
 	return ( 0 );
 }
 
-int Q_isupper( int c ) {
+int _STRIP Q_isupper( int c ) {
 	if ( c >= 'A' && c <= 'Z' ) {
 		return ( 1 );
 	}
 	return ( 0 );
 }
 
-int Q_isalpha( int c ) {
+int _STRIP Q_isalpha( int c ) {
 	if ( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) ) {
 		return ( 1 );
 	}
 	return ( 0 );
 }
 
-int Q_isnumeric( int c ) {
+int _STRIP Q_isnumeric( int c ) {
 	if ( c >= '0' && c <= '9' ) {
 		return ( 1 );
 	}
 	return ( 0 );
 }
 
-int Q_isalphanumeric( int c ) {
+int _STRIP Q_isalphanumeric( int c ) {
 	if ( Q_isalpha( c ) ||
 		 Q_isnumeric( c ) ) {
 		return( 1 );
@@ -116,14 +188,14 @@ int Q_isalphanumeric( int c ) {
 	return ( 0 );
 }
 
-int Q_isforfilename( int c ) {
+int _STRIP Q_isforfilename( int c ) {
 	if ( ( Q_isalphanumeric( c ) || c == '_' ) && c != ' ' ) { // space not allowed in filename
 		return( 1 );
 	}
 	return ( 0 );
 }
 
-char* Q_strrchr( const char* string, int c ) {
+char* _STRIP Q_strrchr( const char* string, int c ) {
 	char cc = c;
 	char *s;
 	char *sp = (char *)0;
@@ -151,7 +223,7 @@ Q_strncpyz
 Safe strncpy that ensures a trailing zero
 =============
 */
-void Q_strncpyz( char *dest, const char *src, int destsize ) {
+void _STRIP Q_strncpyz( char *dest, const char *src, int destsize ) {
 	if ( !src ) {
 		Com_Error( ERR_FATAL, "Q_strncpyz: NULL src" );
 	}
@@ -163,7 +235,7 @@ void Q_strncpyz( char *dest, const char *src, int destsize ) {
 	dest[destsize - 1] = 0;
 }
 
-const char *Q_stristr( const char *s, const char *find) {
+const char* _STRIP Q_stristr( const char *s, const char *find) {
   register char c, sc;
   register size_t len;
 
@@ -191,7 +263,7 @@ const char *Q_stristr( const char *s, const char *find) {
   return s;
 }
 
-int stricmp (const char *p1, const char *p2)
+int _STRIP stricmp (const char *p1, const char *p2)
 {
   register unsigned char *s1 = (unsigned char *) p1;
   register unsigned char *s2 = (unsigned char *) p2;
@@ -211,7 +283,7 @@ int stricmp (const char *p1, const char *p2)
   return c1 - c2;
 }
 
-void QDECL Com_sprintf( char *dest, int size, const char *fmt, ... ) {
+void QDECL _STRIP Com_sprintf( char *dest, int size, const char *fmt, ... ) {
 	int ret;
 	va_list argptr;
 
@@ -226,7 +298,7 @@ void QDECL Com_sprintf( char *dest, int size, const char *fmt, ... ) {
 #define Q_COLOR_ESCAPE   '^'
 #define Q_IsColorString(p)   ( p && *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
 
-char *Q_CleanStr( char *string ) {
+char * _STRIP Q_CleanStr( char *string ) {
 	char*   d;
 	char*   s;
 	int c;
@@ -246,7 +318,7 @@ char *Q_CleanStr( char *string ) {
 	return string;
 }
 
-void Info_Print( const char *s ) {
+void _STRIP Info_Print( const char *s ) {
 	char key[512];
 	char value[512];
 	char    *o;
@@ -297,7 +369,7 @@ key and returns the associated value, or an empty string.
 FIXME: overflow check?
 ===============
 */
-char *Info_ValueForKey( const char *s, const char *key ) {
+char* _STRIP Info_ValueForKey( const char *s, const char *key ) {
 	char pkey[BIG_INFO_KEY];
 	static char value[2][BIG_INFO_VALUE];   // use two buffers so compares
 											// work without stomping on each other
@@ -355,7 +427,7 @@ char *Info_ValueForKey( const char *s, const char *key ) {
 Info_RemoveKey
 ===================
 */
-void Info_RemoveKey( char *s, const char *key ) {
+void _STRIP Info_RemoveKey( char *s, const char *key ) {
 	char    *start;
 	char pkey[MAX_INFO_KEY];
 	char value[MAX_INFO_VALUE];
@@ -418,7 +490,7 @@ Info_SetValueForKey
 Changes or adds a key/value pair
 ==================
 */
-void Info_SetValueForKey( char *s, const char *key, const char *value ) {
+void _STRIP Info_SetValueForKey( char *s, const char *key, const char *value ) {
 	char newi[MAX_INFO_STRING];
 	
 	if ( strlen( s ) >= MAX_INFO_STRING ) {
@@ -456,7 +528,7 @@ void Info_SetValueForKey( char *s, const char *key, const char *value ) {
 	strcat( s, newi );
 }
 
-int Q_stricmpn( const char *s1, const char *s2, int n ) {
+int _STRIP Q_stricmpn( const char *s1, const char *s2, int n ) {
 	int c1, c2;
 
 	do {
@@ -483,7 +555,7 @@ int Q_stricmpn( const char *s1, const char *s2, int n ) {
 	return 0;       // strings are equal
 }
 
-int Q_strncmp( const char *s1, const char *s2, int n ) {
+int _STRIP Q_strncmp( const char *s1, const char *s2, int n ) {
 	int c1, c2;
 
 	do {
@@ -502,7 +574,7 @@ int Q_strncmp( const char *s1, const char *s2, int n ) {
 	return 0;       // strings are equal
 }
 
-int Q_stricmp( const char *s1, const char *s2 ) {
+int _STRIP Q_stricmp( const char *s1, const char *s2 ) {
 	return ( s1 && s2 ) ? Q_stricmpn( s1, s2, 99999 ) : -1;
 }
 
@@ -518,7 +590,7 @@ char *Q_strlwr( char *s1 ) {
 	return s1;
 }
 
-char *Q_strupr( char *s1 ) {
+char _STRIP *Q_strupr( char *s1 ) {
 	char* cp;
 
 	for ( cp = s1 ; *cp ; ++cp ) {
@@ -532,7 +604,7 @@ char *Q_strupr( char *s1 ) {
 
 
 // never goes past bounds or leaves without a terminating 0
-void Q_strcat( char *dest, int size, const char *src ) {
+void _STRIP Q_strcat( char *dest, int size, const char *src ) {
 	int l1;
 
 	l1 = strlen( dest );
@@ -555,7 +627,7 @@ previous strings
 ============
 */
 
-char    * QDECL va( char *format, ... ) {
+char    * _STRIP QDECL va( char *format, ... ) {
 	va_list argptr;
 	#define MAX_VA_STRING   32000
 	static char temp_buffer[MAX_VA_STRING];
@@ -583,11 +655,4 @@ char    * QDECL va( char *format, ... ) {
 	index += len + 1;
 
 	return buf;
-}
-
-char* Cvar_InfoString(int bit) {
-	char* (*call)(int);
-	*((int*)(&call)) = 0x806FC30;
-	char* ret = call(bit);
-	return ret;
 }

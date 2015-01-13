@@ -33,15 +33,14 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include "cracking.h"
 #include "x_util.h"
+#include "surfaceflags.h"
 
-#define CURRENTBUILD 11
+#include "build.txt"
 
 #ifdef uMYSQL
 #include "mysql/mysql.h"
 #endif
-#include "x_util.h"
 #include <malloc.h>
 #include <mcheck.h>
 
@@ -51,11 +50,26 @@ typedef unsigned char boolean;
 #define QDECL __cdecl
 #define __fastcall __attribute__((fastcall))
 
+#ifdef xDEBUG
+
+#define _STRIP __attribute__((visibility ("hidden")))
+#define _VIS __attribute__((visibility ("default")))
+#define _DEBUG __attribute__((visibility ("default")))
+#define _PROT __attribute__((visibility ("protected")))
+#else
+#define _STRIP
+#define _VIS
+#define _STRIP
+#define _PROT
+#endif
+
 //static int ( QDECL * syscall )( int arg, ... ) = ( int ( QDECL * )( int, ... ) )0x8087DCC;
 
 #define NOP 0x90
 #define VERSION_STRING "Call of Duty Extended %.1f\n"
 #define EXTENDEDVERSION 1f
+
+#define NUMVERTEXNORMALS    162
 
 #define DotProduct( x,y )         ( ( x )[0] * ( y )[0] + ( x )[1] * ( y )[1] + ( x )[2] * ( y )[2] )
 #define VectorSubtract( a,b,c )   ( ( c )[0] = ( a )[0] - ( b )[0],( c )[1] = ( a )[1] - ( b )[1],( c )[2] = ( a )[2] - ( b )[2] )
@@ -85,9 +99,78 @@ typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
 typedef vec_t vec5_t[5];
 
+#define PITCH               0       // up / down
+#define YAW                 1       // left / right
+#define ROLL                2       // fall over
+#define M_PI 3.14
+
+#define MAKERGB( v, r, g, b ) v[0] = r; v[1] = g; v[2] = b
+#define MAKERGBA( v, r, g, b, a ) v[0] = r; v[1] = g; v[2] = b; v[3] = a
+
+#define DEG2RAD( a ) ( ( ( a ) * M_PI ) / 180.0F )
+#define RAD2DEG( a ) ( ( ( a ) * 180.0f ) / M_PI )
+
+#define nanmask ( 255 << 23 )
+
+#define IS_NAN( x ) ( ( ( *(int *)&x ) & nanmask ) == nanmask )
+
+#define random()    ( ( rand() & 0x7fff ) / ( (float)0x7fff ) )
+#define crandom()   ( 2.0 * ( random() - 0.5 ) )
+
 typedef enum { qfalse, qtrue }	qboolean;
 
 typedef int clipHandle_t;
+
+int     _Q_rand( int *seed );
+float   _Q_random( int *seed );
+float   _Q_crandom( int *seed );
+signed char _ClampChar( int i );
+signed short _ClampShort( int i );
+int _DirToByte( vec3_t dir );
+void _ByteToDir( int b, vec3_t dir );
+unsigned _ColorBytes3( float r, float g, float b );
+unsigned _ColorBytes4( float r, float g, float b, float a );
+float _NormalizeColor( const vec3_t in, vec3_t out );
+void _RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,
+							  float degrees );
+void _RotateAroundDirection( vec3_t axis[3], float yaw );
+void _vectoangles( const vec3_t value1, vec3_t angles );
+void _AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+void _AxisClear( vec3_t axis[3] );
+void _AxisCopy( vec3_t in[3], vec3_t out[3] );
+void _ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
+void _MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
+void _VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out );
+float _Q_rsqrt( float number );
+float _Q_fabs( float f );
+float _LerpAngle( float from, float to, float frac );
+void _LerpPosition( vec3_t start, vec3_t end, float frac, vec3_t out );
+float   _AngleSubtract( float a1, float a2 );
+void _AnglesSubtract( vec3_t v1, vec3_t v2, vec3_t v3 );
+float   _AngleMod( float a );
+float _AngleNormalize360( float angle );
+float _AngleNormalize180( float angle );
+float _AngleDelta( float angle1, float angle2 );
+float _RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
+void _ClearBounds( vec3_t mins, vec3_t maxs );
+void _AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
+int _VectorCompare( const vec3_t v1, const vec3_t v2 );
+vec_t _VectorNormalize( vec3_t v );
+void _VectorNormalizeFast( vec3_t v );
+vec_t _VectorNormalize2( const vec3_t v, vec3_t out );
+vec_t _VectorLength( const vec3_t v );
+vec_t _VectorLengthSquared( const vec3_t v );
+vec_t _Distance( const vec3_t p1, const vec3_t p2 );
+vec_t _DistanceSquared( const vec3_t p1, const vec3_t p2 );
+void _VectorInverse( vec3_t v );
+void _Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
+void _AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up );
+void _MatrixMultiply( float in1[3][3], float in2[3][3], float out[3][3] );
+void _PerpendicularVector( vec3_t dst, const vec3_t src );
+void _GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up );
+void _ProjectPointOntoVector( vec3_t point, vec3_t vStart, vec3_t vEnd, vec3_t vProj );
+float _vectoyaw( const vec3_t vec );
+float _VectorDistance( vec3_t v1, vec3_t v2 );
 
 typedef enum {
 	ERR_FATAL,                  // exit the entire game with a popup window
@@ -202,14 +285,17 @@ typedef struct {
 	float		fraction;
 	vec3_t		endpos;
 
-	cplane_t	plane;
-	int			surfaceFlags;
-	int			contents;
-
-	qboolean	allsolid;
-	qboolean	startsolid;
-	int			entityNum;
-
+	vec3_t normal; //normal?
+	
+	//not sure can be dist? but most likely not due to too far away distance on low range and non-float
+	byte	type;
+	byte	signbits;
+	byte	pad[2];
+	
+	int contents;
+	char *textureName;
+	int entityNum;
+	int surfaceFlags; //assuming it's surfaceFlags, but where is allsolid, startsolid? ( 2.3509887e-38 or 0x01000000 )
 } trace_t;
 
 /*
@@ -243,13 +329,8 @@ typedef struct {
 #define ENTITYNUM_WORLD   (MAX_GENTITIES-2)
 #define ENTITYNUM_MAX_NORMAL  (MAX_GENTITIES-2)
 
-typedef int gentity_t;
-struct entityState_s;
-struct entityState_t;
-struct playerState_s;
-
 typedef struct {
-	int unknown; //0
+	int overflowed; //0
 	byte* data; //4
 	int maxsize; //8 (most likely maxsize value 16384)
 	int cursize; //12 //value 129
@@ -282,18 +363,19 @@ typedef enum {
 } fsMode_t;
 
 typedef enum {
-    ET_GENERAL,
-    ET_PLAYER,
-    ET_CORPSE,
-    ET_ITEM,
-    ET_MISSILE,
-    ET_MOVER,
-    ET_PORTAL,
-    ET_INVISIBLE,
-    ET_SCRIPTMOVER,
-	ET_UNKNOWN,
-	ET_FX,
-	ET_TURRET
+    ET_GENERAL, //0
+    ET_PLAYER, //1
+    ET_CORPSE, //2
+    ET_ITEM, //3
+    ET_MISSILE, //4
+    ET_MOVER, //5
+    ET_PORTAL, //6
+    ET_INVISIBLE, //7
+    ET_SCRIPTMOVER, //8
+	ET_UNKNOWN, //9
+	ET_FX, //10
+	ET_TURRET, //11
+	ET_EVENTS //12
 } entityType_t;
 
 typedef enum {
@@ -325,7 +407,7 @@ typedef struct {
 //----(SA)	removed
 } trajectory_t;
 
-/*
+
 typedef struct {
     byte unk[480];
     int maxclients;
@@ -334,10 +416,8 @@ typedef struct {
     int previousTime;
     int startTime; //?idk
 } level_locals_t;
-*/
-typedef unsigned char* level_locals_t;
 
-extern level_locals_t level;
+extern level_locals_t *level;
 
 //gentity->eFlags
 #define EF_DEAD 0x1
@@ -353,48 +433,284 @@ extern level_locals_t level;
 //gentity->flags
 #define FL_NODRAW 0x1000
 
-/*
-typedef struct gentity_s {
-    int number; //0
-    entityType_t eType; //4
-    int eFlags; //console open //crouch, stand, prone //8
-    trajectory_t pos;
-    trajectory_t apos;
-    int unknown; //80
-    int unknown2;
-    int unknown3;
-    int weaponunknown; //something with weapon
-    int weaponunknown2; //something with weapon
-    int weaponunknown3; //something with weapon
-    float unknownangle; //104
-    float unknownangle2;
-    float unknownangle3;
-    int unknown4; //116
-    int unknown5;
-    int groundEntityNum;
-    int constantLight; //128
-    int loopSound;
-    int event;
-    int eventParm; //140
-    int clientNum; //144
-    byte unknown148[20]; //164
-    int eventSequence;
-    int events[4];
-    int eventParms[4];
-    int weapon;
-    int legsAnim;
-    int torsoAnim; //208
-    int unknown212;
-    int unknown216;
-    int unknown220;
-    int animMovetype;
-    int unknown228;
-    byte unknown232[8];
-    qboolean linked;
-} gentity_t;
+#define WBUTTON_RELOAD 8
+
+typedef enum {
+	WEAPON_READY, //0
+	WEAPON_RAISING, //1
+	WEAPON_DROPPING, //2
+	WEAPON_FIRING, //3
+	WEAPON_RECHAMBERING, //4
+	WEAPON_RELOADING, //5
+	WEAPON_RELOADING_INTERUPT, //6
+	WEAPON_RELOAD_START, //7
+	WEAPON_RELOAD_START_INTERUPT, //8
+	WEAPON_RELOAD_END, //9
+	WEAPON_MELEE_WINDUP, //10
+	WEAPON_MELEE_RELAX, //11
+	WEAPON_UNKNOWN //12
+} weaponstates;
+
+typedef enum {
+	WEAP_IDLE, //0
+	WEAP_UNK, //1
+	WEAP_ATTACK, //2
+	WEAP_ATTACK_LASTSHOT, //3
+	WEAP_RECHAMBER, //4
+	WEAP_ADS_ATTACK, //5
+	WEAP_ADS_ATTACK_LASTSHOT, //6
+	WEAP_ADS_RECHAMBER, //7
+	WEAP_MELEE_ATTACK, //8
+	WEAP_DROP, //9
+	WEAP_RAISE, //10
+	WEAP_RELOAD, //11
+	WEAP_RELOAD_EMPTY, //12
+	WEAP_RELOAD_START, //13
+	WEAP_RELOAD_END, //14
+	WEAP_ALTSWITCHFROM, //15
+	WEAP_ALTSWITCHTO, //16
+	WEAP_UNKNOWN //17
+} weaponanimations;
+
+#define MAX_ENTITIES 1024
+#define MAX_ENTITY_SIZE 1024
+#define PLAYERSTATE_SIZE 0x22cc
+#if PATCH == 1
+#define GENTITY_SIZE 788
+#else
+#define GENTITY_SIZE 0x31c
+#endif
+
+typedef enum {
+	SS_PLAYING,
+	SS_DEAD,
+	SS_SPECTATOR,
+	SS_INTERMISSION
+} sessionstate_types;
+
+#if PATCH == 1
+typedef enum {
+	EOFF_S_SVFLAGS = 244,
+	EOFF_S_GROUNDENTITYNUM = 124,
+	
+	EOFF_ETYPE = 4,
+	EOFF_PHYSICSOBJECT = 353,
+    EOFF_PLAYERSTATE = 344,
+    EOFF_CONTENTS = 280,
+	EOFF_TAKEDAMAGE = 369,
+    EOFF_NEXTTHINK = 508,
+	EOFF_FLAGS = 380,
+    EOFF_THINK = 512,
+    EOFF_USE = 528,
+    EOFF_PAIN = 532,
+    EOFF_DIE = 536,
+    EOFF_HEALTH = 560,
+    EOFF_CLASSNAME = 374, //it's a string index of scr_
+    EOFF_ORIGIN = 308,
+    EOFF_ANGLES = 320,
+	EOFF_CONTROLLER = 544
+} ENTITY_OFFSET;
+
+#else
+
+typedef enum {
+	EOFF_S_ETYPE = 4,
+	EOFF_EFLAGS = 8,
+	EOFF_PLAYERSTATE = 348,
+	EOFF_TAKEDAMAGE = 373,
+	EOFF_NEXTTHINK = 516,
+	EOFF_THINK = 520,
+	EOFF_USE = 536,
+	EOFF_PAIN = 540,
+	EOFF_DIE = 544,
+	EOFF_HEALTH = 568,
+	EOFF_FLAGS = 388,
+	EOFF_R_CONTENTS = 284,
+	EOFF_R_SVFLAGS = 244,
+	EOFF_TEAMMASTER = 620,
+	EOFF_TEAMCHAIN = 616,
+	EOFF_TEAM = 480,
+	EOFF_INUSE = 356,
+	EOFF_CLASSNAME = 380, //it's a string index of scr_
+	EOFF_R_OWNERNUM = 336,
+	EOFF_EVENTTIME = 392,
+	EOFF_FREEAFTEREVENT = 396,
+	EOFF_WAIT = 624,
+	EOFF_RANDOM = 628,
+	EOFF_CLIENTNUM = 144,
+	EOFF_ORIGIN = 312,
+	EOFF_ANGLES = 324,
+	EOFF_PHYSICSOBJECT = 357,
+	EOFF_UNLINKAFTEREVENT = 400,
+	EOFF_GROUNDENTITYNUM = 124,
+	EOFF_LOOPSOUND = 132,
+	EOFF_SOUND_OPENING = 359,
+	EOFF_SOUND_CLOSING = 360,
+	EOFF_SOUND_OPEN_END = 361,
+	EOFF_SOUND_OPEN_LOOP = 363,
+	EOFF_SOUND_CLOSE_LOOP = 364,
+	EOFF_SOUND_LOCKED = 365,
+	EOFF_SOUND_OPENING_QUIET = 366,
+	EOFF_SOUND_OPEN_QUIET_END = 367,
+	EOFF_SOUND_CLOSING_QUIET = 368,
+	EOFF_SOUND_CLOSE_QUIET_END = 369,
+	EOFF_MOVERSTATE = 376,
+	EOFF_SPAWNFLAGS = 384,
+	EOFF_DAMAGE = 576,
+	EOFF_SPEED = 488,
+	EOFF_SPLASHDAMAGE = 580,
+	EOFF_R_CURRENTORIGIN = 312,
+	EOFF_PARENT = 416,
+	EOFF_SPLASHRADIUS = 584,
+	EOFF_SPLASHMETHODOFDEATH = 588,
+	EOFF_R_EVENTTIME = 340
+} ENTITY_OFFSET;
+
+#endif
+
+typedef enum {
+	POFF_CLIENTNUM = 172,
+	POFF_EFLAGS = 128,
+	POFF_PM_TYPE = 4,
+    POFF_VELOCITY = 0x20,
+    POFF_ANGLES = 0xC0,
+	POFF_SESSIONSTATE = 8400
+} PLAYER_OFFSET;
+
+typedef struct {
+	char data[64]; //holds some values like origin of player before on turret, is being used flag, degrees of freedom (arcs)
+} __attribute__((packed)) turret_entity_info; //size 0x40
 
 typedef struct gentity_s gentity_t;
+typedef struct gclient_s gclient_t;
+
+typedef struct entityState_s {
+	int number;
+	int eType; //4
+	int eFlags; //8
+	trajectory_t pos; //12
+	trajectory_t apos; //48
+	int unk; //84 //time??
+	int unk2; //88 //time2??
+	vec3_t origin2; //92
+	vec3_t angles2; //104 (guessed name)
+	int otherEntityNum; //116
+	int otherEntityNum2; //120
+	int groundEntityNum; //124
+	int constantLight; //128
+	int loopSound; //132
+	int surfaceFlags; //136
+	int modelindex; //140
+	int clientNum; //144
+	char ___cba[0x34];
+	/*
+	gentity_t *teammaster; //152
+	int eventParm; //160
+	int eventSequence; //164
+	int events[4]; //168
+	int eventParms[4]; //184
+	*/
+	
+	int weapon; //200
+	int legsAnim; //204
+	int torsoAnim; //208
+	float leanf; //212
+	int loopfxid; //216
+	int hintstring; //220
+	int animMovetype; //224
+} __attribute__((packed)) entityState_t;
+
+typedef struct playerState_s {
+	int commandTime;            // cmd->serverTime of last executed command
+	int pm_type;
+	int bobCycle;               // for view bobbing and footstep generation
+	int pm_flags;               // ducked, jump_held, etc
+	int pm_time;
+} __attribute__((packed)) playerState_t;
+
+struct gclient_s {
+	playerState_t ps;
+	//other stuff
+} __attribute__((packed));
+
+typedef enum {
+	PERK_QUICK_RELOAD
+} perk_names;
+
+#define MAX_PERKS 16
+
+typedef struct {
+	
+} more_ent;
+
+struct gentity_s {
+	entityState_t s;
+	float PM_GetViewHeightLerpTime_unknown; //228
+	float some_view_angle_when_prone; //232
+	float some_view_angle_when_prone2; //236
+	qboolean linked; //240
+	int svFlags; //244
+	int some_idk_num; //248
+	int unk2; //252
+	vec3_t mins, maxs; //256
+	int contents; //280
+	vec3_t absmin, absmax; //284
+	vec3_t currentOrigin; //308
+	vec3_t currentAngles; //320
+	int ownerNum; //332
+	int r_eventTime; //336
+	int unk3; //340
+	struct gclient_s *client; //344
+	turret_entity_info *turret_info; //348
+	byte inuse; //352
+	byte physicsObject; //353
+	byte _sounds[13]; //354
+	byte idk; //367
+	byte idk2; //368
+	byte takedamage; //369
+	byte active; //370
+	byte idk3; //371
+	byte moverState; //372
+	unsigned char modelindex2; //373
+	short classname; //374
+	int spawnflags; //376
+	int flags; //380
+	int eventTime; //384
+	int freeAfterEvent; //388
+	int unlinkAfterEvent; //392
+	float physicsBounce; //396
+	int clipmask; //400
+	int framenum; //404 (not sure)
+	gentity_t *parent; //408
+	gentity_t *nextTrain; //412
+	
+	unsigned char __i_dont_really_care_for_now[GENTITY_SIZE - 0x1A0 - sizeof(more_ent)];
+} __attribute__((packed));
+
+extern gentity_t *g_entities;
+/*
+#define ENT_SET(e, off, src, size) do { \
+memcpy((void*)((int)e + off), (void*)src, size); \
+} while(0)
+#define ENT_GET(e, off, dest, size) do { \
+memcpy((void*)dest, (void*)((int)e + off), size); \
+} while(0)
 */
+
+static inline void ENT_SET(gentity_t *e, int off, void *src, size_t size) {
+	//printf("ENT_SET(%x, %d, %x, %d) ent num = %d\n", e, off, src, size, e->s.number);
+	memcpy((void*)(((int)e) + off), src, size);
+}
+static inline void ENT_GET(gentity_t *e, int off, void *dest, size_t size) {
+	//printf("ENT_GET(%x, %d, %x, %d) ent num = %d\n", e, off, dest, size, e->s.number);
+	memcpy(dest, (void*)(((int)e) + off), size);
+}
+
+typedef struct {
+	bool sprinting;
+} xentity_t;
+
+extern xentity_t xentities[1024];
 
 extern char* modNames[];
 
@@ -402,6 +718,12 @@ typedef struct gitem_s {
 	char        *classname;
 	//rest idc
 } gitem_t;
+
+typedef struct {
+	int weaponNumber; //not sure
+	char *weaponName;
+	
+} weaponInfo;
 
 typedef enum {
     TRAP_PRINT,
@@ -581,6 +903,26 @@ typedef enum {
     */
 } gameImport_t;
 
+#define LEVELTIME (*(int*)&level[488])
+//#define g_entities(x) ((gentity_t*)( (int)g_entities + GENTITY_SIZE * x )) //no linking issues since it's a macro <3 - Richard
+//#define level.num_entities (*(int*)&level[12])
+
+void set_trap_func_ptr( void );
+
+typedef void (*T_SetBrushModel_t)(gentity_t*);
+extern T_SetBrushModel_t T_SetBrushModel;
+
+typedef void (*T_LinkEntity_t)(gentity_t*);
+typedef void (*T_UnlinkEntity_t)(gentity_t*);
+
+extern T_UnlinkEntity_t T_UnlinkEntity;
+extern T_LinkEntity_t T_LinkEntity;
+
+typedef void (*BG_EvaluateTrajectory_t)(const trajectory_t*, int, vec3_t);
+typedef void (*BG_EvaluateTrajectoryDelta_t)(const trajectory_t*, int, vec3_t);
+
+extern BG_EvaluateTrajectory_t BG_EvaluateTrajectory;
+extern BG_EvaluateTrajectoryDelta_t BG_EvaluateTrajectoryDelta;
 
 typedef enum {
     GAME_INIT,
@@ -631,8 +973,8 @@ CMD
 ================
 */
 
-typedef void (*Com_Printf_t)(const char*, ...);
-typedef void (*Com_DPrintf_t)(const char*, ...);
+typedef void (QDECL *Com_Printf_t)(const char*, ...);
+typedef void (QDECL *Com_DPrintf_t)(const char*, ...);
 
 extern Com_Printf_t Com_Printf;
 extern Com_DPrintf_t Com_DPrintf;
@@ -646,6 +988,9 @@ extern Cmd_Argc_t Cmd_Argc;
 extern Cmd_Argv_t Cmd_Argv;
 extern Cmd_ArgvBuffer_t Cmd_ArgvBuffer;
 extern Cmd_TokenizeString_t Cmd_TokenizeString;
+
+typedef int (*FS_FileIsInPAK_t)( const char *filename, int *pChecksum );
+extern FS_FileIsInPAK_t FS_FileIsInPAK;
 
 #define MAX_STACK   256
 #define STACK_MASK  ( MAX_STACK - 1 )
@@ -673,8 +1018,9 @@ extern Cvar_Get_t Cvar_Get;
 char* Cvar_VariableString(const char*);
 char* Cvar_InfoString(int bit);
 
-
-
+qboolean COM_BitCheck( const int array[], int bitNum );
+void COM_BitSet( int array[], int bitNum );
+void COM_BitClear( int array[], int bitNum );
 
 /*
 ==============
@@ -715,8 +1061,7 @@ void Info_SetValueForKey( char *s, const char *key, const char *value );
 
 extern void* gamelib;
 extern int base;
-extern char (*zpml)[140];
-extern void *zpm;
+extern char (*pml)[140];
 
 
 bool is_good_string(char* str);
@@ -761,6 +1106,55 @@ static char *utrim(char *str) //malloc unsafe trim
   *(end+1) = 0;
 
   return str;
+}
+
+#define PRINT_RESET (1<<1)
+#define PRINT_BOLD (1<<2)
+#define PRINT_UNDERLINE (1<<3)
+#define PRINT_BLINK (1<<4)
+#define PRINT_DEF (1<<5)
+#define PRINT_BLINK (1<<6)
+#define PRINT_DEF (1<<7)
+#define PRINT_ERR (1<<8)
+#define PRINT_GOOD (1<<9)
+#define PRINT_WARN (1<<10)
+#define PRINT_INFO (1<<11)
+
+typedef enum {
+	PC_BLACK,
+	PC_RED,
+	PC_GREEN,
+	PC_YELLOW,
+	PC_BLUE,
+	PC_MAGENTA,
+	PC_CYAN,
+	PC_WHITE
+} print_colors;
+
+static void cprintf(int color, const char *fmt, ...) {
+	va_list va;
+	va_start(va, fmt);
+	if(color & PRINT_RESET)
+		printf("\e[0m");
+	if(color & PRINT_BOLD)
+		printf("\e[1m");
+	if(color & PRINT_UNDERLINE)
+		printf("\e[4m");
+	if(color & PRINT_BLINK)
+		printf("\e[6m");
+	if(color & PRINT_DEF)
+		printf("\e[30m");
+	if(color & PRINT_ERR)
+		printf("\e[31m");
+	if(color & PRINT_GOOD)
+		printf("\e[32m");
+	if(color & PRINT_WARN)
+		printf("\e[33m");
+	if(color & PRINT_INFO)
+		printf("\e[34m");
+	vprintf(fmt, va);
+	printf("\e[0m");
+	va_end(va);
 }
 
 #endif // SHARED_H

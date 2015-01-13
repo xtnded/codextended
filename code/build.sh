@@ -1,29 +1,33 @@
 #!/bin/bash
 
 cc="gcc"
+LINK_CURL="$(/usr/bin/curl-config --static-libs --cflags)";
 
 info()
 {
 	cat << EOF
 	CoDExtended
+		Linux
 		 by
 	riicchhaarrd
 
 	http://github.com/riicchhaarrd/CoDExtended
 	http://cod1.eu/
 	
-	Thanks to kung foo man and his project libcod
+	Thanks to kung foo man and his project 'libcod'
 	https://github.com/kungfooman/libcod
 EOF
 }
 
+PATCHVERSION=1
 uANY=false
 uMYSQL=false
 uECMASCRIPT=false
 DEBUG=false
+uPOWERED=false
 DEFINES=""
 
-while getopts “hdmj” qo
+while getopts “hdmjp15” qo
 do
 	case $qo in
 	h)
@@ -41,8 +45,24 @@ do
 	d)
 		DEBUG=true
 		;;
+	p)
+		uPOWERED=true
+		uANY=true
+		;;
+	5)
+		PATCHVERSION=5
+		;;
+	1)
+		PATCHVERSION=1
+		;;
 	esac
 done
+
+if [ $PATCHVERSION = 5 ]; then
+echo "Call of Duty Patch 1.5"
+else
+echo "Call of Duty Patch 1.1"
+fi
 
 if [ $DEBUG = true ]; then
 echo "{ CODEXTENDED DEVELOPMENT BUILD }"
@@ -62,25 +82,41 @@ if [ $uECMASCRIPT = true ]; then
 	echo -n "ECMASCRIPT, "
 fi
 
+if [ $uPOWERED = true ]; then
+	echo -n "BRANDED VERSION, "
+else
+	echo -n "UNBRANDED VERSION, "
+fi
+
 if [ $uANY = true ]; then
 echo ""
 fi
 
 #Compiling CoDExtended
 
-compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w"
+compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 
 if [ $DEBUG = true ]; then
-#compiler="$cc -DxDEBUG -g -w"
-compiler="$cc -DxDEBUG -g -Os -O1 -O3 -s -fvisibility=hidden -w"
+compiler="$cc -g -w -Wl,--exclude-libs,ALL"
+#compiler="$cc -DxDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 fi
 
 if [ $uMYSQL = true ]; then
 DEFINES+="-DuMYSQL "
 fi
 
+if [ $uPOWERED = true ]; then
+DEFINES+="-DxPOWERED "
+fi
+
 if [ $uECMASCRIPT = true ]; then
 DEFINES+="-DBUILD_ECMASCRIPT "
+fi
+
+if [ $PATCHVERSION = 5 ]; then
+DEFINES+="-DPATCH=5 "
+else
+DEFINES+="-DPATCH=1 "
 fi
 
 params="$DEFINES -std=c99 -I. -m32 -fPIC -Wno-write-strings"
@@ -89,24 +125,24 @@ params="$DEFINES -std=c99 -I. -m32 -fPIC -Wno-write-strings"
 mkdir -p bin
 mkdir -p obj
 
-info
-
 echo "Compiling..."
 echo "[ROOT]"
 $compiler $params -c init.c -o obj/init.o
 $compiler $params -c librarymodule.c -o obj/librarymodule.o
 $compiler $params -c codextended.c -o obj/codextended.o
-$compiler $params -c entity.c -o obj/entity.o
 echo "[COMMON]"
-$compiler $params -c cracking.c -o obj/cracking.o
 $compiler $params -c cvar.c -o obj/cvar.o
 $compiler $params -c files.c -o obj/files.o
 $compiler $params -c cmd.c -o obj/cmd.o
 $compiler $params -c msg.c -o obj/msg.o
+$compiler $params -c curl.c -o obj/curl.o
 echo "[GAME]"
 $compiler $params -c shared.c -o obj/shared.o
 $compiler $params -c script.c -o obj/script.o
 $compiler $params -c bg_pmove.c -o obj/bg_pmove.o
+$compiler $params -c bg_misc.c -o obj/bg_misc.o
+$compiler $params -c g_utils.c -o obj/g_utils.o
+$compiler $params -c q_math.c -o obj/q_math.o
 echo "[SERVER]"
 $compiler $params -c sv_commands.c -o obj/sv_commands.o
 $compiler $params -c sv_client.c -o obj/sv_client.o
@@ -115,6 +151,7 @@ $compiler $params -c sv_game.c -o obj/sv_game.o
 $compiler $params -c sv_init.c -o obj/sv_init.o
 $compiler $params -c sv_main.c -o obj/sv_main.o
 $compiler $params -c x_clientcmds.c -o obj/x_clientcmds.o
+$compiler $params -c unix_net.c -o obj/unix_net.o
 echo "[SCRIPT]"
 $compiler $params -c scr_method_player.c -o obj/scr_method_player.o
 $compiler $params -c scr_string.c -o obj/scr_string.o
@@ -136,10 +173,29 @@ fi
 fi
 
 obj="$(ls obj/*.o)"
+
+if [ $DEBUG = true ]; then
+for f in obj/*.o; do
+if [ "$f" != "duktape.o" ]; then
+#objcopy --keep-symbols=symbols.txt --prefix-symbols=xtn_ $f
+objcopy --redefine-syms=syms.txt $f
+fi
+done
+fi
+
 if [ $uMYSQL = true ]; then
-$compiler -m32 -shared -L/lib32 -L/home/lib -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -o ./bin/codextended.so $obj -Os -s -ldl -lm -Wall
+if [ $DEBUG = true ]; then
+$compiler -m32 -shared -L/lib32 -L/home/lib -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -o ./bin/codextended.so $obj -Os -lz $LINK_CURL -ldl -lm -Wall
 else
-$compiler -m32 -shared -L/lib32 -L./lib -L/home/rawcod -o ./bin/codextended.so $obj -Os -s -ldl -lm -Wall
+$compiler -m32 -shared -L/lib32 -L/home/lib -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -o ./bin/codextended.so $obj -Os -s -lz $LINK_CURL -ldl -lm -Wall
+fi
+#$compiler -m32 -shared -L/lib32 `mysql_config --libs` -I/usr/include/mysql -o ./bin/codextended.so $obj -Os -s -lz $LINK_CURL -ldl -lm -Wall
+else
+if [ $DEBUG = true ]; then
+$compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -lz $LINK_CURL -ldl -lm -Wall
+else
+$compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -Os -s -lz $LINK_CURL -ldl -lm -Wall
+fi
 fi
 #rm -rf ./obj
 find /home/ext/obj -name '*.o' ! -name 'duktape.o' -delete

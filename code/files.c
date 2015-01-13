@@ -37,30 +37,38 @@ typedef struct searchpath_s {
 
 static searchpath_t    *fs_searchpaths = (searchpath_t*)0x80DD590;
 
+FS_FileIsInPAK_t FS_FileIsInPAK = (FS_FileIsInPAK_t)0x8070240;
+
 int pak_num = 0;
 
-
-
-bool FS_IsServerFile(char* basename) {
-	bool flag = false;
-	if(strstr(basename, "svr") != NULL)
-		flag=1;
-	if(strstr(basename, "server") != NULL)
-		flag=1;
-	if(strstr(basename, "localized") != NULL)
-		flag=1;
-	if(strstr(basename, "pak") != NULL)
-		flag=1;
-	return flag;
+int FS_IsPakFile(char *name) {
+	if(strstr(name, "pak") != NULL)
+		return 1;
+	if(strstr(name, "localized") != NULL)
+		return 1;
+	return 0;
 }
 
+bool FS_IsServerFile(char* basename) {
+	if(strstr(basename, "srv") != NULL)
+		return 1;
+	if(strstr(basename, "svr") != NULL)
+		return 1;
+	if(strstr(basename, "server") != NULL)
+		return 1;
+	return 0;
+}
+
+extern cvar_t *x_requireclient;
+
 bool FS_IsExtendedFile(char* file) {
-	bool flag = false;
 	if(strstr(file, "xtnded") != NULL)
-		flag=1;
+		return 1;
 	if(strstr(file, "codextended") != NULL)
-		flag=1;
-	return flag;
+		return 1;
+	if(!FS_IsServerFile(file))
+		return 1;
+	return 0;
 }
 
 static bool count_flag = 1;
@@ -83,10 +91,10 @@ const char *__cdecl FS_LoadedPakPureChecksums( void ) {
 				sprintf(info, "%s%s", info, " " );
 			}
 			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
-			if(search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
+			if(FS_IsPakFile(search->pak->pakBasename) || search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
 				sprintf(info, "%s%i", info, search->pak->checksum_pure);
 				if(count_flag)
-				pak_num++;
+					pak_num++;
 			}
 		}
 	}
@@ -113,11 +121,12 @@ const char *__cdecl FS_ReferencedPakChecksums() {
 				sprintf(info, "%s%s", info, " " );
 			}
 			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
-			if(search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
+			if(FS_IsPakFile(search->pak->pakBasename) || search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
 				sprintf(info, "%s%i", info, search->pak->checksum);
 			}
 		}
 	}
+	
 	return info;
 }
 
@@ -139,7 +148,7 @@ const char *__cdecl FS_ReferencedPakNames() {
 				sprintf(info, "%s%s", info, " " );
 			}
 			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
-			if(search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
+			if(FS_IsPakFile(search->pak->pakBasename) || search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
 				//printf("PAK: %s with checksum %d and PURE = %d GAMENAME = %s\n", search->pak->pakBasename, search->pak->checksum, search->pak->checksum_pure, search->pak->pakGamename);
 				sprintf(info, "%s%s", info, search->pak->pakGamename );
 				sprintf(info, "%s%s", info, "/" );
@@ -147,5 +156,6 @@ const char *__cdecl FS_ReferencedPakNames() {
 			}
 		}
 	}
+	
 	return info;
 }

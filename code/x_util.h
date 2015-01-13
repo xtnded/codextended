@@ -17,47 +17,9 @@
 #ifndef X_UTIL_H
 #define X_UTIL_H
 
-/*
-	riicchhaarrd
-*/
-
-/*
-typedef struct mpatch_s {
-	int offset;
-	byte* bytes;
-	byte* patched_bytes;
-	size_t size;
-} mpatch;
-
-static mpatch* create_patch(int off, byte* bytes, size_t len) {
-	mpatch* p = (mpatch*)malloc(sizeof(mpatch));
-	if(0 != p) {
-		p->size = len;
-		p->offset = off;
-		p->bytes = (byte*)off;
-		p->patched_bytes = (byte*)malloc(sizeof(byte) * len); //just use len???
-		if(!p->patched_bytes) {
-			free(p);
-			return 0;
-		}
-		memcpy(p->patched_bytes, bytes, len);
-	}
-	return p;
-}
-
-static void delete_patch(mpatch* p) {
-	free(p->patched_bytes);
-	free(p);
-}
-
-static void p_undo(mpatch* p) {
-	memcpy((void*)p->offset, p->bytes, p->size);
-}
-
-static void p_patch(mpatch* p) {
-	memcpy((void*)p->offset, p->patched_bytes, p->size);
-}
-*/
+#include <sys/mman.h>
+#include <string.h>
+#include "openssl/md5.h"
 
 typedef unsigned char byte;
 
@@ -79,7 +41,7 @@ static int patch_memory(int start, int end, byte* search_for, byte* patched, siz
 */
 
 static void __nop(unsigned int start, unsigned int end) {
-	int len = ( end < start ) ? end : ( end - start), i;	
+	int len = ( end < start ) ? end : ( end - start ), i;	
 	mprotect((void *)start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
 	memset((void*)start, 0x90, len);
 }
@@ -97,8 +59,6 @@ static void __call(unsigned int off, unsigned int loc) {
 	memcpy((void *)(off + 1), &foffset, 4);
 }
 
-#include "openssl/md5.h"
-
 /*
 	MD5
 */
@@ -113,6 +73,14 @@ static char* get_md5(char* str) {
 	return &xhash_md5[0];
 }
 
+static char *get_md5b(unsigned char *buf, size_t len) {
+	unsigned char digest[MD5_DIGEST_LENGTH];
+	MD5(buf, len, (unsigned char*)&digest);
+	for(int i = 0; i < 16; i++)
+		sprintf(&xhash_md5[i*2], "%02x", (unsigned int)digest[i]);
+	return &xhash_md5[0];
+}
+
 static char* get_pass_hash(char* password, char* salt) {
 	char tmp[32*((!strcmp(salt,""))?1:2)+1];
 	if(strcmp(salt,"")) {
@@ -122,6 +90,32 @@ static char* get_pass_hash(char* password, char* salt) {
 		sprintf(tmp, "%s", get_md5(password));
 	}
 	return get_md5(tmp);
+}
+
+
+static void dumpbase(int* base, size_t len, const char *fn) {
+	static char dumpbase_path[64];
+	
+	snprintf(dumpbase_path, 63, "./dumps/%s.dump", fn);
+	
+	unsigned int result;
+	float rf;
+	char* rstr;
+	
+	FILE* f = fopen(dumpbase_path, "wb");
+	if(f) {
+		fprintf(f, "File: %s\nDUMPFILE\n\n");
+		
+		for(unsigned int i = 0; i < len; i++) {
+			result = *(unsigned int*)(base + i);
+			rf = *(float*)(base + i);
+			rstr = (char*)(base + i);
+			fprintf(f, "%d: Hex: %x, Decimal: %d, Float: %f, String: %s\n", i, result, result, rf, rstr);
+		}
+		fclose(f);
+	}
+	
+	printf("Successfully dumped '%s' to location '%s'.\n", fn, dumpbase_path);
 }
 
 
@@ -150,6 +144,14 @@ static int unprotect_lib(char *libname)
     }
     fclose(fp);
     return 1;
+}
+
+static inline void xor_crypt(char *key, char *string, int n) {
+    int i;
+	int c_use = 'x';
+    int keyLength = strlen(key);
+    for(i = 0; i < n; i++)
+        string += string[i] ^ (c_use /*+i*/) % 255;//string[i] = string[i] ^ key[i%keyLength];
 }
 
 #endif

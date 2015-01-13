@@ -16,74 +16,63 @@
 */
 #include "script.h"
 
-// gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod );
-/*
-    //param TODO
-*/
+int callbackEntityDamage, callbackEntityKilled;
 
-void use( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
+#if 0
+
+static void use( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
 	int callback;
-	ENTITY* entity = game->getEntity(*ent);
+	ENTITY* entity = game->getEntity(ent->s.number);
 	if(!entity)
 		return;
 	if(!entity->use)
 		return;
 	callback = entity->use;
-	Script_AddEntity(activator);
-	int result = Script_ExecEntThread(*ent, 0, callback, 1);
-	Script_FreeThread(result);
+	Scr_AddEntity(activator);
+	int result = Scr_ExecEntThread(ent->s.number, 0, callback, 1);
+	Scr_FreeThread(result);
 }
 
-void die(int* self, gentity_t* inflictor, gentity_t* attacker, int damage, unsigned int mod) {
-    int callback;
-    ENTITY* ent = game->getEntity(*self);
-    if(!ent)
+#endif
+
+static void die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, unsigned int mod) {
+	if(!callbackEntityKilled) {
+		Scr_Error("ERROR: EntityDeath(eAttacker, eInflictor, iDamage, sMeansOfDeath) was not found!");
 		return;
-    if(!ent->die)
-		return;
-	callback = ent->die;
+	}
     //printf(">> DIE [self=%p] [attacker=%p] [damage=%i] [mod=%d]\n", self, attacker, damage, mod);
     if(mod > 0x18)
-        Script_AddString((char*)modNames[0]);
+        Scr_AddString((char*)modNames[0]);
     else
-        Script_AddString((char*)modNames[mod]);
-    Script_AddInt(damage);
-    Script_AddEntity(inflictor);
-    Script_AddEntity(attacker);
-    int result = Script_ExecEntThread(*self, 0, callback, 4);
-    Script_FreeThread(result);
+        Scr_AddString((char*)modNames[mod]);
+    Scr_AddInt(damage);
+    Scr_AddEntity(inflictor);
+    Scr_AddEntity(attacker);
+    int result = Scr_ExecEntThread(self->s.number, 0, callbackEntityKilled, 4);
+    Scr_FreeThread(result);
 }
 
-void pain(int* self, gentity_t* attacker, int damage, vec3_t point) {
-    int callback;
-    ENTITY* ent = game->getEntity(*self);
-    if(!ent)
+static void pain(gentity_t* self, gentity_t* attacker, int damage, vec3_t point) {
+	if(!callbackEntityDamage) {
+		Scr_Error("ERROR: EntityDamage(eAttacker, vPoint, iDamage) was not found!");
 		return;
-	if(!ent->pain)
-		return;
-    callback = ent->pain;
+	}
     //Com_Printf(">> pain [self=%p] [attacker=%p] [damage=%i] [point=%f %f %f]\n", self, attacker, damage, point);
-    Script_AddInt(damage);
-	Script_AddVector(point);
-	Script_AddEntity(attacker);
-    int result = Script_ExecEntThread(*self, 0, callback, 2);
-    Script_FreeThread(result);
+    Scr_AddInt(damage);
+	Scr_AddVector(point);
+	Scr_AddEntity(attacker);
+    int result = Scr_ExecEntThread(self->s.number, 0, callbackEntityDamage, 2);
+    Scr_FreeThread(result);
 }
 
-void EntCmd_nextthink(int a1) {
+#if 0
+// maybe later again
+void ScriptEnt_callback(int a1) {
     ENTITY* ent = game->getEntity(a1);
-    int next = Script_GetInt(0);
-    if(ent) {
-        ent->set(EOFF_NEXTTHINK, &next, sizeof(next));
-    }
-}
-
-void EntCmd_callback(int a1) {
-    ENTITY* ent = game->getEntity(a1);
-    char* type = Script_GetString(0);
+    char* type = Scr_GetString(0);
     int handle = 0;
-    if(Script_GetNumParam() == 2)
-        handle = Script_GetFunc(1);
+    if(Scr_GetNumParam() == 2)
+        handle = Scr_GetFunc(1);
     if(!ent)
         return;
 	int use_as_int = 0;
@@ -100,66 +89,73 @@ void EntCmd_callback(int a1) {
         ent->die = handle;
     }
 }
+#endif
 
-void EntCmd_setBounds(int a1) {
-    ENTITY* ent = game->getEntity(a1);
-    float width = Script_GetFloat(0);
-    float height = Script_GetFloat(1);
-    if(ent) {
-        /*
-            int width, height;
-            stackGetParamInt(2, &width);
-            stackGetParamInt(3, &height);
-            *(float*)(GENTITY_SIZE * a1 + g_entities + 280) = height;
-            *(float*)(GENTITY_SIZE * a1 + g_entities + 276) = width;
-            *(float*)(GENTITY_SIZE * a1 + g_entities + 272) = width;
-            *(float*)(GENTITY_SIZE * a1 + g_entities + 264) = -width;
-            *(float*)(GENTITY_SIZE * a1 + g_entities + 260) = -width;
-            //syscall(53, (int*)(GENTITY_SIZE * a1 + g_entities));
-        */
-        ent->set(280, &height, sizeof(float));
-        ent->set(276, &width, sizeof(float));
-        ent->set(272, &width, sizeof(float));
-        width *= -1.0;
-        ent->set(264, &width, sizeof(float));
-        ent->set(260, &width, sizeof(float));
-    }
-    Script_AddUndefined();
+void ScriptEnt_SetLight(int ent) {
+	gentity_t *e = &g_entities[ent];
+	int r, g, b, i;
+	r = Scr_GetInt(0);
+	g = Scr_GetInt(1);
+	b = Scr_GetInt(2);
+	i = Scr_GetInt(3);
+	
+	e->s.constantLight = r | ( g << 8 ) | ( b << 16 ) | ( i << 24 );
 }
 
-void EntCmd_setBoundCorners(int a1) {
-    ENTITY *ent = game->getEntity(a1);
-    float c1 = Script_GetFloat(0);
-    float c2 = Script_GetFloat(1);
-    float c3 = Script_GetFloat(2);
-    float c4 = Script_GetFloat(3);
-    float c5 = Script_GetFloat(4);
-    float c6 = Script_GetFloat(5);
-    if(ent) {
-        ent->set(280, &c1, sizeof(float));
-        ent->set(276, &c2, sizeof(float));
-        ent->set(272, &c3, sizeof(float));
-        ent->set(268, &c4, sizeof(float));
-        ent->set(264, &c5, sizeof(float));
-        ent->set(260, &c6, sizeof(float));
-    }
-    Script_AddUndefined();
+void ScriptEnt_PlayAnim(int ent) {
+	gentity_t *e = &g_entities[ent];
 }
 
+void ScriptEnt_SetBounds(int entityNum) {
+    float width = Scr_GetFloat(0);
+    float height = Scr_GetFloat(1);
+    gentity_t *ent = &g_entities[entityNum];
+	
+	vec3_t mins = {-width,-width,0};
+	vec3_t maxs = {width,width,height};
+	
+	VectorCopy(mins,ent->mins);
+	VectorCopy(maxs,ent->maxs);
+	VectorCopy(mins,ent->absmin);
+	VectorCopy(maxs,ent->absmax);
+}
 
-void EntCmd_setTakeDamage(int entityIndex) {
-    ENTITY* ent = game->getEntity(entityIndex);
-    if(ent) {
-        int take = Script_GetInt(0);
-        int p = 0;
-        int d = 0;
-        ent->set(EOFF_TAKEDAMAGE, &take, sizeof(int));
-        if(take) {
-            p = (int)pain;
-            d = (int)die;
-        }
-        ent->set(EOFF_PAIN, &p, sizeof(int));
-        ent->set(EOFF_DIE, &d, sizeof(int));
-    }
-    Script_AddUndefined();
+void ScriptEnt_SetMins(int num) {
+	gentity_t *ent = &g_entities[num];
+	vec3_t vec;
+	Scr_GetVector(0, vec);
+	VectorCopy(vec,ent->mins);
+}
+
+void ScriptEnt_SetMaxs(int num) {
+	gentity_t *ent = &g_entities[num];
+	vec3_t vec;
+	Scr_GetVector(0, vec);
+	VectorCopy(vec,ent->maxs);
+}
+
+void ScriptEnt_SetAbsMax(int num) {
+	gentity_t *ent = &g_entities[num];
+	vec3_t vec;
+	Scr_GetVector(0, vec);
+	VectorCopy(vec,ent->absmax);
+}
+
+void ScriptEnt_SetAbsMin(int num) {
+	gentity_t *ent = &g_entities[num];
+	vec3_t vec;
+	Scr_GetVector(0, vec);
+	VectorCopy(vec,ent->absmin);
+}
+
+void ScriptEnt_SetTakeDamage(int entityIndex) {
+    gentity_t *ent = &g_entities[entityIndex];
+	int flag = Scr_GetInt(0);
+	int p = (int)pain, d = (int)die;
+	
+	if(!flag)
+		p = d = 0;
+	ent->takedamage = flag;
+	ENT_SET(ent, EOFF_PAIN, &p, sizeof(int));
+	ENT_SET(ent, EOFF_DIE, &d, sizeof(int));
 }

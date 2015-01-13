@@ -138,10 +138,10 @@ int js_getliboffset(duk_context* c) {
 int js_getentint(duk_context* c) {
 	int index = duk_require_number(c,-1);
 	int offset = duk_require_number(c,-2);
-	ENTITY* ent = game->getEntity(index);
+	gentity_t *ent = &g_entities[index];
 	if(ent) {
 		int value;
-		ent->get(offset, &value, sizeof(value));
+		ENT_GET(ent, offset, &value, sizeof(value));
 		duk_push_int(c,value);
 	} else {
 		duk_push_int(c,0);
@@ -153,9 +153,9 @@ int js_setentint(duk_context* c) {
 	int index = duk_require_int(c,-1);
 	int offset = duk_require_int(c,-2);
 	int value = duk_require_int(c,-3);
-	ENTITY* ent = game->getEntity(index);
+	gentity_t *ent = &g_entities[index];
 	if(ent) {
-		ent->set(offset, &value, sizeof(value));
+		ENT_SET(ent, offset, &value, sizeof(value));
 	}
 	return 0;
 }
@@ -167,13 +167,13 @@ int js_getplayer(duk_context* c) {
 	printf("-1 = %d\n", index);
 	printf("-2 = %d\n", off);
 	printf("-3 = %s\n", str);
-	ENTITY* ent = game->getEntity(index);
+	gentity_t *ent = &g_entities[index];
 	if(ent) {
 		int v;
-		ent->get(off, &v, sizeof(v));
+		ENT_GET(ent, off, &v, sizeof(v));
 		duk_push_int(c,v);
 	} else {
-	duk_push_int(c,-1);
+		duk_push_int(c,-1);
 	}
 	/*if(!strcmp(str, "int")) {
 		printf("off = %d\n", *(int*)off);
@@ -191,7 +191,7 @@ int js_getplayer(duk_context* c) {
 int js_setplayer(duk_context* c) {
 	int player = duk_require_int(c, -1);
 	int duk_off = duk_require_int(c, -2);
-	int off = (gentities + GENTITY_SIZE * player) + duk_off;
+	int off = (g_entities + GENTITY_SIZE * player) + duk_off;
 	const char* str = duk_require_string(c, -3);
 	if(!strcmp(str, "int")) {
 		*(int*)off = duk_require_int(c,-4);
@@ -404,15 +404,13 @@ int js_ent_setorigin(duk_context *c) {
 	
 	
 	
-	ENTITY* ent = game->getEntity(ent_idx);
+	gentity_t *ent = &g_entities[ent_idx];
 	
 	if(!ent)
 		return 0;
-		
-	gentity_t* gent = (gentity_t*)ent->base;
 	
-	X_SetOrigin(gent, org);
-	TRAP_LinkEntity(gent);
+	X_SetOrigin(ent, org);
+	TRAP_LinkEntity(ent);
 	return 0;
 }
 
@@ -421,14 +419,14 @@ int js_ent_getorigin(duk_context *c) {
 
 	int ent_idx = duk_require_int(ctx,0);
 	
-	ENTITY* ent = game->getEntity(ent_idx);
+	gentity_t *ent = &g_entities[ent_idx];
 	
 	if(!ent)
 		return 0;
 	
 	int ORIGIN_OFF = 308;
 	
-	ent->get(ORIGIN_OFF, org, sizeof(org));
+	ENT_GET(ent, ORIGIN_OFF, org, sizeof(org));
 	
 	int obj_idx = duk_push_object(ctx);
 	duk_push_number(ctx, org[0]);
@@ -512,34 +510,31 @@ LABEL_12:
 int js_dobjupdate(duk_context *c) {
 	int e = duk_require_int(c,0);
 	
-	void (__cdecl *d)(int);
+	void (__cdecl *d)(gentity_t*);
 	*(int*)&d = GAME("G_DObjUpdate");
 	
 	printf("dobjupdate = %x\n", d);
 	
-	ENTITY *ent = game->getEntity(e);
+	gentity_t *ent = &g_entities[e];
 	
 	if(!ent)
 		return 0;
-	Com_DPrintf("ent->base = %x\n", ent->base);
-	d(gentities + GENTITY_SIZE * e);
+	d(ent);
 }
 
 int js_linkentity(duk_context *c) {
-	void (*linkentity)(int);
+	void (*linkentity)(gentity_t*);
 	*(int*)&linkentity = GAME("trap_LinkEntity");
 	
-	int ent = duk_require_int(c,0);
+	int idx = duk_require_int(c,0);
 	
-	if(ent<0||ent>0x400)
+	if(idx < 0 || idx > 0x400)
 		return 0;
 	
-	ENTITY *gent = game->getEntity(ent);
+	gentity_t *ent = &g_entities[idx];
 	
-	if(!gent)
-		return 0;
-	
-	linkentity(gent->base);
+	if(ent)
+		linkentity(ent);
 	return 0;
 }
 
@@ -552,19 +547,19 @@ int js_ent_setint(duk_context *c) {
 	if(entity<0||entity>=0x400)
 		return 0;
 		
-	ENTITY *ent = game->getEntity(entity);
+	gentity_t *ent = &g_entities[entity];
 	
 	if(!ent)
 		return 0;
 	
 	if(type==8)
-	ent->set(off, (byte*)&value, sizeof(byte));
+		ENT_SET(ent, off, (byte*)&value, sizeof(byte));
 	else if(type==16)
-	ent->set(off, (short*)&value, sizeof(short));
+		ENT_SET(ent, off, (short*)&value, sizeof(short));
 	else if(type==32)
-	ent->set(off, &value, sizeof(value));
+		ENT_SET(ent, off, &value, sizeof(value));
 	else if(type==64)
-	ent->set(off, (long*)&value, sizeof(long));
+		ENT_SET(ent, off, (long*)&value, sizeof(long));
 	return 0;
 }
 
@@ -576,7 +571,7 @@ int js_ent_getint(duk_context *c) {
 	if(entity<0||entity>=0x400)
 		return 0;
 		
-	ENTITY *ent = game->getEntity(entity);
+	gentity_t *ent = &g_entities[entity];
 	
 	if(!ent)
 		return 0;
@@ -588,7 +583,7 @@ int js_ent_getint(duk_context *c) {
 		short svalue;
 	} u;
 	
-	ent->get(off, &u.lvalue, sizeof(u.lvalue));
+	ENT_GET(ent, off, &u.lvalue, sizeof(u.lvalue));
 	
 	if(type==8)
 	duk_push_int(c,u.bvalue);
@@ -599,6 +594,15 @@ int js_ent_getint(duk_context *c) {
 	else if(type==64)
 	duk_push_int(c,u.lvalue);
 	return 1;
+}
+
+int js_net_outofbandprint(duk_context *c) {
+	int clientNum = duk_require_int(c, 0);
+	char *msg = duk_require_string(c, 1);
+	
+	client_t *cl = getclient(clientNum);
+	
+	NET_OutOfBandPrint(NS_SERVER,cl->remoteAddress,msg);
 }
 
 int js_spawn(duk_context *c) {
@@ -693,6 +697,7 @@ void js_init() {
 	js_addfunction("get_lib_offset", js_getliboffset, 1);
 	js_addfunction("setentint", js_setentint, 2);
 	js_addfunction("getentint", js_getentint, 3);
+	js_addfunction("NET_OutOfBandPrint", js_net_outofbandprint, 2);
     js_load();
 }
 

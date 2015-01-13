@@ -85,7 +85,7 @@ void SV_XStatus_f() {
 		for ( j = 0 ; j < l ; j++ )
 			Com_Printf( " " );
 	
-		int tt = *(int*)0x83B67A4 - *(int *)(&cl->state + 68364);
+		int tt = *(int*)0x83B67A4 - *(int *)((int)cl + 68364);
 			
 		Com_Printf( "%7i ", tt );
 		
@@ -296,7 +296,7 @@ void SV_WasAdded(const char* cmd, int id, const char* name) {
 	Com_Printf("Client %d: %s\n", id, name);
 }
 
-client_t* search_players[64];
+client_t *search_players[64];
 
 void X_GetPlayersByName( void ) {
 	client_t    *cl;
@@ -751,6 +751,54 @@ void SV_BanGUID_f() {
 	Com_Printf("GUID '%d' has been banned.\n", guid);
 	
 	X_ReadBannedList(false);
+}
+
+void SV_MuteName() {
+	if(Cmd_Argc() != 2) {
+		Com_Printf("Usage: mutename <id>\n");
+		return;
+	}
+	
+	int id = atoi( Cmd_Argv(1) );
+	
+	if(id < 0 || id > 64) {
+		Com_Printf("Invalid number.\n");
+		return;
+	}
+	
+	client_t *cl = getclient( id );
+	
+	if( cl == NULL ) {
+		Com_Printf("Client doesn't exist!\n");
+		return;
+	}
+	
+	x_clients[id].namemuted ^= 1;
+	Com_Printf("Client: '%s' is now %s.\n", cl->name, x_clients[id].namemuted ? "muted" : "unmuted");
+}
+
+void SV_Mute() {
+	if(Cmd_Argc() != 2) {
+		Com_Printf("Usage: mute <id>\n");
+		return;
+	}
+	
+	int id = atoi( Cmd_Argv(1) );
+	
+	if(id < 0 || id > 64) {
+		Com_Printf("Invalid number.\n");
+		return;
+	}
+	
+	client_t *cl = getclient( id );
+	
+	if( cl == NULL ) {
+		Com_Printf("Client doesn't exist!\n");
+		return;
+	}
+	
+	x_clients[id].muted ^= 1;
+	Com_Printf("Client: '%s' is now %s.\n", cl->name, x_clients[id].muted ? "muted" : "unmuted");
 }
 
 void X_ReadBannedList_sub() {

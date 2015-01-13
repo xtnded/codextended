@@ -14,69 +14,446 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "server.h"
+#include "bg_public.h"
 
-/*
-	unf and don't use
-*/
+#define LOBYTE(x)   (*((unsigned char*)&(x)))   // low byte
+#define LOWORD(x)   (*((short*)&(x)))   // low word
+#define LODWORD(x)  (*((int*)&(x)))  // low dword
+#define HIBYTE(x)   (*((unsigned char*)&(x)+1))
+#define HIWORD(x)   (*((short*)&(x)+1))
+#define HIDWORD(x)  (*((int*)&(x)+1))
+#define BYTEn(x, n)   (*((unsigned char*)&(x)+n))
+#define WORDn(x, n)   (*((short*)&(x)+n))
+#define BYTE1(x)   BYTEn(x,  1)         // byte 1 (counting from 0)
+#define BYTE2(x)   BYTEn(x,  2)
+#define BYTE3(x)   BYTEn(x,  3)
+#define BYTE4(x)   BYTEn(x,  4)
+#define BYTE5(x)   BYTEn(x,  5)
+#define BYTE6(x)   BYTEn(x,  6)
+#define BYTE7(x)   BYTEn(x,  7)
+#define BYTE8(x)   BYTEn(x,  8)
+#define BYTE9(x)   BYTEn(x,  9)
+#define BYTE10(x)  BYTEn(x, 10)
+#define BYTE11(x)  BYTEn(x, 11)
+#define BYTE12(x)  BYTEn(x, 12)
+#define BYTE13(x)  BYTEn(x, 13)
+#define BYTE14(x)  BYTEn(x, 14)
+#define BYTE15(x)  BYTEn(x, 15)
+#define WORD1(x)   WORDn(x,  1)
+#define WORD2(x)   WORDn(x,  2)         // third word of the object, unsigned
+#define WORD3(x)   WORDn(x,  3)
+#define WORD4(x)   WORDn(x,  4)
+#define WORD5(x)   WORDn(x,  5)
+#define WORD6(x)   WORDn(x,  6)
+#define WORD7(x)   WORDn(x,  7)
 
-typedef struct {
-	int* ps;
-	usercmd_t cmd;
-} pmove_t;
+#define OVERCLIP 1.001
 
-static int checkjump_result;
+pmove_t *pm;
 
-int __cdecl X_CheckJump( void ) {
-	printf("checjump_result=%x\n",checkjump_result);
-	int (*call)( void );
-	*(int*)&call = checkjump_result;
+static int (*BG_GetNumWeapons)();
+static int (*BG_GetInfoForWeapon)(int);
+static int (*BG_AnimScriptEvent)(playerState_t*,int,int,int);
+static void (*PM_AddEvent)(int);
+
+static void (*PM_SetWeaponReloadAddAmmoDelay)();
+static void (*PM_SetReloadingState2)();
+
+#define QUICK_RELOAD_FRACTION 3
+
+static void PM_Weapon( void ) {
+	pmove_t *xm = *(pmove_t**)(int)pm;
 	
-	int result = call();
+	int *weaponstate = (int*)((int)xm->ps + 180);
+	int *weapons = *(int**)((int)xm->ps + 796);
+	int *weapon = (int*)((int)xm->ps + 176);
+	int *weaponTime = (int*)((int)xm->ps + 44);
+	int *weaponDelay = (int*)((int)xm->ps + 48);
+	int prestate = *weaponstate;
 	
-	printf("result = %d\n", result);
+	void (*o)() = (void(*)())GAME("PM_Weapon");
+	o();
 	
-	//pmove_t *xm = (pmove_t*)zpm;
-	/*
-	int *jumpTime = *(int*)(xm->ps + 100);
+	playerState_t *ps = xm->ps;
 	
-	if ( xm->cmd.serverTime - *jumpTime < 500 ) {
-			return qfalse;
+	int clientNum = *(int*)((int)ps + 172);
+	client_t *cl = getclient( clientNum );
+	gentity_t *ent = &g_entities[clientNum];
+	
+	gclient_t *gclient = ent->client;
+	//prob shouldnt include interrupts
+	if(xclients[clientNum].perks[PERK_QUICK_RELOAD] && (prestate == WEAPON_RELOADING || prestate == WEAPON_RELOAD_END || prestate == WEAPON_RELOAD_START || prestate == WEAPON_RECHAMBERING) && (!*weaponDelay || !*weaponTime)) {
+		*(int*)((int)gclient + 980) = 17;
 	}
 	
-	if( *(byte*) (xm->ps + 12) & 8) {
-		*(byte*)(xm + 26) = 0;
-		return 0;
-	}
-	
-	
-	*(int *)(zpml + 48) = 0;
-	*(int *)(zpml + 44) = 0;
-	*(byte*)(xm->ps + 12) |= 8;
-	*(int*)(xm->ps + 84) = ENTITYNUM_NONE;
-	*(float*)(xm->ps + 40) = 0.0f;
-	*(float*)(xm->ps + 104) = 80;
-	*/
 	/*
-	printf("xm = %x\n", (int)xm);
-	printf("xm->ps = %x\n", (int)xm->ps);
-	printf("xm->ps + 104 = %f\n", *(float*)(xm->ps+104));
-	*/
-	return result;
-}
-
-void CODPatch_CheckJump(void) {
-	int start = GAME("BG_EvaluateTrajectory");
-	int end = GAME("PM_FootstepEvent");
-	byte search[] = {0x55,0x89,0xE5,0x83,0xEC,0x30,0x56,0x53,0xA1};
-	int result = search_memory(start,end,search,sizeof(search));
+	client_t *cl = getclient( clientNum );
 	
-	if(result!=-1) {
-		cracking_hook_function(result,(int)X_CheckJump);
-		checkjump_result=result;
-		printf("Patched CheckJump at %x\n", result);
+	xentity_t *xent = &xentities[clientNum];
+	gentity_t *ent = g_entities(clientNum);
+	gclient_t *gclient = ent->client;
+	
+	//if(*(int*)((int)ps + 8680) & 0x20 && cl->lastUsercmd.wbuttons & 0x8) {
+	if(xent->sprinting) {
+		*(int*)((int)gclient + 180) = WEAPON_RECHAMBERING;
+		*(int*)((int)gclient + 980) = WEAP_ALTSWITCHFROM;
+		
+		//*(int*)((int)gclient + 828) = //prone
+		//*(int*)((int)gclient + 832) = //crouch;
+		//*(int*)((int)gclient + 836) = 100;//standing;
 		return;
 	}
-	printf("Failed to patch CheckJump (-1)\n");
+	
+	//*(int*)((int)gclient + 836) = 60;//standing;
+	*/
+	
+}
+
+static void PM_SetReloadingState() {
+	pmove_t *xm = *(pmove_t**)(int)pm;
+	
+	int clientNum = *(int*)((int)xm->ps + 172);
+	xclient_t *xcl = &xclients[clientNum];
+	
+	int *weaponstate = (int*)((int)xm->ps + 180);
+	int *weapons = *(int**)((int)xm->ps + 796);
+	int weapon = *(int*)((int)xm->ps + 176);
+	int *weaponTime = (int*)((int)xm->ps + 44);
+	int *weaponDelay = (int*)((int)xm->ps + 48);
+	
+	int weaponinfo = BG_GetInfoForWeapon(weapon);
+	
+	int v2 = *(int*)((int)pml + 132);
+	int event = EV_RELOAD_FROM_EMPTY, v3;
+	if (*(int *)(4 * *(int *)(weaponinfo + 424) + (int)xm->ps + 524) || *(int *)(v2 + 112)) {
+		if ( xm->ps->pm_type <= 5 ) {
+			if (xm->cmd.wbuttons ) {
+				v3 = *(int *)((int)xm->ps + 980) & 0x200;
+				BYTE1(v3) ^= 2u;
+				LOBYTE(v3) = 11;
+				*(int *)((int)xm->ps + 980) = v3;
+			}
+		}
+		if(!xcl->perks[PERK_QUICK_RELOAD])
+		*weaponTime = *(int *)(v2 + 488);
+		else
+		*weaponTime = (int)(*(int *)(v2 + 488) / QUICK_RELOAD_FRACTION);
+		event = EV_RELOAD;
+	} else {
+		if ( xm->ps->pm_type <= 5 ) {
+			if (xm->cmd.wbuttons ) {
+				v3 = *(int *)((int)xm->ps + 980) & 0x200;
+				BYTE1(v3) ^= 2u;
+				LOBYTE(v3) = 12;
+				*(int *)((int)xm->ps + 980) = v3;
+			}
+		}
+		if(!xcl->perks[PERK_QUICK_RELOAD])
+		*weaponTime = *(int *)(v2 + 492);
+		else
+		*weaponTime = (int)(*(int *)(v2 + 492) / QUICK_RELOAD_FRACTION);
+	}
+	PM_AddEvent(event);
+	if ( *weaponstate == 8 )
+		*weaponstate = 6; //WEAPON_RELOADING_INTERRUPT??
+	else
+		*weaponstate = 5; //WEAPON_RELOADING
+	//if(!reloadtime->integer)
+	PM_SetWeaponReloadAddAmmoDelay();
+	if(xcl->perks[PERK_QUICK_RELOAD])
+		*weaponDelay = (int)(*weaponDelay / QUICK_RELOAD_FRACTION);
+}
+
+static void PM_BeginWeaponReload() { //works for kar98 sniper? rest not? mmhm
+	
+	pmove_t *xm = *(pmove_t**)(int)pm;
+	
+	int clientNum = *(int*)((int)xm->ps + 172);
+	xclient_t *xcl = &xclients[clientNum];
+	
+	int *weapons = *(int**)((int)xm->ps + 796);
+	int weapon = *(int*)((int)xm->ps + 176);
+	int *weaponTime = (int*)((int)xm->ps + 44);
+	int *weaponDelay = (int*)((int)xm->ps + 48);
+	
+	int weaponinfo = BG_GetInfoForWeapon(weapon);
+	
+	int *weaponstate = (int*)((int)xm->ps + 180);
+	
+	if(*weaponstate == WEAPON_READY || *weaponstate == WEAPON_FIRING || *weaponstate == WEAPON_RECHAMBERING) {
+		int weapon = *(int*)((int)xm->ps + 176);
+		if(weapon) {
+			if(weapon <= BG_GetNumWeapons()) {
+				
+				int weaponinfo = BG_GetInfoForWeapon(weapon);
+				
+				if(!*(int*)(weaponinfo + 724))
+					BG_AnimScriptEvent(xm->ps, 10, 0, 1);
+				
+				int v2 = *(int*)((int)pml + 132);
+				
+				if(*(int*)(v2 + 748) && *(int*)(v2 + 500)) {
+					if(xm->ps->pm_type <= 5) {
+						if(*(unsigned char*)((int)xm + 10)) {
+							int v4 = *(int*)((int)xm->ps + 980) & 0x200;
+							BYTE1(v4) ^= 2u;
+							LOBYTE(v4) = 13;
+							*(int*)((int)xm->ps + 980) = v4;
+						}
+					}
+					if(xcl->perks[PERK_QUICK_RELOAD])
+						*weaponTime = (int)(*(int*)(v2 + 500) / QUICK_RELOAD_FRACTION);
+					else
+						*weaponTime = *(int*)(v2 + 500);
+					*weaponstate = WEAPON_RELOAD_START; //7
+					
+					PM_AddEvent(EV_RELOAD_START);
+					PM_SetWeaponReloadAddAmmoDelay();//sub_377B8
+					if(xcl->perks[PERK_QUICK_RELOAD])
+						*weaponDelay = (int)(*weaponDelay / QUICK_RELOAD_FRACTION);
+				} else {
+					PM_SetReloadingState();//sub_378BC
+				}
+			}
+		}
+	}
+}
+
+static int PM_CheckJump() {
+	pmove_t *xm = *(pmove_t**)(int)pm;
+	
+	if(xm->cmd.wbuttons & WBUTTON_RELOAD) {
+		
+		return 0;
+		
+	}
+	
+	int (*cj)() = (int(*)())GAME("BG_PlayerTouchesItem") + 0x7DC;
+	return cj();
+}
+
+static int PM_Weapon_CheckForRechamber(int time) {
+	return 0;
+	#define int_ptr_val(x) (*(int*)((int)x))
+	pmove_t *xm = *(pmove_t**)(int)pm;
+	
+	#define ps_off(type, off) (*(type*)((int)xm->ps + off))
+	
+	int *weaponstate = (int*)((int)xm->ps + 180);
+	int *weapons = *(int**)((int)xm->ps + 796);
+	int weapon = *(int*)((int)xm->ps + 176);
+	int *weaponTime = (int*)((int)xm->ps + 44);
+	int *weaponDelay = (int*)((int)xm->ps + 48);
+	
+	int v2 = *(int*)((int)pml + 132);
+	
+	if(!int_ptr_val(v2 + 712))
+		return 0;
+	
+	if(!COM_BitCheck(weapons, weapon))
+		return 0;
+
+	if(*weaponstate == WEAPON_RECHAMBERING) {
+		if(time) {
+			COM_BitClear(weapons, weapon);
+			PM_AddEvent(EV_EJECT_BRASS);
+			if(*weaponTime)
+				return 1;
+		}
+	}
+	
+	if(!*weaponTime || ((*weaponstate - WEAPON_FIRING) > WEAPON_RAISING && *weaponstate != WEAPON_MELEE_WINDUP && *weaponstate != WEAPON_MELEE_RELAX && !*weaponDelay)) {
+		if(*weaponstate == WEAPON_RECHAMBERING) {
+			if(xm->cmd.wbuttons) {
+				int *v9 = (int*)((int)xm->ps + 980);
+				if(*v9 & 0xFFFFFDFF) {
+					if(xm->ps->pm_type <= 5) {
+						int v6 = *v9 & 0x200;
+						BYTE1(v6) ^= 2;
+						*v9 = v6;
+					}
+				}
+			}
+			*weaponstate = WEAPON_READY;
+			return 0;
+		}
+	}
+	
+	if(*weaponstate == WEAPON_READY) {
+		if(xm->ps->pm_type > 5 || !xm->cmd.wbuttons)
+			goto label_27;
+			/*
+			
+        v8 = 0.75 < *(float *)(v2 + 184);
+        v9 = 0;
+        v10 = 0.75 == *(float *)(v2 + 184);
+        if ( (HIBYTE(v7) & 0x45) == 1 )
+        {
+          if ( *(_DWORD *)(v2 + 4) > 5 || !*(_BYTE *)(xm + 10) )
+            goto LABEL_27;
+          v11 = *(_DWORD *)(v2 + 980) & 0x200;
+          BYTE1(v11) ^= 2u;
+          LOBYTE(v11) = 7;
+        }
+        else
+        {
+          if ( *(_DWORD *)(v2 + 4) > 5 || !*(_BYTE *)(xm + 10) )
+            goto LABEL_27;
+          v11 = *(_DWORD *)(v2 + 980) & 0x200;
+          BYTE1(v11) ^= 2u;
+          LOBYTE(v11) = 4;
+        }
+        *(_DWORD *)(v2 + 980) = v11;
+		*/
+			//set cool stuff for keys?
+		//ps_off(int,980) = 
+		label_27:
+		*weaponstate = WEAPON_RECHAMBERING;
+		*weaponTime = int_ptr_val(v2 + 472);
+		
+		int v13 = int_ptr_val(v2 + 476);
+		/*
+		if(v13 && v13 < *weaponTime)
+			*weaponDelay = v13;
+		else
+			*weaponDelay = 1;*/
+		PM_AddEvent(EV_RECHAMBER_WEAPON);
+	}
+	
+	return 0;
+	#undef int_ptr_val
+}
+
+#if 0
+
+static void PM_Weapon_CheckForReload() {
+  pmove_t *xm = *(pmove_t**)(int)pm;
+  
+  int reloadRequested = xm->cmd.wbuttons & 8; //check for reload pressed
+  
+  
+  
+  v8 = *(_BYTE *)(xm + 9) & 8;
+  v0 = 0;
+  if ( *(_DWORD *)(*(_DWORD *)&pml[132] + 748) )
+  {
+    v2 = *(_DWORD *)xm;
+    v1 = *(_DWORD *)(*(_DWORD *)xm + 180);
+    if ( v1 == 7 || v1 == 5 )
+    {
+      if ( *(_BYTE *)(xm + 8) & 1 )
+      {
+        if ( !(*(_BYTE *)(xm + 32) & 1) )
+        {
+          if ( v1 == 7 )
+          {
+            *(_DWORD *)(v2 + 180) = 8;
+          }
+          else
+          {
+            if ( v1 == 5 )
+              *(_DWORD *)(v2 + 180) = 6;
+          }
+        }
+      }
+    }
+  }
+  result = *(_DWORD *)(*(_DWORD *)xm + 180);
+  if ( result < 1 || result > 2 && (result > 11 || result < 5) )
+  {
+    v6 = *(_DWORD *)(dword_7C91C + 4 * *(_DWORD *)(*(_DWORD *)xm + 176));
+    v4 = *(_DWORD *)(v6 + 424);
+    v5 = *(_DWORD *)(v6 + 416);
+    if ( v8 )
+    {
+      if ( sub_3803C() )
+        v0 = 1;
+    }
+    v7 = *(_DWORD *)xm;
+    result = *(_DWORD *)xm + 524;
+    if ( !*(_DWORD *)(result + 4 * v4) )
+    {
+      result = v7 + 268;
+      if ( *(_DWORD *)(v7 + 268 + 4 * v5) )
+      {
+        if ( *(_DWORD *)(v7 + 180) != 3 )
+        {
+          if ( !(*(_BYTE *)(v7 + 12) & 1) || !*(_WORD *)(xm + 24) )
+            v0 = 1;
+        }
+      }
+    }
+    if ( v0 )
+      result = PM_BeginWeaponReload();
+  }
+  return result;
+}
+
+#endif //decided not to do cuz i dont need
+
+/*
+==================
+PM_ClipVelocity
+
+Slide off of the impacting surface
+==================
+*/
+void PM_ClipVelocity( vec3_t in, vec3_t normal, vec3_t out, float overbounce ) {
+	float	backoff;
+	float	change;
+	int		i;
+	
+	backoff = DotProduct (in, normal);
+	
+	if ( backoff < 0 ) {
+		backoff *= overbounce;
+	} else {
+		backoff /= overbounce;
+	}
+
+	for ( i=0 ; i<3 ; i++ ) {
+		change = normal[i]*backoff;
+		out[i] = in[i] - change;
+	}
+}
+
+#ifdef xDEBUG
+void __dump_events() {
+	char **events = (char**)GAME("eventnames");
+	FILE *fp = fopen("/home/rawcod/event.dump", "w");
+	if(!fp)
+		return 0;
+	int i ;
+	for( i = 0; i < EV_MAX_EVENTS; i ++) {
+		fprintf(fp, "\"%s\", //%d\n", events[i], i);
+		fflush(fp);
+	}
+	fclose(fp);
+}
+#endif
+
+void BG_Link() {
+	#ifdef xDEBUG
+	Cmd_AddCommand("debug_dumpevents", __dump_events);
+	#endif
+
+	BG_GetNumWeapons = (int(*)())GAME("BG_GetNumWeapons");
+	BG_GetInfoForWeapon = (int(*)(int))GAME("BG_GetInfoForWeapon");
+	BG_AnimScriptEvent = (int(*)(playerState_t*,int,int,int))GAME("BG_AnimScriptEvent");
+	PM_AddEvent = (void(*)(int))GAME("PM_AddEvent");
+	
+	//sub_37488
+	//GAME("PM_InteruptWeaponWithProneMove");
+	
+	PM_SetReloadingState2 = (void(*)())GAME("PM_InteruptWeaponWithProneMove") + 0x434;
+	PM_SetWeaponReloadAddAmmoDelay = (void(*)())GAME("PM_InteruptWeaponWithProneMove") + 0x330;
+	__jmp(GAME("PM_InteruptWeaponWithProneMove") + 0x434, (int)PM_SetReloadingState);
+	__jmp(GAME("PM_InteruptWeaponWithProneMove") + 0x530, (int)PM_BeginWeaponReload);
+	//__jmp(GAME("PM_InteruptWeaponWithProneMove") + 0x148, (int)PM_Weapon_CheckForRechamber);
+	
+	__call(GAME("PmoveSingle")+0x455, (int)PM_Weapon);
+	__call(GAME("PmoveSingle")+0x535, (int)PM_Weapon);
+	
+	__call(GAME("BG_PlayerTouchesItem") + 0xEA5, (int)PM_CheckJump);
 }

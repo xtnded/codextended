@@ -17,40 +17,166 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
-#include "codextended.h"
 #include "shared.h"
-#include "entity.h"
 #include "server.h"
+#include "bg_public.h"
 #include "js.h"
 #include <math.h>
 
-/*
-.rodata:080E1AE0 aUndefined      db 'undefined',0        ; DATA XREF: .data:off_80EE920o
-.rodata:080E1AEA ; char aString_1[]
-.rodata:080E1AEA aString_1       db 'string',0           ; DATA XREF: sub_80A92AA:loc_80A939Eo
-.rodata:080E1AEA                                         ; .data:080EE924o
-.rodata:080E1AF1 aLocalizedStrin db 'localized string',0 ; DATA XREF: .data:080EE928o
-.rodata:080E1B02 aVector         db 'vector',0           ; DATA XREF: .data:080EE92Co
-.rodata:080E1B09 ; char aFloat_1[]
-.rodata:080E1B09 aFloat_1        db 'float',0            ; DATA XREF: sub_80A92AA:loc_80A935Eo
-.rodata:080E1B09                                         ; .data:080EE930o
-.rodata:080E1B0F ; char aInt[]
-.rodata:080E1B0F aInt            db 'int',0              ; DATA XREF: sub_80A92AA:loc_80A937Eo
-.rodata:080E1B0F                                         ; .data:080EE934o
-.rodata:080E1B13 aCodepos        db 'codepos',0          ; DATA XREF: .data:080EE938o
-.rodata:080E1B1B aObject         db 'object',0           ; DATA XREF: .data:080EE93Co
-.rodata:080E1B22 aKeyValue       db 'key/value',0        ; DATA XREF: .data:080EE940o
-.rodata:080E1B2C aFunction       db 'function',0         ; DATA XREF: .data:080EE944o
-.rodata:080E1B35 aStack          db 'stack',0            ; DATA XREF: .data:080EE948o
-.rodata:080E1B3B aAnimation      db 'animation',0        ; DATA XREF: .data:080EE94Co
-.rodata:080E1B45 aThread         db 'thread',0           ; DATA XREF: .data:080EE950o
-.rodata:080E1B4C aEntity         db 'entity',0           ; DATA XREF: .data:080EE954o
-.rodata:080E1B53 aStruct         db 'struct',0           ; DATA XREF: .data:080EE958o
-.rodata:080E1B5A aArray          db 'array',0            ; DATA XREF: .data:080EE95Co
-.rodata:080E1B60 aDeadThread     db 'dead thread',0      ; DATA XREF: .data:080EE960o
-.rodata:080E1B6C aDeadEntity     db 'dead entity',0      ; DATA XREF: .data:080EE964o
-.rodata:080E1B78 aDeadObject     db 'dead object',0      ; DATA XREF: .data:080EE968o
-*/
+typedef struct {
+	int map_main;
+	int idk;
+	int gametype_main;
+	int startgametype;
+	int playerconnect;
+	int playerdisconnect;
+	int playerdamage;
+	int playerkilled;
+} game_script_data;
+
+extern game_script_data *g_scr_data;
+
+typedef struct {
+	short active;
+	short air_strike;
+	short allies;
+	short animdone;
+	short axis;
+	short bodyque;
+	short combat;
+	short connected;
+	short connecting;
+	short count;
+	short crouch;
+	short crowbar;
+	short current;
+	short damage;
+	short death;
+	short disconnected;
+	short dlight;
+	short done;
+	short empty;
+	short enemy;
+	short enemyhidden;
+	short enemyvisible;
+	short entity;
+	short failed;
+	short flamebarrel;
+	short fraction;
+	short func_door;
+	short func_door_rotating;
+	short func_rotating;
+	short func_tramcar;
+	short goal;
+	short grenade;
+	short info_notnull;
+	short invisible;
+	short key1;
+	short key2;
+	short killanimscript;
+	short left;
+	short misc_flak;
+	short misc_mg42;
+	short misc_tagemitter;
+	short mortar;
+	short movedone;
+	short noclass;
+	short noenemy;
+	short noncombat;
+	short normal;
+	short pistol;
+	short plane_waypoint;
+	short player;
+	short position;
+	short primary;
+	short primaryb;
+	short prone;
+	short right;
+	short rocket;
+	short rotatedone;
+	short script_brushmodel;
+	short script_model;
+	short script_origin;
+	short scriptcamera;
+	short spawned;
+	short spectator;
+	short stand;
+	short surfacetype;
+	short tag_engine1;
+	short tag_engine2;
+	short target_location;
+	short target_script_trigger;
+	short tempEntity;
+	short muzzleEntity;
+	short smokegrenade;
+	short touch;
+	short trigger;
+	short trigger_use;
+	short trigger_damage;
+	short trigger_lookat;
+	short truck_cam;
+	short xmodel_airborne;
+	short xmodel_wehrmacht;
+	short worldspawn;
+	short begin;
+	short dynamite;
+	short explosive_indicator;
+	short flamechunk;
+	short follow;
+	short free;
+	short freed;
+	short func_leaky;
+	short info_player_checkpoint;
+	short initialize;
+	short intermission;
+	short item_stamina_brandy;
+	short menuresponse;
+	short misc_gunner_gun;
+	short misc_gunner_ring;
+	short mp_info_player_deathmatch;
+	short mp_info_player_intermission;
+	short mp_team_alliedplayer_respawn;
+	short mp_team_alliedplayer_start;
+	short mp_team_axisplayer_respawn;
+	short mp_team_axisplayer_start;
+	short nail;
+	short _not;
+	short playing;
+	short prox_mine;
+	short reset;
+	short script_mover;
+	short script_multiplayer;
+	short spear;
+	short tag_hand;
+	short tag_rider;
+	short tag_ring;
+	short team_CTF_blueflag;
+	short team_CTF_redflag;
+	short team_WOLF_checkpoint;
+	short team_WOLF_objective;
+	short trigger_aidoor;
+	short trigger_flagonly;
+	short trigger_multiple;
+	short trigger_objective_info;
+	short waiting_for_players;
+	short WP;
+	short zombiespit;
+	short none;
+	short dead;
+	short auto_change;
+	short manual_change;
+} scr_const_t;
+
+typedef struct {
+	short texturename;
+	short contents;
+	
+	//assumingly from perk > MAX_PERKS
+	short perks[MAX_PERKS];
+} xscr_const_t;
+
+extern xscr_const_t xscr_const;
+extern scr_const_t *scr_const;
 
 /*
 	A pointer type their variable type is always 7 [object]
@@ -86,46 +212,46 @@ typedef struct {
 	int developer;
 } SCRIPTFUNCTION;
 
-typedef SCRIPTFUNCTIONCALL (*Script_GetFunction_t)(const char**, int*);
-typedef SCRIPTFUNCTIONCALL (*Script_GetMethod_t)(const char**, int*);
+typedef SCRIPTFUNCTIONCALL (*Scr_GetFunction_t)(const char**, int*);
+typedef SCRIPTFUNCTIONCALL (*Scr_GetMethod_t)(const char**, int*);
 
-extern Script_GetFunction_t Script_GetFunction;
-extern Script_GetMethod_t Script_GetMethod;
+extern Scr_GetFunction_t Scr_GetFunction;
+extern Scr_GetMethod_t Scr_GetMethod;
 
-SCRIPTFUNCTIONCALL Script_GetCustomFunction(const char**, int*);
-SCRIPTFUNCTIONCALL Script_GetCustomMethod(const char**, int*);
+SCRIPTFUNCTIONCALL Scr_GetCustomFunction(const char**, int*);
+SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char**, int*);
 
-typedef int (*Script_GetNumParam_t)();
-typedef int (*Script_GetPointerType_t)(int);
-typedef int (*Script_GetType_t)(int);
+typedef int (*Scr_GetNumParam_t)();
+typedef int (*Scr_GetPointerType_t)(int);
+typedef int (*Scr_GetType_t)(int);
 
-typedef void (*Script_MakeArray_t)();
-typedef void (*Script_AddArray_t)();
-typedef void (*Script_Error_t)(const char*);
+typedef void (*Scr_MakeArray_t)();
+typedef void (*Scr_AddArray_t)();
+typedef void (*Scr_AddArrayStringIndexed_t)(short);
+typedef void (*Scr_Error_t)(const char*);
 
-typedef int (*Script_AddFloat_t)(float);
-typedef int (*Script_AddInt_t)(int);
-typedef int (*Script_AddBool_t)(bool);
-typedef int (*Script_AddString_t)(char*);
-typedef int (*Script_AddIString_t)(char*);
-typedef int (*Script_AddVector_t)(vec3_t);
-typedef int (*Script_AddUndefined_t)();
-typedef void (*Script_AddEntity_t)(int*);
+typedef int (*Scr_AddFloat_t)(float);
+typedef int (*Scr_AddInt_t)(int);
+typedef int (*Scr_AddBool_t)(bool);
+typedef int (*Scr_AddString_t)(char*);
+typedef int (*Scr_AddIString_t)(char*);
+typedef int (*Scr_AddVector_t)(vec3_t);
+typedef int (*Scr_AddUndefined_t)();
+typedef void (*Scr_AddEntity_t)(int*);
 
-typedef bool (*Script_GetBool_t)(int);
-typedef int (*Script_GetInt_t)(int);
-typedef void (*Script_GetAnim_t)(int,int,int);
-typedef int (*Script_GetAnimsIndex_t)(int);
-typedef float (*Script_GetFloat_t)(int);
-typedef int (*Script_GetVector_t)(int, vec3_t);
-typedef char* (*Script_GetString_t)(int);
-typedef int (*Script_GetFunc_t)(int);
+typedef bool (*Scr_GetBool_t)(int);
+typedef int (*Scr_GetInt_t)(int);
+typedef void (*Scr_GetAnim_t)(int,int,int);
+typedef int (*Scr_GetAnimsIndex_t)(int);
+typedef float (*Scr_GetFloat_t)(int);
+typedef int (*Scr_GetVector_t)(int, vec3_t);
+typedef char* (*Scr_GetString_t)(int);
+typedef int (*Scr_GetFunc_t)(int);
+typedef short (*Scr_GetOffset_t)(unsigned, const char*);
 
-typedef int (*Script_GetConstString_t)(int);
-typedef void (*Script_SetString_t)(int*, int);
-typedef int (*oSpawn_t)(void);
-typedef void (*oInitGentity_t)(gentity_t*);
-typedef void (*oFreeEntity_t)(gentity_t*);
+typedef int (*Scr_GetConstString_t)(int);
+typedef void (*Scr_SetString_t)(int*, int);
+typedef short (*Scr_AllocString_t)(const char*, int);
 
 typedef int (*oBG_AnimationIndexForString_t)(const char*);
 extern oBG_AnimationIndexForString_t oBG_AnimationIndexForString;
@@ -133,63 +259,57 @@ extern oBG_AnimationIndexForString_t oBG_AnimationIndexForString;
 typedef qboolean (*CallSpawnEntity_t)(int);
 extern CallSpawnEntity_t CallSpawnEntity;
 
-extern Script_SetString_t Script_SetString;
-extern Script_GetConstString_t Script_GetConstString;
-extern oSpawn_t oSpawn;
-extern oInitGentity_t oInitGentity;
-extern oFreeEntity_t oFreeEntity;
+extern Scr_AllocString_t Scr_AllocString;
+extern Scr_SetString_t Scr_SetString;
+extern Scr_GetConstString_t Scr_GetConstString;
 
-extern Script_GetNumParam_t Script_GetNumParam;
-extern Script_GetPointerType_t Script_GetPointerType;
-extern Script_GetType_t Script_GetType;
+extern Scr_GetNumParam_t Scr_GetNumParam;
+extern Scr_GetPointerType_t Scr_GetPointerType;
+extern Scr_GetType_t Scr_GetType;
 
-extern Script_MakeArray_t Script_MakeArray;
-extern Script_AddArray_t Script_AddArray;
-extern Script_Error_t Script_Error;
+extern Scr_MakeArray_t Scr_MakeArray;
+extern Scr_AddArray_t Scr_AddArray;
+extern Scr_AddArrayStringIndexed_t Scr_AddArrayStringIndexed;
+extern Scr_Error_t Scr_Error;
 
-extern Script_AddInt_t Script_AddInt;
-extern Script_AddFloat_t Script_AddFloat;
-extern Script_AddBool_t Script_AddBool;
-extern Script_AddString_t Script_AddString;
-extern Script_AddIString_t Script_AddIString;
-extern Script_AddVector_t Script_AddVector;
-extern Script_AddUndefined_t Script_AddUndefined;
-extern Script_AddEntity_t Script_AddEntity;
+extern Scr_AddInt_t Scr_AddInt;
+extern Scr_AddFloat_t Scr_AddFloat;
+extern Scr_AddBool_t Scr_AddBool;
+extern Scr_AddString_t Scr_AddString;
+extern Scr_AddIString_t Scr_AddIString;
+extern Scr_AddVector_t Scr_AddVector;
+extern Scr_AddUndefined_t Scr_AddUndefined;
+extern Scr_AddEntity_t Scr_AddEntity;
 
-extern Script_GetBool_t Script_GetBool;
-extern Script_GetInt_t Script_GetInt;
-extern Script_GetAnim_t Script_GetAnim;
-extern Script_GetAnimsIndex_t Script_GetAnimsIndex;
-extern Script_GetFloat_t Script_GetFloat;
-extern Script_GetVector_t Script_GetVector;
-extern Script_GetString_t Script_GetString;
-extern Script_GetFunc_t Script_GetFunc;
+extern Scr_GetBool_t Scr_GetBool;
+extern Scr_GetInt_t Scr_GetInt;
+extern Scr_GetAnim_t Scr_GetAnim;
+extern Scr_GetAnimsIndex_t Scr_GetAnimsIndex;
+extern Scr_GetFloat_t Scr_GetFloat;
+extern Scr_GetVector_t Scr_GetVector;
+extern Scr_GetString_t Scr_GetString;
+extern Scr_GetFunc_t Scr_GetFunc;
+extern Scr_GetOffset_t Scr_GetOffset;
 
-typedef int (*Script_LoadScript_t)(const char*);
-typedef int (*Script_GetFunctionHandle_t)(const char*, const char*);
-typedef int (*Script_ExecThread_t)(int, int);
-typedef int (*Script_ExecEntThread_t)(int, int, int, int);
-typedef int (*Script_FreeThread_t)(int);
+typedef int (*Scr_LoadScr_t)(const char*);
+typedef int (*Scr_GetFunctionHandle_t)(const char*, const char*);
+typedef int (*Scr_ExecThread_t)(int, int);
+typedef int (*Scr_ExecEntThread_t)(int, int, int, int);
+typedef int (*Scr_FreeThread_t)(int);
 
-typedef char* (*ScriptL_ConvertToString_t)(unsigned int);
-typedef unsigned short (*_SL_GetString_t)(const char*, int);
+typedef char* (*SL_ConvertToString_t)(unsigned int);
+typedef unsigned short (*SL_GetString_t)(const char*, int);
 
 extern int callbackTest;
 extern int callbackPlayerCommand;
-extern int callbackEntityDamage;
-extern int callbackEntityKilled;
-extern int callbackEntityUse;
-extern int callbackEntityTouch;
-extern int callbackEntityThink;
 
-extern Script_LoadScript_t Script_LoadScript;
-extern Script_GetFunctionHandle_t Script_GetFunctionHandle;
-extern Script_ExecThread_t Script_ExecThread;
-extern Script_ExecEntThread_t Script_ExecEntThread;
-extern Script_FreeThread_t Script_FreeThread;
-extern ScriptL_ConvertToString_t ScriptL_ConvertToString;
-extern _SL_GetString_t _SL_GetString;
-
+extern Scr_LoadScr_t Scr_LoadScript;
+extern Scr_GetFunctionHandle_t Scr_GetFunctionHandle;
+extern Scr_ExecThread_t Scr_ExecThread;
+extern Scr_ExecEntThread_t Scr_ExecEntThread;
+extern Scr_FreeThread_t Scr_FreeThread;
+extern SL_ConvertToString_t SL_ConvertToString;
+extern SL_GetString_t SL_GetString;
 
 void scriptInitializing();
 char* Scr_GetVariableType(int type);
@@ -289,16 +409,16 @@ PLAYER METHODS
 */
 
 void PlayerCmd_useButtonPressedX(int);
-void PlayerCmd_setVelocity(int);
-void PlayerCmd_getVelocity(int);
+void PlayerCmd_SetVelocity(int);
+void PlayerCmd_GetVelocity(int);
 void PlayerCmd_getPlayerAngles(int);
 void PlayerCmd_getip(int);
-void PlayerCmd_getInt(int);
-void PlayerCmd_setInt(int);
-void PlayerCmd_getbyte(int);
-void PlayerCmd_setbyte(int);
-void PlayerCmd_getfloat(int);
-void PlayerCmd_setfloat(int);
+void PlayerCmd_GetInt(int);
+void PlayerCmd_SetInt(int);
+void PlayerCmd_GetByte(int);
+void PlayerCmd_SetByte(int);
+void PlayerCmd_GetFloat(int);
+void PlayerCmd_SetFloat(int);
 void PlayerCmd_backButtonPressed(int);
 void PlayerCmd_forwardButtonPressed(int);
 void PlayerCmd_leftButtonPressed(int);
@@ -310,13 +430,18 @@ void PlayerCmd_reloadButtonPressed(int);
 void PlayerCmd_leanLeftButtonPressed(int);
 void PlayerCmd_leanRightButtonPressed(int);
 void PlayerCmd_GetUserInfoKey(int);
+void PlayerCmd_GetUserInfo(int);
 void PlayerCmd_DropClient(int);
 void PlayerCmd_kickbot(int);
 void PlayerCmd_renamebot(int);
 void PlayerCmd_isbot(int);
 void PlayerCmd_SendServerCommand(int);
+void PlayerCmd_SendGamestate(int);
 void PlayerCmd_ispure(int a1);
 void PlayerCmd_GetGuid(int a1);
+void PlayerCmd_SetPerk(int);
+void PlayerCmd_UnsetPerk(int);
+void PlayerCmd_HasPerk(int);
 
 /*
 =============
@@ -324,11 +449,14 @@ ENTITY METHODS
 =============
 */
 
-void EntCmd_setBounds(int);
-void EntCmd_setBoundCorners(int);
-void EntCmd_setTakeDamage(int);
-void EntCmd_callback(int);
-void EntCmd_nextthink(int);
+void ScriptEnt_SetBounds(int);
+void ScriptEnt_SetBoundCorners(int);
+void ScriptEnt_SetTakeDamage(int);
+void ScriptEnt_SetAbsMax(int);
+void ScriptEnt_SetMaxs(int);
+void ScriptEnt_SetMins(int);
+void ScriptEnt_SetAbsMin(int);
+void ScriptEnt_SetLight(int);
 
 /*
 =============

@@ -15,11 +15,3 @@
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "script.h"
-
-void Scr_printf(int) {
-	int argc = Script_GetNumParam();
-	int i;
-	for(i = 0; i < argc; i++) {
-		
-	}
-}

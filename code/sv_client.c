@@ -17,10 +17,7 @@
 #include "server.h"
 #include <sys/time.h>
 
-cvar_t *x_connect_message;
-cvar_t *x_connect_message_time;
-
-xtnded_client xtnded_clients[64];
+x_client x_clients[64];
 x_challenge x_challenges[MAX_CHALLENGES];
 
 long long current_timestamp() {
@@ -39,15 +36,68 @@ typedef struct {
 
 void SV_VerifyPaks_f(client_t*);
 void SV_BeginDownload(client_t*);
-void SV_GameCommand_f(client_t *cl) {
-
-}
 void SV_CoDExtended_f(client_t*);
+
+#ifdef xDEBUG
+void sv_sprint( client_t *cl ) {
+	int num = get_client_number( cl );
+	xentities[ num ].sprinting ^= 1;
+	
+	
+}
+#endif
+
+void ucmd_ascii( client_t *cl ) {
+	
+	#if 0
+	#define MAX_CURSOR 50
+	int i,j,cursor;
+
+	cursor = 0;
+	int prev = 0;
+	
+	char send[4096] = {0};
+	char str[MAX_CURSOR] = {0};
+	for(i = 0; i < 40; i++) {
+		for(j = 0; j < MAX_CURSOR; j++) {
+			if( (rand() % 2) == 1 && prev != '^')
+			prev = str[j] = '^';
+			else
+			str[j] = '0' + ( rand() % ('Z' - '0') );
+			cursor = (cursor + 1) % MAX_CURSOR;
+		}
+		str[j] = '\0';
+
+		strcat(send, str);
+		strcat(send, "\n");
+	}
+	/*
+	for(char *i = msg; *i != '\0'; *i++)
+		if(*i == '\'')
+			*i = '"';
+	*/
+	NET_OutOfBandPrint(NS_SERVER, cl->remoteAddress, "print\n%s", send);
+	#endif
+	#ifdef BUILD_ECMASCRIPT
+	duk_push_global_object(ctx);
+	if(duk_has_prop_string(ctx, -1, "ucmd_ascii")) {
+		duk_get_prop_string(ctx, -1, "ucmd_ascii");
+		duk_push_int(ctx, get_client_number(cl));
+		duk_call(ctx, 1);
+		#if 0
+		int duk_ret_val = duk_to_int(ctx, -1);
+		if(duk_ret_val)
+			return;
+		#endif
+	}
+	duk_pop(ctx);
+	#endif
+}
 
 static ucmd_t ucmds[] = {
 	{"userinfo", (void*)0x8087B28},
 	{"disconnect", (void*)0x8087AF8},
-	{"cp", SV_VerifyPaks_f},
+	{"cp", (void*)0x808674C},//SV_VerifyPaks_f},
 	{"vdr", (void*)0x8087B14},
 	{"download", SV_BeginDownload},
 	{"nextdl", (void*)0x8086168},
@@ -55,9 +105,11 @@ static ucmd_t ucmds[] = {
 	{"donedl", (void*)0x80879FC},
 	{"retransdl", (void*)0x8087A2C},
 	
-	
-	{"gc", SV_CoDExtended_f},
 	{"codextended", SV_CoDExtended_f},
+	#ifdef xDEBUG
+	{"asc", ucmd_ascii},
+	{"sprint", sv_sprint},
+	#endif
 	{NULL, NULL}
 };
 
@@ -138,8 +190,6 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 	char    *r;
 	int guid;
 	char ret[1024];
-
-	int* svs_time = (int*)0x83B67A4;
 	
 	if ( !NET_CompareBaseAdr( from, authorizeAddress ) ) {
 		Com_Printf( "SV_AuthorizeIpPacket: not from authorize server\n" );
@@ -160,7 +210,7 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 	}
 
 	// send a packet back to the original client
-	challenges[i].pingTime = *svs_time;
+	challenges[i].pingTime = svs_time;
 	s = Cmd_Argv( 2 );
 	r = Cmd_Argv( 3 );          // reason
 	guid = atoi(Cmd_Argv(4));
@@ -224,9 +274,38 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 
 static time_t connect_t = 0;
 
+void repeat_annoy(client_t *cl) {
+	
+	void (*MSG_Init)( msg_t *buf, byte *data, int length ) = (void (*)(msg_t*,byte*,int))0x807EEB8;
+	void (*MSG_WriteLong)(msg_t*,int) = (void(*)(msg_t*,int))0x807F0EC;
+	void (*MSG_WriteString)(msg_t*,const char*) = (void(*)(msg_t*,const char*))0x807A620;
+	void (*MSG_WriteByte)(msg_t*,int) = (void(*)(msg_t*,int))0x807F090;
+	void (*SV_SendMessageToClient)(msg_t*,client_t*) = (void(*)(msg_t*,client_t*))0x808F680;
+	
+	byte msg_buf[16384];
+	msg_t msg;
+	
+	MSG_Init( &msg, msg_buf, sizeof( msg_buf ) );
+	
+	MSG_WriteLong( &msg, cl->lastClientCommand );
+	
+	MSG_WriteByte(&msg,svc_serverCommand);
+	//MSG_WriteLong(&msg, *(int*)((int)cl + 67088) + 1);
+	MSG_WriteLong(&msg, 1);
+	MSG_WriteString(&msg,"v \"cl_allowdownload\" \"1\"");
+	MSG_WriteByte(&msg,svc_EOF); //end?
+	//check for overflow i doubt it tho
+	
+	SV_SendMessageToClient(&msg, cl);
+}
+
 void SV_DirectConnect( netadr_t* from ) {
 	void (*call)(netadr_t);
+	#if PATCH == 1
 	*(int*)&call = 0x8085498;
+	#else if PATCH == 5
+	*(int*)&call = 0x8089E7E;
+	#endif
 	
 	char userinfo[MAX_INFO_STRING];
 	
@@ -259,15 +338,15 @@ void SV_DirectConnect( netadr_t* from ) {
 	if(diff < 10)
 		return;
 	connect_t = time(NULL);*/
-	
-	int svs_time = *(int*)0x83B67A4;
-	x_challenge *xc;
 	int i;
+	#ifdef xPOWERED
+	
+	x_challenge *xc;
 	
 	xc = &x_challenges[0];
 	for ( i = 0 ; i < MAX_CHALLENGES ; i++, xc++ ) {
 		if ( NET_CompareAdr( *from, xc->adr ) ) {
-				if(svs_time - xc->time < x_connect_message_time->integer)
+				if(svs_time - xc->time < SHOWMSG_MSEC)
 					return;
 			break;
 		}
@@ -280,7 +359,22 @@ void SV_DirectConnect( netadr_t* from ) {
 	}
 	#endif
 	
+	#endif
+	
 	call(*from);
+	
+	client_t *cl = NULL;
+	for(i = 0; i < sv_maxclients->integer; i++) {
+		cl = getclient(i);
+		if(cl == NULL)
+			continue;
+		if(NET_CompareAdr(*from,cl->remoteAddress)) {
+			//printf("found client: %s\n", cl->name);
+			memset(&x_clients[i], 0, sizeof(x_client));
+			break;
+		}
+	}
+	
 	
 	/*char userinfo[MAX_INFO_STRING];
 	int i;
@@ -496,7 +590,7 @@ gotnewcl:
 	int (*Scr_AllocArray)();
 	*(int*)&Scr_AllocArray = 0x80A2610;
 	
-	*(int *)(newcl + 370928) = Scr_AllocArray();//Script_MakeArray();
+	*(int *)(newcl + 370928) = Scr_AllocArray();//Scr_MakeArray();
 	
 	// save the challenge
 	newcl->challenge = challenge;
@@ -556,14 +650,17 @@ gotnewcl:
 
 void SV_GetChallenge( netadr_t* from ) {
 	void (*chall)(netadr_t);
+	#if PATCH == 1
 	*(int*)&chall = 0x8084D90;
+	#else if PATCH == 5
+	*(int*)&chall = 0x80889D0;
+	#endif
 	
+	#ifdef xPOWERED
 	int i;
 	int oldest;
 	int oldestTime;
 	x_challenge* xc;
-	
-	int svs_time = *(int*)0x83B67A4;
 	
 	if ( NET_CompareBaseAdr( *from, masterAddress ) )
 		goto whatever_floats_your_boat;
@@ -592,12 +689,54 @@ void SV_GetChallenge( netadr_t* from ) {
 		xc->time = svs_time;
 	}
 	
-	if(svs_time - xc->time < x_connect_message_time->integer) {
-		NET_OutOfBandPrint( NS_SERVER, *from, "print\n%s\n", x_connect_message->string);
+	char msg[38];
+	
+	msg[0] = 'T';
+	msg[1] = 'h';
+	msg[2] = 'i';
+	msg[3] = 's';
+	msg[4] = ' ';
+	msg[5] = 's';
+	msg[6] = 'e';
+	msg[7] = 'r';
+	msg[8] = 'v';
+	msg[9] = 'e';
+	msg[10] = 'r';
+	msg[11] = ' ';
+	msg[12] = 'i';
+	msg[13] = 's';
+	msg[14] = ' ';
+	msg[15] = 'p';
+	msg[16] = 'o';
+	msg[17] = 'w';
+	msg[18] = 'e';
+	msg[19] = 'r';
+	msg[20] = 'e';
+	msg[21] = 'd';
+	msg[22] = ' ';
+	msg[23] = 'b';
+	msg[24] = 'y';
+	msg[25] = ' ';
+	msg[26] = 'C';
+	msg[27] = 'o';
+	msg[28] = 'D';
+	msg[29] = 'E';
+	msg[30] = 'x';
+	msg[31] = 't';
+	msg[32] = 'e';
+	msg[33] = 'n';
+	msg[34] = 'd';
+	msg[35] = 'e';
+	msg[36] = 'd';
+	msg[37] = 0;
+	
+	if(svs_time - xc->time < SHOWMSG_MSEC) {
+		NET_OutOfBandPrint( NS_SERVER, *from, "print\n%s\n", x_print_connect_message[0] != '\0' ? x_print_connect_message : msg);
 		return;
 	}
 	
 	whatever_floats_your_boat:
+	#endif
 	
 	chall(*from);
 }
@@ -658,15 +797,18 @@ void SV_UserinfoChanged( client_t* cl ) {
 		newname[j++] = request_name[i];
 	}
 	
-	Q_strncpyz(cl->name, newname, sizeof(cl->name));
+	if(!x_clients[ get_client_number( cl ) ].namemuted) {
 	
-	/*g_client = (int*)(g_clients + 8900 * get_client_number(cl));
-	char* netname = (char*)(g_client + 2157);
-	Q_strncpyz((char*)(g_client + 2157), newname, sizeof(cl->name));*/
-	
-	//game module won't fix the name in manual_change
-	
-	Info_SetValueForKey(cl->userinfo, "name", newname);
+		Q_strncpyz(cl->name, newname, sizeof(cl->name));
+		
+		/*g_client = (int*)(g_clients + 8900 * get_client_number(cl));
+		char* netname = (char*)(g_client + 2157);
+		Q_strncpyz((char*)(g_client + 2157), newname, sizeof(cl->name));*/
+		
+		//game module won't fix the name in manual_change
+		
+		Info_SetValueForKey(cl->userinfo, "name", newname);
+	}
 	
 	val = Info_ValueForKey( cl->userinfo, "rate" );
 	if ( strlen( val ) ) {
@@ -698,6 +840,8 @@ void SV_UserinfoChanged( client_t* cl ) {
 }
 
 void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *msg) {
+	int result ;
+			
 	void (*G_Say)( gentity_t *ent, gentity_t *target, int mode, const char *chatText );
 	*(int*)&G_Say = GAME("G_Say");
 
@@ -715,12 +859,17 @@ void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *msg) {
 	}
 	
 	if(callbackPlayerCommand) {
-		Script_AddString(line);
-		int result = Script_ExecEntThread(*ent, 0, callbackPlayerCommand, 1);
-		Script_FreeThread(result);
+		Scr_AddString(line);
+		result = Scr_ExecEntThread(ent->s.number, 0, callbackPlayerCommand, 1);
+		Scr_FreeThread(result);
 	}
 	
 	if(!Scr_Continue())
+		return;
+		
+	int tmp = *(int*)( (int)ent->client + 8400);
+	
+	if(tmp && !x_deadchat->integer)
 		return;
 	
 	G_Say(ent, NULL, mode, line);
@@ -730,7 +879,7 @@ int last_client_number = 0;
 
 extern int callbackPlayerCommand;
 
-qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
+int QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 	int seq, clientNum;
 	const char *s;
 	char *cmd;
@@ -758,13 +907,11 @@ qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 	if(!strncmp("team", s, 4) || !strncmp("score", s, 5) || !strncmp("mr", s, 2))
 		floodprotect = qfalse;
 
-	int *svs_time = (int*)0x83B67A4;
-
-	if(cl->state >= CS_ACTIVE && *svs_time < *(int*)(&cl->state + 68360) && floodprotect)
+	if(cl->state >= CS_ACTIVE && svs_time < *(int*)(&cl->state + 68360) && floodprotect)
 		clientOk = qfalse;
 
 	if(floodprotect)
-		*(int*)(&cl->state + 68360) = *svs_time + 800;
+		*(int*)((int)&cl->state + 68360) = svs_time + 800;
 
 	ucmd_t *u;
 	qboolean bProcessed = qfalse;
@@ -785,7 +932,17 @@ qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 		if(!u->name && *(int*)0x8355260 == 2) {
 			
 			//long long timestamp = current_timestamp();
-	
+			
+			#if 0
+			int result ;
+			
+			if(callbackPlayerCommand) {
+				Scr_AddInt(clientNum);
+				result = Scr_ExecEntThread(clientNum, 0, callbackPlayerCommand, 1);
+				Scr_FreeThread(result);
+			}
+			#endif
+			
 			#define JS_PLAYERCOMMAND "player_command"
 			
 			#ifdef BUILD_ECMASCRIPT
@@ -802,19 +959,27 @@ qboolean QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 				duk_pop(ctx);
 			}
 			#endif
-		
-				
-			VM_Call(*(int*)0x80E30C4, 6, get_client_number( cl ));
+			
+			if(!Q_stricmp(cmd, "follownext") || !Q_stricmp(cmd, "followprev") || !Q_stricmp(cmd, "gc"))
+				goto skip_vm_call;
+			
+			if(!Q_stricmp(cmd, "say_team") || !Q_stricmp(cmd, "say_team")) {
+				if(x_clients[clientNum].muted)
+					goto skip_vm_call;
+			}
+			
+			VM_Call(*(int*)0x80E30C4, 6, get_client_number( cl )); //works
 			//VM_Call(gvm, GAME_CLIENT_COMMAND, get_client_number( cl ));
 			//((int (*)(int,...))GAME("vmMain"))(6,get_client_number(cl));
 			//((void (QDECL *)(int))GAME("ClientCommand"))(get_client_number(cl));
-			
 		}
 	}
-
+	
+	skip_vm_call:
+	
 	cl->lastClientCommand = seq;
 	Com_sprintf(cl->lastClientCommandString, 0x400, "%s", s);
-	return qtrue;
+	return 1;
 	
 	#if 0
 
@@ -830,19 +995,22 @@ void SV_CoDExtended_f( client_t *cl ) {
 }
 
 bool FS_IsServerFile(char* basename);
+int FS_IsPakFile(char*);
 
 void SV_BeginDownload(client_t* cl) {
     int argc = Cmd_Argc();
-
+	static int update_pak;
+	
     if(argc > 1) {
         const char* arg1 = Cmd_Argv(1);
         SV_StopDownload_f(cl);
+		
         if(strstr(arg1, "..") != NULL)
             return;
 			
-        if(!strstr(arg1, ".pk3") || FS_IsServerFile((char*)arg1) || strstr(arg1, "pak") != NULL) {
+        if(!strstr(arg1, ".pk3") || FS_IsPakFile((char*)arg1) || FS_IsServerFile((char*)arg1) || strstr(arg1, "pak") != NULL) {
 			printf("WARNING: %s is trying to download %s\n", cl->name, arg1);
-            SV_DropClient(cl, "tried to hack.");
+            SV_DropClient(cl, "unauthorized download.");
 			return;
         }
     }
@@ -868,7 +1036,6 @@ int CL_GetGuid(client_t* cl) {
 	return guid;
 }
 
-//yes i know i can just make a macro ._.
 int get_client_number(client_t* cl) {
 	return (((int)&cl->state - *(int*)svsclients_ptr) / clientsize);
 }
@@ -884,6 +1051,187 @@ void get_client_ip(int num, char* ip) {
 const char *__cdecl FS_LoadedPakPureChecksums( void );
 
 extern int pak_num;
+
+int SV_IsLegacyMap() {
+	const char *legacy_maps[] = {
+	"mp_harbor", "mp_carentan", "mp_brecourt", "mp_bocage", "mp_chateau",
+	"mp_hurtgen", "mp_neuville", "mp_pavlov", "mp_powcamp", "mp_railyard", 
+	"mp_stalingrad", "mp_tigertown", NULL
+	};
+	int i;
+	char *mapname = Cvar_VariableString("mapname");
+	for(i = 0; legacy_maps[i] != NULL; i++)
+			if(!strcasecmp(mapname, legacy_maps[i]))
+					return 1;
+	return 0;
+}
+
+
+void SV_VerifyPaks_f( client_t *cl ) {
+	return;
+	
+	int nChkSum1, nChkSum2, nClientPaks, nServerPaks, i, j, nCurArg;
+	int nClientChkSum[1024];
+	int nServerChkSum[1024];
+	const char *pPaks, *pArg;
+	qboolean bGood = qtrue;
+
+	*(int*)((int)cl + 338092) = 1;
+	
+	int clientNum = get_client_number(cl);
+	bGood = qtrue;
+	nChkSum1 = nChkSum2 = 0;
+
+	bGood = ( FS_FileIsInPAK( "cgame_mp_x86.dll", &nChkSum1 ) == 1 );
+	if ( bGood ) {
+		bGood = ( FS_FileIsInPAK( "ui_mp_x86.dll", &nChkSum2 ) == 1 );
+		
+		nCurArg = 1;
+		
+		pArg = Cmd_Argv( nCurArg++ );
+		if ( !pArg || *pArg == '@' || atoi( pArg ) != nChkSum1 ) {
+			bGood = qfalse;
+		}
+		// verify the second to be the ui checksum
+		pArg = Cmd_Argv( nCurArg++ );
+		if ( !pArg || *pArg == '@' || atoi( pArg ) != nChkSum2 ) {
+			bGood = qfalse;
+		}
+		// should be sitting at the delimeter now
+		pArg = Cmd_Argv( nCurArg++ );
+		if ( *pArg != '@' ) {
+			bGood = qfalse;
+		}
+		
+		x_clients[clientNum].clientusage = bGood;
+		if(!bGood)
+			return;
+	}
+	/*
+
+		nClientPaks = Cmd_Argc();
+
+		// start at arg 2 ( skip serverId cl_paks )
+		nCurArg = 1;
+
+		pArg = Cmd_Argv( nCurArg++ );
+
+		if ( !pArg ) {
+			bGood = qfalse;
+		}
+
+		// we basically use this while loop to avoid using 'goto' :)
+		while ( bGood ) {
+
+			// must be at least 6: "cl_paks cgame ui @ firstref ... numChecksums"
+			// numChecksums is encoded
+			if ( nClientPaks < 6 ) {
+				bGood = qfalse;
+				break;
+			}
+			// verify first to be the cgame checksum
+			pArg = Cmd_Argv( nCurArg++ );
+			if ( !pArg || *pArg == '@' || atoi( pArg ) != nChkSum1 ) {
+				bGood = qfalse;
+				break;
+			}
+			// verify the second to be the ui checksum
+			pArg = Cmd_Argv( nCurArg++ );
+			if ( !pArg || *pArg == '@' || atoi( pArg ) != nChkSum2 ) {
+				bGood = qfalse;
+				break;
+			}
+			// should be sitting at the delimeter now
+			pArg = Cmd_Argv( nCurArg++ );
+			if ( *pArg != '@' ) {
+				bGood = qfalse;
+				break;
+			}
+			// store checksums since tokenization is not re-entrant
+			for ( i = 0; nCurArg < nClientPaks; i++ ) {
+				nClientChkSum[i] = atoi( Cmd_Argv( nCurArg++ ) );
+			}
+
+			// store number to compare against (minus one cause the last is the number of checksums)
+			nClientPaks = i - 1;
+
+			// make sure none of the client check sums are the same
+			// so the client can't send 5 the same checksums
+			for ( i = 0; i < nClientPaks; i++ ) {
+				for ( j = 0; j < nClientPaks; j++ ) {
+					if ( i == j ) {
+						continue;
+					}
+					if ( nClientChkSum[i] == nClientChkSum[j] ) {
+						bGood = qfalse;
+						break;
+					}
+				}
+				if ( bGood == qfalse ) {
+					break;
+				}
+			}
+			if ( bGood == qfalse ) {
+				break;
+			}
+
+			// get the pure checksums of the pk3 files loaded by the server
+			pPaks = FS_LoadedPakPureChecksums();
+			Cmd_TokenizeString( pPaks );
+			nServerPaks = Cmd_Argc();
+			if ( nServerPaks > 1024 ) {
+				nServerPaks = 1024;
+			}
+
+			for ( i = 0; i < nServerPaks; i++ ) {
+				nServerChkSum[i] = atoi( Cmd_Argv( i ) );
+			}
+
+			// check if the client has provided any pure checksums of pk3 files not loaded by the server
+			for ( i = 0; i < nClientPaks; i++ ) {
+				for ( j = 0; j < nServerPaks; j++ ) {
+					if ( nClientChkSum[i] == nServerChkSum[j] ) {
+						break;
+					}
+				}
+				if ( j >= nServerPaks ) {
+					bGood = qfalse;
+					break;
+				}
+			}
+			if ( bGood == qfalse ) {
+				break;
+			}
+
+			#if 0
+			// check if the number of checksums was correct
+			nChkSum1 = sv.checksumFeed;
+			for ( i = 0; i < nClientPaks; i++ ) {
+				nChkSum1 ^= nClientChkSum[i];
+			}
+			nChkSum1 ^= nClientPaks;
+			if ( nChkSum1 != nClientChkSum[nClientPaks] ) {
+				bGood = qfalse;
+				break;
+			}
+			#endif
+			// break out
+			break;
+		}
+		
+	if ( bGood ) {
+		*(int*)((int)cl + 338092) = 1;
+	} else {
+		*(int*)((int)cl + 338092) = 2;
+		*(int *)((int)cl + 68372) = -1;
+		cl->state = CS_ACTIVE;
+		SV_SendClientSnapshot( cl );
+		SV_DropClient( cl, "EXE_UNPURECLIENTDETECTED" );
+	}
+	*/
+}
+
+#if 0
 
 void SV_VerifyPaks_f( client_t *cl ) {
 	bool pure = 0;
@@ -921,23 +1269,22 @@ void SV_VerifyPaks_f( client_t *cl ) {
 	if(!sv_pure->integer)
 		pure=1;
 	
-	/*
 	if(!pure) {
 		SV_SendServerCommand(cl, 1, "v cl_allowdownload \"1\"");
 		SV_SendServerCommand(cl, 1, "v rate \"25000\"");
-		SV_SendServerCommand(cl, 1, "v snaps \"40\"");
-        //*(int *)(cl + 68372) = -1;
+		//SV_SendServerCommand(cl, 1, "v snaps \"40\"");
+        *(int *)((int)cl + 68372) = -1;
         cl->state = CS_ACTIVE;
-		//SV_SendClientSnapshot(cl);
-        SV_DropClient(cl, "Please reconnect to the server.");
-        //SV_DropClient(cl, "Run Call of Duty as Administrator and reconnect.");
-        //SV_DropClient(cl, "Unpure. Set cl_allowdownload to 1");
+		SV_SendClientSnapshot(cl);
+        SV_DropClient(cl, "EXE_UNPURECLIENTDETECTED");
 	} else {
 		SV_SendServerCommand(cl, 1, "v cl_allowdownload \"0\"");
-	}*/
+	}
 	int clientNum = get_client_number(cl);
-	xtnded_clients[clientNum].pure = pure;
+	x_clients[clientNum].pure = pure;
+	*(int*)((int)cl + 338092) = pure;
 }
+#endif
 
 #ifdef xDEBUG
 void SV_DumpUcmd() {
@@ -948,6 +1295,25 @@ void SV_DumpUcmd() {
 	}
 }
 #endif
+
+void ClientBegin(int clientNum) {
+	void (*begin)(int)  = (void(*)(int))GAME("ClientBegin");
+	begin(clientNum);
+	/*
+	client_t *cl = getclient(clientNum);
+	
+	void (*donedl)(client_t*) = (void(*)(client_t*))0x80879FC;
+	
+	//char *codclient = Info_ValueForKey(cl->userinfo, "xtnded");
+	
+	//if((!codclient || !*codclient) && x_requireclient->integer) {
+	
+	if(x_requireclient->integer && !xtnded_clients[clientNum].clientusage) {
+		SV_SendServerCommand(cl, 1, "v cl_allowdownload \"1\"");
+		SV_SendServerCommand(cl, 1, "v rate \"25000\"");
+		donedl(cl);
+	}*/
+}
 
 /*
 void php() {

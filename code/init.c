@@ -48,7 +48,9 @@ void __attribute__ ((constructor)) codextended_load(void) {
 	#endif
 }
 
-#if 0
+// Odd, isn't it? 1.5 destructor works
+#if PATCH == 5
 void __attribute__ ((destructor)) codextended_unload( void ) {
+	COD_Destructor();
 }
 #endif

@@ -24,9 +24,48 @@
 
 #include "shared.h"
 #include "script.h"
+#include <sys/queue.h>
 
+#if PATCH == 1
 #define svsclients_ptr 0x83B67AC
 #define clientsize 370940
+#else
+#define svsclients_ptr 0x83CCD90
+#define clientsize 371124
+#endif
+
+#define SVF_NOCLIENT 0x1
+
+
+#if PATCH == 1
+#define svs_time (*(int*)0x83B67A4)
+#else if PATCH == 5
+#define svs_time (*(int*)0x83CCD88)
+#endif
+
+typedef enum {
+	svc_bad,
+	svc_nop,
+	svc_gamestate,
+	svc_configstring,           // [short] [string] only in gamestate messages
+	svc_baseline,               // only in gamestate messages
+	svc_serverCommand,          // [string] to be executed by client game module
+	svc_download,               // [short] size [size bytes]
+	svc_snapshot,
+	svc_EOF
+} svc_ops_e; //not really server only it's for client aswell
+
+static char *svc_strings[256] = {
+	"svc_bad",
+	"svc_nop",
+	"svc_gamestate",
+	"svc_configstring",
+	"svc_baseline",
+	"svc_serverCommand",
+	"svc_download",
+	"svc_snapshot",
+	"svc_EOF"
+};
 
 typedef enum {
 	NA_BOT,
@@ -78,7 +117,11 @@ typedef struct {
 	int pingTime; //28
 	int firstTime; //32
 	int firstPing; //36
-	qboolean connected; //40
+	int connected; //40
+	#if PATCH == 5
+	int guid; //44
+	unsigned char __idk[36];
+	#endif
 } challenge_t;
 
 typedef int sharedEntity_t;
@@ -135,15 +178,27 @@ extern cvar_t *shortversion;
 extern cvar_t *protocol;
 extern cvar_t* dedicated;
 extern cvar_t* sv_running;
+
+#if PATCH == 5
+extern cvar_t *sv_disableClientConsole;
+#endif
+
+extern cvar_t *x_requireclient;
+extern cvar_t *x_requireveritas;
+extern cvar_t *x_globalbans;
 extern cvar_t *x_bannedmessage;
-extern cvar_t *xtnded_contents;
-extern cvar_t *x_connect_message;
-extern cvar_t *x_connect_message_time;
+extern cvar_t *x_contents;
+extern cvar_t *x_deadchat;
+extern cvar_t *x_authorize;
+extern cvar_t *x_spectator_noclip;
+
+extern cvar_t *cl_allowDownload; //the client will locally change any cvars to match the SYSTEMINFO cvars
 
 #define MAX_MASTER_SERVERS 5
 extern cvar_t* sv_master[MAX_MASTER_SERVERS];
 
-extern cvar_t *x_authorize;
+extern char x_print_connect_message[1024];
+extern char SVC_CHANDELIER[12];
 
 typedef void (*Netchan_Setup_t)( netsrc_t sock, void*/*netchan_t*/ chan, netadr_t adr, int qport );
 extern Netchan_Setup_t Netchan_Setup;
@@ -188,6 +243,16 @@ typedef struct usercmd_s {
 	byte unknown; //could be doubleTap or client
 } usercmd_t;
 
+typedef struct { //usercmd_s i defined in server.h mmmmmmm
+	playerState_t *ps;
+	usercmd_t cmd;
+	//other stuff
+} pmove_t;
+
+extern pmove_t *pm;
+
+#define iprintln(m) SV_SendServerCommand(NULL, 0, "e \"%s\"", m)
+
 typedef struct client_s {
 	clientState_t state;
 	int unknown4;
@@ -201,7 +266,7 @@ typedef struct client_s {
 
 	int lastClientCommand;
 	char lastClientCommandString[1024];
-	int gentity;
+	int gentity; //sharedEntity?
 	char name[32];
 	char downloadName[64];
 	int download;
@@ -219,6 +284,17 @@ typedef struct client_s {
 	
 	char lazy_to_figure_out_so_fill_it_up[32812];//to initialize client_t structs properly
 } client_t;
+
+typedef struct animation_s {
+	char name[64]; //pb_combatwalk_left_loop_pistol
+	int a; //4294967295
+	int b; //31
+	int c; //733
+	int d; //426038
+	int e; //144
+	int f; //16
+	int g; //0
+} animation_t;
 
 /*
 from 1.5
@@ -254,29 +330,6 @@ typedef struct usercmd_s {
 	// index, so make sure it's unsigned
 	byte identClient;           // NERVE - SMF
 } usercmd_t;
-
-typedef struct client_s {
-	clientState_t state;
-	int unknown4;
-	int unknown8;
-	char userinfo[MAX_INFO_STRING];
-	byte unknown1032[66064];
-	int challenge;
-    byte inaccuratelastUserCmd[28];
-    int lastClientCommand;
-    char lastClientCommandString[MAX_STRING_CHARS];
-    int* gentity; //sharedEntity_t  *gentity;
-    char name[MAX_NAME_LENGTH];
-    byte unknown1[270024];
-    int ping;
-    int rate;
-    int snapshotMsec;                   // requests a snapshot every snapshotMsec unless rate choked
-	int pureAuthentic;
-	qboolean gotCP;  // TTimo - additional flag to distinguish between a bad pure checksum, and no cp command at all
-    int unknown2;
-    int dropped;
-    byte remoteAddress[4];
-} client_t;
 */
 
 typedef struct {
@@ -284,8 +337,15 @@ typedef struct {
 	long long commandtimer;
 	int uid;
 	bool pure;
-} xtnded_client;
+	int clientusage;
+	
+	qboolean namemuted; //can this player rename?
+	qboolean muted; //can this player chat?
+	
+	int perks[MAX_PERKS];
+} xtnded_client, x_client;
 
+#define xclient_t x_client
 
 typedef struct {
 	netadr_t adr;
@@ -294,10 +354,12 @@ typedef struct {
 	int guid;
 } x_challenge;
 
-
 extern x_challenge x_challenges[MAX_CHALLENGES];
 
 extern xtnded_client xtnded_clients[64];
+
+#define x_clients xtnded_clients
+#define xclients x_clients
 
 extern client_t* clients;
 

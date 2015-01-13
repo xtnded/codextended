@@ -17,43 +17,44 @@
 #include "script.h"
 
 void Scr_StrTok(int a1) {
-	char* str = Script_GetString(0);
-	char* delim = Script_GetString(1);
+	char* str = Scr_GetString(0);
+	char* delim = Scr_GetString(1);
 	char* tok = strtok(str, delim);
-	Script_MakeArray();
+	Scr_MakeArray();
 	while(NULL!=tok) {
-		Script_AddString(tok);
-		Script_AddArray();
+		Scr_AddString(tok);
+		Scr_AddArray();
+		tok = strtok(NULL, delim);
 	}
 }
 
 void Scr_IsSubStr(int a1) {
-	char* string = Script_GetString(0);
-	char* substring = Script_GetString(1);
+	char* string = Scr_GetString(0);
+	char* substring = Scr_GetString(1);
 
-	Script_AddBool( ( strstr(string, substring) != NULL ) );
+	Scr_AddBool( ( strstr(string, substring) != NULL ) );
 }
 
 void Scr_ToLower(int a1) {
-	char* str = Script_GetString(0);
+	char* str = Scr_GetString(0);
 	char* it = str;
 	for(;*it;++it)
 		*it = tolower(*it);
-	Script_AddString(str);
+	Scr_AddString(str);
 }
 
 void Scr_ToUpper(int a1) {
-	char* str = Script_GetString(0);
+	char* str = Scr_GetString(0);
 	char* it = str;
 	for(;*it;++it)
 		*it = toupper(*it);
-	Script_AddString(str);
+	Scr_AddString(str);
 }
 
 void Scr_trim(int a1) {
 	#if 0
 	char* ws = "\n\r\t\f";
-	std::string str = Script_GetString(0);
+	std::string str = Scr_GetString(0);
 	std::string r = "";
 	bool f;
 	for(std::string::iterator it = str.begin(); it != str.end(); ++it) {
@@ -62,7 +63,7 @@ void Scr_trim(int a1) {
 		if(!f)
 			r.append((char*)*it);
 	}
-	Script_AddString((char*)r.c_str());
+	Scr_AddString((char*)r.c_str());
 	#endif
 }
 
@@ -117,15 +118,15 @@ void dumpmem(int* base, int len, char* outputfile) {
 }
 
 void Scr_convertToIString(int a1) {
-	char* str = Script_GetString(0);
-	Script_AddIString(str);
+	char* str = Scr_GetString(0);
+	Scr_AddIString(str);
 }
 
 void Scr_ucfirst(int a1) {
-	char* str = Script_GetString(0);
+	char* str = Scr_GetString(0);
 	char* it = str;
 	for(;*it;++it)
 		*it = tolower(*it);
 	*str = toupper(*str);
-	Script_AddString(str);
+	Scr_AddString(str);
 }

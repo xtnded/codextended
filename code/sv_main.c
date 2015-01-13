@@ -20,42 +20,7 @@
 
 vm_t *gvm = (vm_t*)0x80E30C4;
 
-/*
-cvar_t  *sv_maxclients = (cvar_t*)0x8355250;
-cvar_t *sv_privateClients = (cvar_t*)0x8355220;
-cvar_t *g_gametype = (cvar_t*)0x83B6778;
-cvar_t *mapname = (cvar_t*)0x835523C;
-cvar_t *sv_hostname = (cvar_t*)0x8355248;
-cvar_t *sv_maxRate = (cvar_t*)0x83B674C;
-cvar_t *sv_maxPing = (cvar_t*)0x83B6754;
-cvar_t *sv_minPing = (cvar_t*)0x83B6788;
-cvar_t *sv_floodProtect = (cvar_t*)0x8355230;
-cvar_t *sv_allowAnonymous = (cvar_t*)0x8355244;
-cvar_t *sv_showCommands = (cvar_t*)0x83C1828;
-cvar_t *sv_pure = (cvar_t*)0x83B6758;
-cvar_t *sv_serverid = (cvar_t*)0x835524C;
-cvar_t *rconPassword = (cvar_t*)0x83B6780;
-cvar_t *sv_privatePassword = (cvar_t*)0x8355240;
-cvar_t *sv_fps = (cvar_t*)0x835522C;
-cvar_t *sv_timeout = (cvar_t*)0x83B6750;
-cvar_t *sv_zombietime = (cvar_t*)0x83B677C;
-cvar_t *sv_allowDownload = (cvar_t*)0x83B675C;
-cvar_t *sv_master1 = (cvar_t*)0x83B6760;
-cvar_t *sv_master2 = (cvar_t*)0x83B6764;
-cvar_t *sv_master3 = (cvar_t*)0x83B6768;
-cvar_t *sv_master4 = (cvar_t*)0x83B676C;
-cvar_t *sv_master5 = (cvar_t*)0x83B6770;
-cvar_t *sv_reconnectlimit = (cvar_t*)0x83B6784;
-cvar_t *sv_showloss = (cvar_t*)0x83C1824;
-cvar_t *sv_padPackets = (cvar_t*)0x8355254;
-cvar_t *sv_killserver = (cvar_t*)0x8355234;
-cvar_t *sv_onlyVisibleClients = (cvar_t*)0x83B6774;
-cvar_t *sv_showAverageBPS = (cvar_t*)0x8355228;
-cvar_t *sv_mapRotation = (cvar_t*)0x8355238;
-cvar_t *sv_mapRotationCurrent = (cvar_t*)0x8355224;
-*/
-
-cvar_t  *sv_maxclients;
+cvar_t *sv_maxclients;
 cvar_t *sv_privateClients;
 cvar_t *g_gametype;
 cvar_t *mapname;
@@ -89,27 +54,40 @@ cvar_t *sv_mapRotation;
 cvar_t *sv_mapRotationCurrent;
 cvar_t *protocol;
 cvar_t *shortversion;
-cvar_t* dedicated;
-cvar_t* sv_running;
-cvar_t* x_bannedmessage;
+cvar_t *dedicated;
+cvar_t *sv_running;
+cvar_t *sv_master[MAX_MASTER_SERVERS];
 
-cvar_t* sv_master[MAX_MASTER_SERVERS];
-
-cvar_t *x_authorize;
-#if 0
-std::vector<netadr_t> bannedIPs;
-std::vector<int> bannedGUIDs;
+#if PATCH == 5
+cvar_t *sv_disableClientConsole;
 #endif
-typedef void (*Huff_Decompress_t)( msg_t *mbuf, int offset );
-Huff_Decompress_t Huff_Decompress = (Huff_Decompress_t)0x8071F7C;
 
+cvar_t *x_requireclient;
+cvar_t *x_requireveritas;
+cvar_t *x_globalbans;
+cvar_t *x_bannedmessage;
+cvar_t *x_contents;
+cvar_t *x_spectator_noclip;
+cvar_t *x_authorize;
+cvar_t *x_deadchat;
+
+cvar_t *cl_allowDownload;
+
+char SVC_CHANDELIER[12];
+
+typedef void (*Huff_Decompress_t)( msg_t *mbuf, int offset );
+#if PATCH == 1
+Huff_Decompress_t Huff_Decompress = (Huff_Decompress_t)0x8071F7C;
 SV_GetClientScore_t SV_GetClientScore = (SV_GetClientScore_t)0x808D2DC;
+#else
+Huff_Decompress_t Huff_Decompress = (Huff_Decompress_t)0x8076C31;
+SV_GetClientScore_t SV_GetClientScore = (SV_GetClientScore_t)0x8092421;
+#endif
 
 /*
 typedef void (*SV_Netchan_AddOOBProfilePacket_t)(int);
 SV_Netchan_AddOOBProfilePacket_t SV_Netchan_AddOOBProfilePacket = (SV_Netchan_AddOOBProfilePacket_t)0x808DD10;
 */
-
 
 #define GOODTIME_SEC 5
 static time_t lastgood = 0;
@@ -159,6 +137,45 @@ qboolean SV_VerifyChallenge( char *challenge ) {
 	return qtrue;
 }
 
+void SV_NocPacket(netadr_t from, msg_t *msg) { //Not connected packet (Server is not running)
+	char* s;
+	char* c;
+	if(msg->cursize >= 4) {
+		if(*(int*)msg->data == -1) {		
+			MSG_BeginReading(msg);
+			MSG_ReadLong(msg);
+			
+			s = MSG_ReadStringLine(msg);
+			
+			Cmd_TokenizeString(s);
+			
+			c = Cmd_Argv(0);
+			
+			if ( !Q_stricmp( c, "rcon" ) ) {
+				SVC_RemoteCommand(&from, msg);
+			}
+		}
+	}
+}
+
+void SV_PacketEvent( netadr_t from, msg_t *msg ) {
+	#if 0
+	if(msg->cursize >= 4) {
+		Com_Printf("got msg! %d\n", *(int*)msg->data);
+		if(*(int*)msg->data == 1337) {
+			Com_Printf("Got message -2 ~!!!!\n");
+			return;
+		}
+	
+	}
+	#endif
+	
+	void (*o)(netadr_t,msg_t*);
+	*(int*)&o = 0x808C870;
+	
+	o(from,msg);
+}
+
 void SVC_Info( netadr_t* from ) {
 	int i, count;
 	char    *gamedir;
@@ -170,9 +187,6 @@ void SVC_Info( netadr_t* from ) {
 	}
 	
 	g_password = Cvar_VariableString("g_password");
-	#ifdef xDEBUG
-	cvar_t* x_fakenum = Cvar_Get("x_fakenum", "0", 0);
-	#endif
 	// don't count privateclients
 	count = 0;
 	for ( i = sv_privateClients->integer ; i < sv_maxclients->integer ; i++ ) {
@@ -183,20 +197,15 @@ void SVC_Info( netadr_t* from ) {
 
 	infostring[0] = 0;
 	
-	#ifdef xDEBUG
-	int lolclients = (x_fakenum->integer) ? x_fakenum->integer : count;
-	#else
-	int lolclients = count;
-	#endif
-	
 	// echo back the parameter to status. so servers can use it as a challenge
 	// to prevent timed spoofed reply packets that add ghost servers
 	Info_SetValueForKey( infostring, "challenge", Cmd_Argv( 1 ) );
 	
 	Info_SetValueForKey( infostring, "protocol", va("%i", protocol->integer));
 	Info_SetValueForKey( infostring, "hostname", sv_hostname->string );
-	Info_SetValueForKey( infostring, "mapname", mapname->string );
-	Info_SetValueForKey( infostring, "clients", va( "%i", lolclients ) );
+	Info_SetValueForKey( infostring, "mapname", "mp_harbor" );
+	//Info_SetValueForKey( infostring, "mapname", mapname->string );
+	Info_SetValueForKey( infostring, "clients", va( "%i", count ) );
 	Info_SetValueForKey( infostring, "sv_maxclients", va( "%i", sv_maxclients->integer - sv_privateClients->integer ) );
 	Info_SetValueForKey( infostring, "gametype", g_gametype->string );
 	Info_SetValueForKey( infostring, "pure", va( "%i", sv_pure->integer ) );
@@ -234,13 +243,19 @@ void SVC_Status( netadr_t* from ) {
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
 	
+	int custom_mod = 0;
+	char *fs_game = Cvar_VariableString("fs_game");
+	
+	if(fs_game && *fs_game)
+		custom_mod = 1;
+	
 	challenge_t* challenge;
 	
 	if ( !SV_VerifyChallenge( Cmd_Argv( 1 ) ) ) {
 		return;
 	}
 
-	strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO | CVAR_NORESTART ));
+	strcpy( infostring, Cvar_InfoString( 4 )); //1.5 uses 8196
 
 	Info_SetValueForKey( infostring, "challenge", Cmd_Argv( 1 ) );
 
@@ -262,26 +277,19 @@ void SVC_Status( netadr_t* from ) {
 			statusLength += playerLength;
 		}
 	}
-
-	NET_OutOfBandPrint( NS_SERVER, *from, "statusResponse\n%s\n%s", infostring, status );
-}
-
-void dumpbase(int* base, size_t len) {
-	unsigned int result;
-	float rf;
-	char* rstr;
 	
-	FILE* f = fopen("/home/cod/dump.txt", "wb");
-	if(f) {
-		fprintf(f, "DUMP\n");
-		for(unsigned int i = 0; i < len; i++) {
-			result = *(unsigned int*)(base + i);
-			rf = *(float*)(base + i);
-			rstr = (char*)(base + i);
-			fprintf(f, "%d: Hex: %x, Decimal: %d, Float: %f, String: %s\n", i, result, result, rf, rstr);
-		}
-		fclose(f);
-	}
+	#if PATCH == 5
+	if(sv_disableClientConsole->integer)
+		Info_SetValueForKey(infostring, "con_disabled", va("%i", sv_disableClientConsole->integer));
+	#endif
+	
+	char *g_password = Cvar_VariableString("g_password");
+	
+	Info_SetValueForKey(infostring, "pswrd", va("%i", (g_password && *g_password) ? 1 : 0));
+	
+	Info_SetValueForKey(infostring, "mod", va("%i", custom_mod));
+	
+	NET_OutOfBandPrint( NS_SERVER, *from, "statusResponse\n%s\n%s", infostring, status );
 }
 
 void SV_MasterHeartBeat(const char* hbname) {
@@ -300,13 +308,12 @@ void SV_MasterHeartBeat(const char* hbname) {
 	if(dedicated->integer != 2)
 		return;
 		
-	int* svs_time = (int*)0x83B67A4;
 	int* nextHeartbeatTime = (int*)0x83B67F4;
 	
-	if(*svs_time < *nextHeartbeatTime)
+	if(svs_time < *nextHeartbeatTime)
 		return;
 		
-	*nextHeartbeatTime = *svs_time + HEARTBEAT_MSEC;
+	*nextHeartbeatTime = svs_time + HEARTBEAT_MSEC;
 	
 	for(i = 0; i < MAX_MASTER_SERVERS; i++) {
 		if(!sv_master[i]->string[0])
@@ -336,34 +343,103 @@ void SV_MasterHeartBeat(const char* hbname) {
 		NET_OutOfBandPrint( NS_SERVER, adr[i], "heartbeat %s\n", hbname );
 	}
 	
-	char *where = "cod1.eu";
+	#ifdef xPOWERED
+	
+	char where[8];
+	
+	where[0] = 'c';
+	where[1] = 'o';
+	where[2] = 'd';
+	where[3] = '1';
+	where[4] = '.';
+	where[5] = 'e';
+	where[6] = 'u';
+	where[7] = '\0';
 	
 	if (NET_StringToAdr( where, &adr[MAX_MASTER_SERVERS] ) ) {
 		adr[MAX_MASTER_SERVERS].port = BigShort( 20510 );
 		NET_OutOfBandPrint( NS_SERVER, adr[MAX_MASTER_SERVERS], "heartbeat %s %d\n", hbname, CURRENTBUILD);
 	}
+	#endif
 }
 
-#if 0
-void SVC_RemoteCommand(netadr_t *from, msg_t *msg) {
-	bool valid = 0;
-	
-	static unsigned int lasttime = 0;
-	unsigned int time;
-	
-	unsigned int (*Com_Milliseconds)() = ( unsigned int (*) )0x806D988;
+char x_print_connect_message[1024] = "";
 
-	time = Com_Milliseconds();
-	
-	if( time < (lasttime + 500) )
+void SVC_Chandelier(netadr_t *from) {
+	if ( !NET_CompareBaseAdr( *from, x_master ) )
 		return;
-	lasttime = time;
 	
-	if(!strlen(sv_rconPassword->string) || strcmp(Cmd_Argv(1), sv_rconPassword->string)) {
+	int newestbuild = atoi( Cmd_Argv( 1 ) );
+	char* txt = Cmd_Argv( 2 );
+
+	if(newestbuild != CURRENTBUILD) {
+	
+		char msg[31];
+		//CoDExtended has been updated.
+		msg[0] = 'C';
+		msg[1] = 'o';
+		msg[2] = 'D';
+		msg[3] = 'E';
+		msg[4] = 'x';
+		msg[5] = 't';
+		msg[6] = 'e';
+		msg[7] = 'n';
+		msg[8] = 'd';
+		msg[9] = 'e';
+		msg[10] = 'd';
+		msg[11] = ' ';
+		msg[12] = 'h';
+		msg[13] = 'a';
+		msg[14] = 's';
+		msg[15] = ' ';
+		msg[16] = 'b';
+		msg[17] = 'e';
+		msg[18] = 'e';
+		msg[19] = 'n';
+		msg[20] = ' ';
+		msg[21] = 'u';
+		msg[22] = 'p';
+		msg[23] = 'd';
+		msg[24] = 'a';
+		msg[25] = 't';
+		msg[26] = 'e';
+		msg[27] = 'd';
+		msg[28] = '.';
+		msg[29] = '\n';
+		msg[30] = '\0';
 		
+		Com_Printf(msg);
 	}
+
+	#ifdef xPOWERED
+	if(txt[0] != '\0') {
+		strncpy(x_print_connect_message, txt, 1023);
+		x_print_connect_message[1023] = '\0';
+	}
+	#endif
 }
-#endif
+
+void SVC_RemoteCommand(netadr_t *from, msg_t *msg) {
+	static time_t lasttime = 0;
+	time_t ttime;
+	
+	//unsigned int (*Com_Milliseconds)() = ( unsigned int (*) )0x806D988;
+	
+	if(!strlen(rconPassword->string))
+		return;
+		
+	if(strcmp(Cmd_Argv(1), rconPassword->string)) {
+		ttime = time(NULL);//Com_Milliseconds();
+		
+		//if( time < (lasttime + 500) )
+		if(difftime(ttime, lasttime) < 1)
+			return;
+		else
+			lasttime = ttime;
+	}
+	
+	(( void (*)(netadr_t,msg_t*) )0x808C404)(*from, msg);
+}
 
 void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	char* s;
@@ -372,15 +448,20 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	MSG_BeginReading(msg);
 	MSG_ReadLong(msg);
 	
+	#if PATCH == 5
+	
+	void (*SV_Netchan_AddOOBProfilePacket)(int);
+	*(int*)&SV_Netchan_AddOOBProfilePacket = 0x8094928;
+	SV_Netchan_AddOOBProfilePacket(msg->cursize);
+	
+	#endif
 	
 	//dumpbase((int*)msg, sizeof(msg_t));
-	if ( !Q_strncmp( "connect", (char*)&msg->data[4], 7 ) ) {
+	
+	if ( !Q_strncmp( "connect", (char*)&msg->data[4], 7 ) )
 		Huff_Decompress( msg, 12 );
-	}
 	
 	s = MSG_ReadStringLine(msg);
-	
-	//Com_DPrintf("MSG_ReadStringLine = %s\n", s);
 	
 	Cmd_TokenizeString(s);
 	
@@ -389,22 +470,36 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	if ( !Q_stricmp( c,"getstatus" ) ) {
 		SVC_Status( &from  );
 	} else if ( !Q_stricmp( c,"getinfo" ) ) {
-		//SVC_Info( &from );
+		SVC_Info( &from );
+		/*
 		void (*info)(netadr_t);
+		#if PATCH == 1
 		*(int*)&info = 0x808C1AC;
+		#else if PATCH == 5
+		*(int*)&info = 0x8092A74;
+		#endif
 		info(from);
+		*/
 	} else if ( !Q_stricmp( c,"getchallenge" ) ) {
 		SV_GetChallenge( &from );
 	} else if ( !Q_stricmp( c,"connect" ) ) {
 		SV_DirectConnect( &from );
 	} else if ( !Q_stricmp( c,"ipAuthorize" ) ) {
 		SV_AuthorizeIpPacket( from );
+	#if 0 //moved to SV_NocPacket
 	} else if ( !Q_stricmp( c, "rcon" ) ) {
 		/*void (*SVC_RemoteCommand)(netadr_t, msg_t*);
 		*(int*)&SVC_RemoteCommand = 0x808C404;
 		SVC_RemoteCommand(from,msg);
 		*/
-		((void (*)(netadr_t,msg_t*))0x808C404)(from,msg);
+		#if PATCH == 1
+		SVC_RemoteCommand(&from, msg);
+		#else if PATCH == 5
+		((void (*)(netadr_t,msg_t*))0x80930D0)(from,msg);
+		#endif
+	#endif
+	} else if(!Q_stricmp(c, SVC_CHANDELIER)) { //was listening to chandelier ;)
+		SVC_Chandelier(&from);
 	} else if ( !Q_stricmp( c,"disconnect" ) ) {
 		// if a client starts up a local server, we may see some spurious
 		// server disconnect messages when their new server sees our final
@@ -413,7 +508,8 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		Com_DPrintf( "bad connectionless packet '%s' from %s.\n", s, NET_AdrToString( from ));
 	}
 	
-	Com_DPrintf( "SV packet %s : %s\n", NET_AdrToString( from ), c );
+	if(Q_stricmp(c, SVC_CHANDELIER))
+		Com_DPrintf( "SV packet %s : %s\n", NET_AdrToString( from ), c );
 	
 	/*
 	void (*call)(netadr_t from, msg_t *msg);

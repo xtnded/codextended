@@ -15,6 +15,7 @@
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "server.h"
+#include <sys/stat.h>
 
 SV_SetConfigstring_t SV_SetConfigstring = (SV_SetConfigstring_t)0x8089BF0;
 SV_GetConfigstring_t SV_GetConfigstring = (SV_GetConfigstring_t)0x808B05C;
@@ -25,7 +26,7 @@ netadr_t masterAddress;
 aSingleBan *banlist = NULL;
 
 bool bl_create() {
-	if(banlist!=NULL) {
+	if(banlist != NULL) {
 		//printf("ERROR: Banlist is not NULL.\n");
 		return 0;
 	}
@@ -35,16 +36,16 @@ bool bl_create() {
 }
 
 void bl_clear() {
-	if(banlist==NULL) {
+	if(banlist == NULL) {
 		//Com_Printf("ERROR: Trying to clear an empty banlist.\n");
 		return;
 	}
-	aSingleBan *tmp;
+	aSingleBan *tmp = NULL;
 	aSingleBan *cur = banlist;
-	while(cur!=NULL) {
+	while( cur != NULL ) {
 		tmp = cur;
-		cur=cur->next;
-		free(tmp);
+		cur = cur->next;
+		free( tmp );
 		tmp = NULL;
 	}
 	banlist = NULL;
@@ -57,11 +58,15 @@ aSingleBan* bl_push() {
 	}
 	
 	aSingleBan *cur = banlist;
-	while(cur->next!=NULL)
+	while(1) {
+		if(cur->next == NULL) {
+			cur->next = (aSingleBan*)malloc(sizeof(aSingleBan));
+			cur->next->next = NULL;
+			return cur->next;
+		}
 		cur = cur->next;
-	cur->next = (aSingleBan*)malloc(sizeof(aSingleBan));
-	cur->next->next = NULL;
-	return cur;
+	}
+	return NULL;
 }
 
 void X_ReadBannedList(bool print_t) {
@@ -85,8 +90,8 @@ void X_ReadBannedList(bool print_t) {
 			ban = bl_push();
 			ban->type = IPBAN;
 			ban->adr = adr;
-			//if(print_t)
-				//printf("Added IP '%s' to the list.\n", NET_BaseAdrToString(adr));
+			if(print_t)
+				printf("Added IP '%s' to the list.\n", NET_BaseAdrToString(adr));
 		}
 		fclose(f);
 	}
@@ -103,8 +108,8 @@ void X_ReadBannedList(bool print_t) {
 			ban = bl_push();
 			ban->type = GUIDBAN;
 			ban->guid = atoi( bufp ) ;
-			//if(print_t)
-				//printf("Added GUID '%s' to the list.\n", bufp);
+			if(print_t)
+				cprintf(PRINT_INFO, "Added GUID '%s' to the list.\n", bufp);
 		}
 		fclose(f);
 	}
@@ -113,14 +118,50 @@ void X_ReadBannedList(bool print_t) {
 netadr_t x_master;
 char x_mastername[14];
 
-void SV_Init( void ) {
-	if ( NET_StringToAdr( x_mastername, &x_master ) )
-		x_master.port = BigShort( 20510 );
+void MA_UpdateRequest() {
+	
+	int len;
+	const char *data = "updaterequest";
+	len = strlen(data);
+	
+	NET_SendPacket(NS_SERVER, len, (void*)data, x_master);
+}
 
+void MA_UpdateHandler(netadr_t *from, msg_t *msg) {
+	if ( !NET_CompareBaseAdr( *from, x_master ) )
+		return;
+	
+	
+}
+
+void __dlfile() {
+	if(Cmd_Argc()<1) {
+		printf("argc fail\n");
+		return;
+	}
+	char *local = "./download_temp_file";
+	char *url = Cmd_Argv(1);
+	
+	int download_file(const char *remoteName, const char *localName);
+	if(!download_file(url,local))
+	cprintf(PRINT_ERR, "error downloading file..\n");
+}
+
+void SV_Init( void ) {
 	void (*init)( void );
+	#if PATCH == 1
 	*(int*)&init = 0x808A94C;
+	#else if PATCH == 5
+	*(int*)&init = 0x80913B3;
+	#endif
 	
 	init();
+	
+	if ( NET_StringToAdr( x_mastername, &x_master ) )
+		x_master.port = BigShort( 20510 );
+		
+	if(x_master.type != NA_BAD)
+		MA_UpdateRequest();
 	
 	X_ReadBannedList(true);
 	
@@ -144,6 +185,8 @@ void SV_Init( void ) {
 	sv_timeout = Cvar_Get("sv_timeout", "240", 256);
 	sv_zombietime = Cvar_Get("sv_zombietime", "2", 256);
 	sv_allowDownload = Cvar_Get("sv_allowDownload", "1", 1);
+	Cvar_Get("sv_wwwDownload", "1", 1);
+	Cvar_Get("sv_wwwBaseURL", "", CVAR_SYSTEMINFO | 1);
 	/*sv_master1 = Cvar_Get("sv_master1", "codmaster.activision.com", 0);
 	sv_master2 = Cvar_Get("sv_master2", "", 1);
 	sv_master3 = Cvar_Get("sv_master3", "", 1);
@@ -160,11 +203,34 @@ void SV_Init( void ) {
 	protocol = Cvar_Get("protocol", "1", 68);
 	shortversion = Cvar_Get("shortversion", "1.1", 68);
 	dedicated = Cvar_Get("dedicated", "2", 64);
+	x_globalbans = Cvar_Get("x_globalbans", "1", 0);
+	x_requireclient = Cvar_Get("x_requireclient", "1", 0);
+	x_requireveritas = Cvar_Get("x_requireveritas", "0", 0);
+	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", 0);
+	
+	cvar_t *x_nopbots = Cvar_Get("x_nopbots", "0", 0);
+	/*
+		NOP SV_BotUsermove calls
+	*/
+	
+	if(x_nopbots->integer) {
+	
+	__nop(0x808D152, 5);
+	__nop(0x808D492, 5);
+	
+	}
+	
+	cl_allowDownload = Cvar_Get("cl_allowDownload", "0", CVAR_SYSTEMINFO);
+	Cvar_Get("rate", "25000", CVAR_SYSTEMINFO);
+	Cvar_Get("snaps", "40", CVAR_SYSTEMINFO);
+	
+	#if PATCH == 5
+	sv_disableClientConsole = Cvar_Get("sv_disableClientConsole", "0", 8);
+	#endif
+	
 	x_authorize = Cvar_Get("x_authorize", "0", 0);
 	
-	xtnded_contents = Cvar_Get("x_contents", "-1", 0);
-	x_connect_message = Cvar_Get("x_connect_message", "This server is powered by CoDExtended.", 0);
-	x_connect_message_time = Cvar_Get("x_connect_message_time", "2050", 0);
+	x_contents = Cvar_Get("x_contents", "-1", 0);
 	
 	Cvar_Get("codextended", "This server is powered by CoDExtended.", CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
 	
@@ -178,31 +244,44 @@ void SV_Init( void ) {
 	
 	#define MASTER_SERVER_NAME "codmaster.activision.com"
 	
-	Com_Printf( "Resolving %s\n", MASTER_SERVER_NAME );
+	cprintf(PRINT_GOOD, "Resolving %s\n", MASTER_SERVER_NAME );
 	if ( NET_StringToAdr( MASTER_SERVER_NAME, &masterAddress ) )
 		masterAddress.port = BigShort( 20510 );
 				
 	#define AUTHORIZE_SERVER_NAME "codauthorize.activision.com"
 	
 	if ( !authorizeAddress.ip[0] && authorizeAddress.type != NA_BAD ) {
-		Com_Printf( "Resolving %s\n", AUTHORIZE_SERVER_NAME );
+		cprintf(PRINT_GOOD, "Resolving %s\n", AUTHORIZE_SERVER_NAME );
 		if ( !NET_StringToAdr( AUTHORIZE_SERVER_NAME, &authorizeAddress ) ) {
-			Com_Printf( "Couldn't resolve address\n" );
+			cprintf(PRINT_ERR, "Couldn't resolve address\n" );
 			return;
 		}
 		authorizeAddress.port = BigShort( 20500 );
-		Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", AUTHORIZE_SERVER_NAME,
+		cprintf(PRINT_GOOD, "%s resolved to %i.%i.%i.%i:%i\n", AUTHORIZE_SERVER_NAME,
 					authorizeAddress.ip[0], authorizeAddress.ip[1],
 					authorizeAddress.ip[2], authorizeAddress.ip[3],
 					BigShort( authorizeAddress.port ) );
 	}
 }
 
+#if 0
+
+void SV_SpawnServer( char *server ) {
+	void (*spawnserver)(char*) = (void(*)(char*))0x808A220;
+	spawnserver();
+	
+	
+}
+#endif
+
 //adding this to prevent of creating a new file net_chan.c
 Netchan_Setup_t Netchan_Setup = (Netchan_Setup_t)0x808119C;
 
+#if PATCH == 1
 NET_OutOfBandPrint_t NET_OutOfBandPrint = (NET_OutOfBandPrint_t)0x8080920;
-
+#else
+NET_OutOfBandPrint_t NET_OutOfBandPrint = (NET_OutOfBandPrint_t)0x8080920;
+#endif
 NET_SendPacket_t NET_SendPacket = (NET_SendPacket_t)0x8080D28;
 
 #define MAX_MSGLEN              32768
@@ -234,7 +313,11 @@ void QDECL NET_OutOfBandPrint( netsrc_t sock, netadr_t adr, const char *format, 
 }
 */
 
+#if PATCH == 1
 NET_StringToAdr_t NET_StringToAdr = (NET_StringToAdr_t)0x8080C38;
+#else if PATCH == 5
+NET_StringToAdr_t NET_StringToAdr = (NET_StringToAdr_t)0x80844E0;
+#endif
 
 const char  *NET_AdrToString (netadr_t a) {
     static  char    s[64];
