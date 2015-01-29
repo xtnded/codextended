@@ -475,10 +475,7 @@ void MSG_WriteLong_2(msg_t *msg, int v) {
 						Info_SetValueForKey_Big(cs, "cl_allowDownload", "1");
 					
 					MSG_WriteBigString( msg, cs );
-					printf("this is called!!!\n");
 			} else {
-			if(start==1)
-				printf("configstrings[1] = %s\n", configstrings[start]);
 				MSG_WriteBigString( msg, configstrings[start] );
 			}
 		}
