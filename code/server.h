@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -24,9 +25,8 @@
 
 #include "shared.h"
 #include "script.h"
-#include <sys/queue.h>
 
-#if PATCH == 1
+#if CODPATCH == 1
 #define svsclients_ptr 0x83B67AC
 #define clientsize 370940
 #else
@@ -37,11 +37,13 @@
 #define SVF_NOCLIENT 0x1
 
 
-#if PATCH == 1
+#if CODPATCH == 1
 #define svs_time (*(int*)0x83B67A4)
-#else if PATCH == 5
+#else if CODPATCH == 5
 #define svs_time (*(int*)0x83CCD88)
 #endif
+
+extern int clientversion;
 
 typedef enum {
 	svc_bad,
@@ -82,6 +84,8 @@ typedef enum {
 	NS_SERVER
 } netsrc_t;
 
+#pragma pack(1)
+
 typedef struct {
 	netadrtype_t type;
 
@@ -91,24 +95,28 @@ typedef struct {
 	unsigned short port;
 } netadr_t; //size = 0x14 (20)
 
+#pragma pack(push, 1)
+
 typedef enum {
 	GUIDBAN,
 	IPBAN
 } ban_types;
 
-typedef struct aSingleBan_t {
+typedef struct {
 	int type; //ban_types
 	int guid;
 	netadr_t adr;
-	struct aSingleBan_t *next;
-} aSingleBan;
+	char reason[128];
+} banInfo_t;
 
-extern aSingleBan *banlist;
+extern LinkedList banlist;
 
 extern char x_mastername[14];
 extern netadr_t x_master;
 
 #define MAX_CHALLENGES 1024
+
+#pragma pack(1)
 
 typedef struct {
 	netadr_t adr; //0
@@ -118,11 +126,13 @@ typedef struct {
 	int firstTime; //32
 	int firstPing; //36
 	int connected; //40
-	#if PATCH == 5
+	#if CODPATCH == 5
 	int guid; //44
 	unsigned char __idk[36];
 	#endif
 } challenge_t;
+
+#pragma pack(push, 1)
 
 typedef int sharedEntity_t;
 
@@ -179,7 +189,7 @@ extern cvar_t *protocol;
 extern cvar_t* dedicated;
 extern cvar_t* sv_running;
 
-#if PATCH == 5
+#if CODPATCH == 5
 extern cvar_t *sv_disableClientConsole;
 #endif
 
@@ -191,6 +201,7 @@ extern cvar_t *x_contents;
 extern cvar_t *x_deadchat;
 extern cvar_t *x_authorize;
 extern cvar_t *x_spectator_noclip;
+extern cvar_t *x_connectmessage;
 
 extern cvar_t *cl_allowDownload; //the client will locally change any cvars to match the SYSTEMINFO cvars
 
@@ -230,6 +241,8 @@ typedef enum {
 	CS_PRIMED,      // gamestate has been sent, but client hasn't sent a usercmd
 	CS_ACTIVE       // client is fully in game
 } clientState_t;
+
+#pragma pack(1)
 
 typedef struct usercmd_s {
 	int serverTime;
@@ -295,6 +308,8 @@ typedef struct animation_s {
 	int f; //16
 	int g; //0
 } animation_t;
+
+#pragma pack(push, 1)
 
 /*
 from 1.5
@@ -398,7 +413,6 @@ void SV_UserinfoChanged( client_t* cl );
 #define SHOWMSG_MSEC 2050
 
 int CL_GetGuid(client_t* cl);
-void get_client_ip(int, char*);
 client_t* getclient(int);
 char	*ConcatArgs( int start );
 typedef void (*SV_Trace_t)( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask );

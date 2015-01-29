@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #ifndef SHARED_H
 #define SHARED_H
 
@@ -51,7 +52,6 @@ typedef unsigned char boolean;
 #define __fastcall __attribute__((fastcall))
 
 #ifdef xDEBUG
-
 #define _STRIP __attribute__((visibility ("hidden")))
 #define _VIS __attribute__((visibility ("default")))
 #define _DEBUG __attribute__((visibility ("default")))
@@ -64,6 +64,11 @@ typedef unsigned char boolean;
 #endif
 
 //static int ( QDECL * syscall )( int arg, ... ) = ( int ( QDECL * )( int, ... ) )0x8087DCC;
+
+#define CL_UPDATE_PAK_LINK "http://cod1.eu/xtnded/codextended_client.pk3"
+#define CL_UPDATE_PAK_BASENAME "zzz_zxtn_client"
+#define CL_UPDATE_PAK_NAME "main/zzz_zxtn_client"
+#define CL_UPDATE_PAK_CHECKSUM "-1500537913"
 
 #define NOP 0x90
 #define VERSION_STRING "Call of Duty Extended %.1f\n"
@@ -329,6 +334,7 @@ typedef struct {
 #define ENTITYNUM_WORLD   (MAX_GENTITIES-2)
 #define ENTITYNUM_MAX_NORMAL  (MAX_GENTITIES-2)
 
+#pragma pack(1)
 typedef struct {
 	int overflowed; //0
 	byte* data; //4
@@ -337,6 +343,7 @@ typedef struct {
 	int readcount; //16 //value 16
 	int bit; //20 //value 0
 } msg_t; //size is 0x18 (24)
+#pragma pack(push, 1)
 
 extern short   BigShort( short l );
 extern short   LittleShort( short l );
@@ -407,7 +414,7 @@ typedef struct {
 //----(SA)	removed
 } trajectory_t;
 
-
+#pragma pack(1)
 typedef struct {
     byte unk[480];
     int maxclients;
@@ -416,7 +423,7 @@ typedef struct {
     int previousTime;
     int startTime; //?idk
 } level_locals_t;
-
+#pragma pack(push, 1)
 extern level_locals_t *level;
 
 //gentity->eFlags
@@ -475,7 +482,7 @@ typedef enum {
 #define MAX_ENTITIES 1024
 #define MAX_ENTITY_SIZE 1024
 #define PLAYERSTATE_SIZE 0x22cc
-#if PATCH == 1
+#if CODPATCH == 1
 #define GENTITY_SIZE 788
 #else
 #define GENTITY_SIZE 0x31c
@@ -488,7 +495,7 @@ typedef enum {
 	SS_INTERMISSION
 } sessionstate_types;
 
-#if PATCH == 1
+#if CODPATCH == 1
 typedef enum {
 	EOFF_S_SVFLAGS = 244,
 	EOFF_S_GROUNDENTITYNUM = 124,
@@ -577,9 +584,11 @@ typedef enum {
 	POFF_SESSIONSTATE = 8400
 } PLAYER_OFFSET;
 
+#pragma pack(1)
+
 typedef struct {
 	char data[64]; //holds some values like origin of player before on turret, is being used flag, degrees of freedom (arcs)
-} __attribute__((packed)) turret_entity_info; //size 0x40
+} turret_entity_info; //size 0x40
 
 typedef struct gentity_s gentity_t;
 typedef struct gclient_s gclient_t;
@@ -618,7 +627,7 @@ typedef struct entityState_s {
 	int loopfxid; //216
 	int hintstring; //220
 	int animMovetype; //224
-} __attribute__((packed)) entityState_t;
+} entityState_t;
 
 typedef struct playerState_s {
 	int commandTime;            // cmd->serverTime of last executed command
@@ -626,12 +635,12 @@ typedef struct playerState_s {
 	int bobCycle;               // for view bobbing and footstep generation
 	int pm_flags;               // ducked, jump_held, etc
 	int pm_time;
-} __attribute__((packed)) playerState_t;
+} playerState_t;
 
 struct gclient_s {
 	playerState_t ps;
 	//other stuff
-} __attribute__((packed));
+};
 
 typedef enum {
 	PERK_QUICK_RELOAD
@@ -685,7 +694,8 @@ struct gentity_s {
 	gentity_t *nextTrain; //412
 	
 	unsigned char __i_dont_really_care_for_now[GENTITY_SIZE - 0x1A0 - sizeof(more_ent)];
-} __attribute__((packed));
+};
+#pragma pack(push, 1)
 
 extern gentity_t *g_entities;
 /*
@@ -956,11 +966,21 @@ int __stdcall trap_XAnimGetRoot(int a1, int a2)
 
 typedef void ( *xcommand_t )( void );
 
-typedef void (*Cmd_AddCommand_t)(const char*, xcommand_t);
+void Cmd_AddCommand(const char*,xcommand_t);
+typedef void (*_Cmd_AddCommand_t)(const char*, xcommand_t);
 typedef void (*Com_Error_t)(int code, const char *fmt, ...);
 
-extern Cmd_AddCommand_t Cmd_AddCommand;
+extern _Cmd_AddCommand_t _Cmd_AddCommand;
 extern Com_Error_t Com_Error;
+
+static void __attribute__((visibility ("hidden"))) *xalloc(size_t size) {
+	void *p = malloc(size);
+	if(!p) {
+		Com_Error(0, "EXE_ERR_OUT_OF_MEMORY");
+		return NULL;
+	}
+	return p;
+}
 
 void myClientCommand();
 void myClientEndFrame(int*);

@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "js.h"
 #include "server.h"
 
@@ -292,8 +293,7 @@ int js_player_getip(duk_context *c) {
 	client_t* cl = getclient(player);
 	if(!cl->state)
 		return 0;
-	char ip[16];
-	get_client_ip(cl, &ip[0]);
+	char *ip = NET_AdrToString(cl->remoteAddress);
 	duk_push_string(c,ip);
 	return 1;
 }

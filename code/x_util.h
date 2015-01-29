@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #ifndef X_UTIL_H
 #define X_UTIL_H
 
@@ -34,6 +35,68 @@ static int patch_memory(int start, int end, byte* search_for, byte* patched, siz
 	if(-1 != s)
 		memcpy((void*)s, patched, len);
 	return s;
+}
+
+struct list_element_t {
+	void *data;
+	struct list_element_t *next;
+};
+
+typedef struct list_element_t *LinkedList;
+
+#define new(x, y) (x*)malloc(sizeof(x) * y)
+#define list_empty(list) (list == NULL)
+#define list_each_element(it, list) \
+	struct list_element_t *it = list; \
+	for(;it!=NULL;it=it->next)
+#define list_each(type, it, list) \
+	struct list_element_t *LIST_CURRENT_ELEMENT = list; type it = (list) ? list->data : NULL; \
+	for(;LIST_CURRENT_ELEMENT!=NULL;it=(type)LIST_CURRENT_ELEMENT->data,LIST_CURRENT_ELEMENT=LIST_CURRENT_ELEMENT->next)
+#define list_remove(list, e) do { \
+	struct list_element_t *LIST_TEMP_ELEMENT = list; \
+	if(e == list) { \
+		list = list->next; free(e->data); free(e); \
+	} else { \
+		while(LIST_TEMP_ELEMENT->next != e) LIST_TEMP_ELEMENT = LIST_TEMP_ELEMENT->next; \
+		LIST_TEMP_ELEMENT->next = e->next; free(e->data); free(e); \
+	} \
+	} while(0)
+
+typedef void (*Com_Error_t)(int code, const char *fmt, ...);
+extern Com_Error_t Com_Error;
+
+static void list_clear(LinkedList *list) {
+	if(*list == NULL)
+		return;
+		
+	LinkedList tmp = *list;
+	
+	while(*list) {
+		tmp = *list;
+		*list = (*list)->next;
+		free(tmp->data);
+		free(tmp);
+	}
+	*list = NULL;
+}
+
+static LinkedList _list_add(LinkedList *list, void *data) {
+	LinkedList n = NULL, cur = *list;
+	n = (LinkedList)malloc(sizeof(*n));
+	if(n == NULL) {
+		Com_Error(0, "Out of memory!");
+		return NULL;
+	}
+	n->next = NULL;
+	n->data = data;
+	if(!cur)
+		*list = n;
+	else {
+		while(cur->next)
+			cur = cur->next;
+		cur->next = n;
+	}
+	return n;
 }
 
 /*

@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
 #include <curl/curl.h>
@@ -51,7 +52,7 @@ static int progress(void* ptr, double TotalToDownload, double NowDownloaded, dou
 }
 
 int download_file(const char* remoteName, const char* localName) {
-	printf("\n");
+	printf("\r\n");
 	CURL *curl;
 	FILE *fp;
 	curl = curl_easy_init();
@@ -76,9 +77,9 @@ int download_file(const char* remoteName, const char* localName) {
         curl_easy_cleanup(curl);
 		
 		fclose(fp);
-		
+		printf("\r\n");
 		return 1;
 	}
-	
+	printf("\r\n");
 	return 0;
 }

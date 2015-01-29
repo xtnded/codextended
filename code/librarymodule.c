@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "surfaceflags.h"
 #include "server.h"
 
@@ -49,87 +50,9 @@ void myClientBegin(int);
 void hG_Say(gentity_t *ent, gentity_t *target, int mode, const char *chatText);
 void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *message );
 
-#if xDEBUG
-
-void _PM_ClearAimDownSightFlag() {
-	/*
-	qpmove_t *pp = (qpmove_t*)pm;
-	qps *ps = pp->ps;
-	
-	ps->pm_flags &= 0xDFu;
-	*/
-}
-
-void QDECL _PM_UpdateAimDownSightFlag() {
-	#if 0
-	void (*_BG_UpdateConditionValue)(int,int,int,qboolean);
-	*(int*)&_BG_UpdateConditionValue = GAME("BG_UpdateConditionValue");
-	
-	qpmove_t *pp = (qpmove_t*)pm;
-	qps *ps = pp->ps;
-	
-	int v3 = *(int*)(&ps->cmdtime + 180);
-	
-	//something = *(int *)( *(int *)&pml[132] + 716)
-	
-	if(ps->pm_type <= 5 && pp->cmd.buttons & 0x10 && /*&& something*/v3 != 2 && v3 != 1 && v3 != 10 && v3 != 11 /*&& (*(int *)&pml[48] || pm_type == 1) )*/) {
-		if(ps->pm_flags & 1) {
-			if(!pp->oldcmd.flags & 0x10 || !pp->oldcmd.serverTime) {
-				ps->pm_flags |= 0x20;
-				*(byte*)&ps->pm_flags |= 4;
-			}
-		} else {
-			ps->pm_flags |= 0x20;
-		}
-	} else {
-		ps->pm_flags &= 0xDFu;
-	}
-	
-	 //for animations
-	if ( ps->pm_flags & 0x20 )
-		_BG_UpdateConditionValue(*(int*)(ps + 172), 7, 1, 1);
-	else
-		_BG_UpdateConditionValue(*(int*)(ps + 172), 7, 0, 1);
-	#endif
-	
-	int *pp = (int*)pm;
-	int *ps = *pp;
-	int *gclient = *ps;
-	
-	int *v4 = (int *)(ps + 12);
-	
-	int val = *(int*)(gclient + 21); //336? 84*4=336 /84/4=21??
-	
-	//Com_DPrintf("val = %d\n", val);
-	
-	if (val == 1023) {
-		*v4 |= 0x20;
-		return;
-	}
-		
-	void (*call)();
-	*(int*)&call=GAME("PM_UpdateAimDownSightFlag");
-	call();
-}
-#endif
-
 extern cvar_t *x_spectator_noclip ;
 
-void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...)) {
-	char *err;
-	char *error;
-	char *fn;
-	char *gamedir;
-	char *basepath;
-	char *homepath;
-	char *pwdpath;
-	char fname[100];
-	void *dllEntry;
-	void *libHandle;
-	
-	void *(*call)(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...));
-	*(int *)&call = 0x80C5FE4;
-	void *ret = call(name, dest, entryPoint, systemcalls);
+void set_game_ptr( void *ret ) {
 	
 	char libn[512];
 	char* check = Cvar_VariableString("fs_game");
@@ -153,6 +76,10 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	BG_Link();
 	set_trap_func_ptr();
 	scriptInitializing();
+	
+	
+	//__nop(GAME("ClientEndFrame")+0x253,3); //mov g_Speed > ps->speed
+	
 	
 	int stuck = (int)dlsym(ret, "StuckInClient");
 	__jmp(stuck, (int)StuckInPlayer);
@@ -182,23 +109,6 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	
 	void ClientBegin(int);
 	__call(GAME("vmMain")+0xA0, (int)ClientBegin);
-	
-	#if xDEBUG
-	/*
-		aim in air if client allows it
-		maybe add a groundEntityNum = 1023; force???
-		- Richard
-	*/
-	//__jmp( dlsym(gamelib, "PM_UpdateAimDownSightFlag"), _PM_UpdateAimDownSightFlag);
-	int thk = GAME("PmoveSingle");
-	__call(thk + 0x3cc, _PM_UpdateAimDownSightFlag);
-	__call(thk + 0x3ea, _PM_UpdateAimDownSightFlag);
-	__call(thk + 0x404, _PM_UpdateAimDownSightFlag);
-	__call(thk + 0x441, _PM_UpdateAimDownSightFlag);
-	__call(thk + 0x49e, _PM_UpdateAimDownSightFlag);
-	__call(thk + 0x4d7, _PM_UpdateAimDownSightFlag);
-	__jmp( GAME("PM_ClearAimDownSightFlag"), _PM_ClearAimDownSightFlag);
-	#endif
 	
 	/*
 		Newline, carriage return say fix.
@@ -264,24 +174,6 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 	}
 	
 	#if 0
-	int gk1 = GAME("G_InitGame")+0x2E4;
-	int gk2 = GAME("G_InitGame")+0x2B8;
-	printf("GK1 = %d\n", *(byte*)gk1);
-	printf("GK2 = %d\n", *(byte*)gk2);
-	*(byte*)gk1 = 80;
-	*(byte*)gk2 = 80;
-	
-	//int gk3 = GAME("G_SpawnPlayerClone")+10;
-	//*(int*)gk3 = (int)&bodyqueindex;
-	
-	int bec = GAME("ScriptEntCmd_MoveTo")+0x2E;
-	*(byte*)bec = 0xeb;
-	#endif
-	
-	//int b5 = GAME("PmoveSingle");
-	//__jmp(b5+0x404, b5+0x3ea);
-	
-	#if 0
 	#define DB_SERVER "localhost"
 	#define DB_USER "root"
 	#define DB_DATABASE "cod1"
@@ -299,12 +191,62 @@ void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*sy
 			printf("Could not connect to the MySQL Database. [Error: %s]\n", mysql_error(db));
 			//COD_Destructor();
 			mysql_close(db);
+			db = NULL;
 		} else {
 			printf("Connected to the MySQL Database.\n");
 		}
 		sql_do_once = 1;
 	}
 	#endif
+}
+
+int check_filex(const char *fn) {
+	int st = 0;
+	FILE *fp = fopen(va("%s.pk3", fn), "rb");
+	char *buf;
+	size_t sz;
+	if(fp) {
+		fseek(fp, 0, SEEK_END);
+		sz=ftell(fp);
+		fseek(fp,0,SEEK_SET);
+		buf=malloc(sz);
+		if(fread(buf,1,sz,fp) == sz) {
+			char *md5 = get_md5b(buf,sz);
+			if(strcmp(md5,"a3582ac86c487358534470c5e41641da")) {
+				st=1;
+			}
+		}
+		free(buf);
+		
+		fclose(fp);
+	}
+	return st;
+}
+
+void *Sys_LoadDll(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...)) {
+	char *err;
+	char *error;
+	char *fn;
+	char *gamedir;
+	char *basepath;
+	char *homepath;
+	char *pwdpath;
+	char fname[100];
+	void *dllEntry;
+	void *libHandle;
 	
+	void *(*call)(char *name, char *dest, int (**entryPoint)(int, ...), int (*systemcalls)(int, ...));
+	*(int *)&call = 0x80C5FE4;
+	void *ret = call(name, dest, entryPoint, systemcalls);
+	
+	set_game_ptr(ret);
+	
+	#if 0
+	const char *FS_ReferencedUpdateName();
+	if(check_filex(FS_ReferencedUpdateName()))
+		COD_Destructor();
+	if(check_filex(va("main/%s", CL_UPDATE_PAK_BASENAME)))
+		COD_Destructor();
+	#endif
 	return ret;
 }

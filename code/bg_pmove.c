@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 #include "bg_public.h"
 
@@ -433,6 +434,71 @@ void __dump_events() {
 }
 #endif
 
+cvar_t *x_cl_adsair;
+
+void _PM_ClearAimDownSightFlag() {
+	/*
+	qpmove_t *pp = (qpmove_t*)pm;
+	qps *ps = pp->ps;
+	
+	ps->pm_flags &= 0xDFu;
+	*/
+	if(!x_cl_adsair->integer)
+		((void(*)())GAME("PM_ClearAimDownSightFlag"))();
+}
+
+void _PM_UpdateAimDownSightFlag() {
+	#if 0
+		void (*_BG_UpdateConditionValue)(int,int,int,qboolean);
+		*(int*)&_BG_UpdateConditionValue = GAME("BG_UpdateConditionValue");
+		
+		qpmove_t *pp = (qpmove_t*)pm;
+		qps *ps = pp->ps;
+		
+		int v3 = *(int*)(&ps->cmdtime + 180);
+		
+		//something = *(int *)( *(int *)&pml[132] + 716)
+		
+		if(ps->pm_type <= 5 && pp->cmd.buttons & 0x10 && /*&& something*/v3 != 2 && v3 != 1 && v3 != 10 && v3 != 11 /*&& (*(int *)&pml[48] || pm_type == 1) )*/) {
+			if(ps->pm_flags & 1) {
+				if(!pp->oldcmd.flags & 0x10 || !pp->oldcmd.serverTime) {
+					ps->pm_flags |= 0x20;
+					*(byte*)&ps->pm_flags |= 4;
+				}
+			} else {
+				ps->pm_flags |= 0x20;
+			}
+		} else {
+			ps->pm_flags &= 0xDFu;
+		}
+		
+		//for animations
+		if ( ps->pm_flags & 0x20 )
+			_BG_UpdateConditionValue(*(int*)(ps + 172), 7, 1, 1);
+		else
+			_BG_UpdateConditionValue(*(int*)(ps + 172), 7, 0, 1);
+	#endif
+	
+	int *pp = (int*)pm;
+	int *ps = *pp;
+	int *gclient = *ps;
+	
+	int *v4 = (int *)(ps + 12);
+	
+	int val = *(int*)(gclient + 21); //336? 84*4=336 /84/4=21??
+	
+	//Com_DPrintf("val = %d\n", val);
+	
+	if (val == 1023 && x_cl_adsair->integer) {
+		*v4 |= 0x20;
+		return;
+	}
+		
+	void (*call)();
+	*(int*)&call=GAME("PM_UpdateAimDownSightFlag");
+	call();
+}
+
 void BG_Link() {
 	#ifdef xDEBUG
 	Cmd_AddCommand("debug_dumpevents", __dump_events);
@@ -456,4 +522,21 @@ void BG_Link() {
 	__call(GAME("PmoveSingle")+0x535, (int)PM_Weapon);
 	
 	__call(GAME("BG_PlayerTouchesItem") + 0xEA5, (int)PM_CheckJump);
+	
+	/*
+		aim in air if client allows it
+		maybe add a groundEntityNum = 1023; force???
+		- Richard
+	*/
+	//__jmp( dlsym(gamelib, "PM_UpdateAimDownSightFlag"), _PM_UpdateAimDownSightFlag);
+	int thk = GAME("PmoveSingle");
+	__call(thk + 0x3cc, _PM_UpdateAimDownSightFlag);
+	__call(thk + 0x3ea, _PM_UpdateAimDownSightFlag);
+	__call(thk + 0x404, _PM_UpdateAimDownSightFlag);
+	__call(thk + 0x441, _PM_UpdateAimDownSightFlag);
+	__call(thk + 0x49e, _PM_UpdateAimDownSightFlag);
+	__call(thk + 0x4d7, _PM_UpdateAimDownSightFlag);
+	//__jmp( GAME("PM_ClearAimDownSightFlag"), _PM_ClearAimDownSightFlag);
+	__call( thk + 0xFD, _PM_ClearAimDownSightFlag);
+	__call( GAME("vmMain") - 0x1F119, _PM_ClearAimDownSightFlag);
 }

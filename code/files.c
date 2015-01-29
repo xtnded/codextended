@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
 typedef struct {
@@ -59,9 +60,9 @@ bool FS_IsServerFile(char* basename) {
 	return 0;
 }
 
-extern cvar_t *x_requireclient;
-
 bool FS_IsExtendedFile(char* file) {
+	return 1;
+	#if 0
 	if(strstr(file, "xtnded") != NULL)
 		return 1;
 	if(strstr(file, "codextended") != NULL)
@@ -69,11 +70,38 @@ bool FS_IsExtendedFile(char* file) {
 	if(!FS_IsServerFile(file))
 		return 1;
 	return 0;
+	#endif
 }
 
 static bool count_flag = 1;
 
-const char *__cdecl FS_LoadedPakPureChecksums( void ) {
+const char *FS_LoadedPakChecksums() {
+	static char info[8192];
+	info[0] = 0;
+	searchpath_t *search;
+	char fs_game[256];
+	char* check = Cvar_VariableString("fs_game");
+	if(check[0] == '\0')
+		sprintf(fs_game, "main");
+	else
+		sprintf(fs_game, check);
+	for(search = fs_searchpaths->next; search; search = search->next) {
+		if(search->pak) {
+			if(FS_IsServerFile(search->pak->pakBasename))
+				continue;
+			if ( *info ) {
+				sprintf(info, "%s%s", info, " " );
+			}
+			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
+			if(FS_IsPakFile(search->pak->pakBasename) || search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
+				sprintf(info, "%s%i", info, search->pak->checksum);
+			}
+		}
+	}
+	return info;
+}
+
+const char *FS_LoadedPakPureChecksums( void ) {
 	static char info[8192];
 	info[0] = 0;
 	searchpath_t *search;
@@ -103,7 +131,7 @@ const char *__cdecl FS_LoadedPakPureChecksums( void ) {
 	return info;
 }
 
-const char *__cdecl FS_ReferencedPakChecksums() {
+const char *FS_ReferencedPakChecksums() {
 	static char info[8192];
 	info[0] = 0;
 	searchpath_t *search;
@@ -130,7 +158,7 @@ const char *__cdecl FS_ReferencedPakChecksums() {
 	return info;
 }
 
-const char *__cdecl FS_ReferencedPakNames() {
+const char *FS_ReferencedPakNames() {
 	static char info[8192];
 	info[0] = 0;
 	searchpath_t *search;
@@ -152,6 +180,56 @@ const char *__cdecl FS_ReferencedPakNames() {
 				//printf("PAK: %s with checksum %d and PURE = %d GAMENAME = %s\n", search->pak->pakBasename, search->pak->checksum, search->pak->checksum_pure, search->pak->pakGamename);
 				sprintf(info, "%s%s", info, search->pak->pakGamename );
 				sprintf(info, "%s%s", info, "/" );
+				sprintf(info, "%s%s", info, search->pak->pakBasename );
+			}
+		}
+	}
+	
+	return info;
+}
+
+const char *FS_UpdateName() {
+	return CL_UPDATE_PAK_BASENAME;
+}
+
+const char *FS_UpdateChecksum() {
+	searchpath_t *search;
+	for(search = fs_searchpaths->next; search; search = search->next) {
+		if(search->pak) {
+			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
+			if(!strcmp(search->pak->pakBasename, CL_UPDATE_PAK_BASENAME))
+				return va("%d", search->pak->checksum);
+		}
+	}
+	return "0";
+}
+
+const char *FS_ReferencedUpdateName() {
+	char *fs_game = Cvar_VariableString("fs_game");
+	if(!*fs_game)
+		fs_game = "main";
+	return va("%s/%s", fs_game, CL_UPDATE_PAK_BASENAME);
+}
+
+const char *FS_LoadedPakNames() {
+	static char info[8192];
+	info[0] = 0;
+	searchpath_t *search;
+	char fs_game[256];
+	char* check = Cvar_VariableString("fs_game");
+	if(check[0] == '\0')
+		sprintf(fs_game, "main");
+	else
+		sprintf(fs_game, check);
+	for(search = fs_searchpaths->next; search; search = search->next) {
+		if(search->pak) {
+			if(FS_IsServerFile(search->pak->pakBasename))
+				continue;
+			if ( *info ) {
+				sprintf(info, "%s%s", info, " " );
+			}
+			//if(search->pak->referenced || !strcmp(fs_game, search->pak->pakGamename)) {
+			if(FS_IsPakFile(search->pak->pakBasename) || search->pak->referenced || FS_IsExtendedFile(search->pak->pakBasename)) {
 				sprintf(info, "%s%s", info, search->pak->pakBasename );
 			}
 		}

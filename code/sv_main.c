@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 
 #define MAX_MSGLEN 32000
@@ -58,7 +59,7 @@ cvar_t *dedicated;
 cvar_t *sv_running;
 cvar_t *sv_master[MAX_MASTER_SERVERS];
 
-#if PATCH == 5
+#if CODPATCH == 5
 cvar_t *sv_disableClientConsole;
 #endif
 
@@ -70,13 +71,17 @@ cvar_t *x_contents;
 cvar_t *x_spectator_noclip;
 cvar_t *x_authorize;
 cvar_t *x_deadchat;
+cvar_t *x_connectmessage;
 
 cvar_t *cl_allowDownload;
+
+netadr_t x_master;
+char x_mastername[14];
 
 char SVC_CHANDELIER[12];
 
 typedef void (*Huff_Decompress_t)( msg_t *mbuf, int offset );
-#if PATCH == 1
+#if CODPATCH == 1
 Huff_Decompress_t Huff_Decompress = (Huff_Decompress_t)0x8071F7C;
 SV_GetClientScore_t SV_GetClientScore = (SV_GetClientScore_t)0x808D2DC;
 #else
@@ -141,7 +146,7 @@ void SV_NocPacket(netadr_t from, msg_t *msg) { //Not connected packet (Server is
 	char* s;
 	char* c;
 	if(msg->cursize >= 4) {
-		if(*(int*)msg->data == -1) {		
+		if(*(int*)msg->data == -1) {	
 			MSG_BeginReading(msg);
 			MSG_ReadLong(msg);
 			
@@ -153,6 +158,13 @@ void SV_NocPacket(netadr_t from, msg_t *msg) { //Not connected packet (Server is
 			
 			if ( !Q_stricmp( c, "rcon" ) ) {
 				SVC_RemoteCommand(&from, msg);
+			} else if(!Q_stricmp(c, "serverversionresponse")) {
+				if(!NET_CompareBaseAdr(from, x_master))
+					return;
+			} else if(!Q_stricmp(c, "clientversionresponse")) {
+				if(!NET_CompareBaseAdr(from, x_master))
+					return;
+				clientversion = atoi( Cmd_Argv(1) );
 			}
 		}
 	}
@@ -194,7 +206,7 @@ void SVC_Info( netadr_t* from ) {
 			count++;
 		}
 	}
-
+	
 	infostring[0] = 0;
 	
 	// echo back the parameter to status. so servers can use it as a challenge
@@ -203,8 +215,9 @@ void SVC_Info( netadr_t* from ) {
 	
 	Info_SetValueForKey( infostring, "protocol", va("%i", protocol->integer));
 	Info_SetValueForKey( infostring, "hostname", sv_hostname->string );
-	Info_SetValueForKey( infostring, "mapname", "mp_harbor" );
-	//Info_SetValueForKey( infostring, "mapname", mapname->string );
+	
+	Info_SetValueForKey( infostring, "mapname", mapname->string );
+	
 	Info_SetValueForKey( infostring, "clients", va( "%i", count ) );
 	Info_SetValueForKey( infostring, "sv_maxclients", va( "%i", sv_maxclients->integer - sv_privateClients->integer ) );
 	Info_SetValueForKey( infostring, "gametype", g_gametype->string );
@@ -278,7 +291,7 @@ void SVC_Status( netadr_t* from ) {
 		}
 	}
 	
-	#if PATCH == 5
+	#if CODPATCH == 5
 	if(sv_disableClientConsole->integer)
 		Info_SetValueForKey(infostring, "con_disabled", va("%i", sv_disableClientConsole->integer));
 	#endif
@@ -343,7 +356,7 @@ void SV_MasterHeartBeat(const char* hbname) {
 		NET_OutOfBandPrint( NS_SERVER, adr[i], "heartbeat %s\n", hbname );
 	}
 	
-	#ifdef xPOWERED
+	//#ifdef xPOWERED
 	
 	char where[8];
 	
@@ -360,7 +373,7 @@ void SV_MasterHeartBeat(const char* hbname) {
 		adr[MAX_MASTER_SERVERS].port = BigShort( 20510 );
 		NET_OutOfBandPrint( NS_SERVER, adr[MAX_MASTER_SERVERS], "heartbeat %s %d\n", hbname, CURRENTBUILD);
 	}
-	#endif
+	//#endif
 }
 
 char x_print_connect_message[1024] = "";
@@ -371,6 +384,7 @@ void SVC_Chandelier(netadr_t *from) {
 	
 	int newestbuild = atoi( Cmd_Argv( 1 ) );
 	char* txt = Cmd_Argv( 2 );
+	clientversion = atoi(Cmd_Argv( 3 ));
 
 	if(newestbuild != CURRENTBUILD) {
 	
@@ -411,12 +425,12 @@ void SVC_Chandelier(netadr_t *from) {
 		Com_Printf(msg);
 	}
 
-	#ifdef xPOWERED
+	//#ifdef xPOWERED
 	if(txt[0] != '\0') {
 		strncpy(x_print_connect_message, txt, 1023);
 		x_print_connect_message[1023] = '\0';
 	}
-	#endif
+	//#endif
 }
 
 void SVC_RemoteCommand(netadr_t *from, msg_t *msg) {
@@ -448,7 +462,7 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	MSG_BeginReading(msg);
 	MSG_ReadLong(msg);
 	
-	#if PATCH == 5
+	#if CODPATCH == 5
 	
 	void (*SV_Netchan_AddOOBProfilePacket)(int);
 	*(int*)&SV_Netchan_AddOOBProfilePacket = 0x8094928;
@@ -473,9 +487,9 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		SVC_Info( &from );
 		/*
 		void (*info)(netadr_t);
-		#if PATCH == 1
+		#if CODPATCH == 1
 		*(int*)&info = 0x808C1AC;
-		#else if PATCH == 5
+		#else if CODPATCH == 5
 		*(int*)&info = 0x8092A74;
 		#endif
 		info(from);
@@ -492,9 +506,9 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		*(int*)&SVC_RemoteCommand = 0x808C404;
 		SVC_RemoteCommand(from,msg);
 		*/
-		#if PATCH == 1
+		#if CODPATCH == 1
 		SVC_RemoteCommand(&from, msg);
-		#else if PATCH == 5
+		#else if CODPATCH == 5
 		((void (*)(netadr_t,msg_t*))0x80930D0)(from,msg);
 		#endif
 	#endif

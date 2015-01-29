@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
 xentity_t xentities[1024];
@@ -54,8 +55,8 @@ char* modNames[] = {
     "MOD_EXPLOSIVE"
 };
 
-#if PATCH == 1
-Cmd_AddCommand_t Cmd_AddCommand = (Cmd_AddCommand_t)0x805AEF8;
+#if CODPATCH == 1
+_Cmd_AddCommand_t _Cmd_AddCommand = (_Cmd_AddCommand_t)0x805AEF8;
 Com_Printf_t _STRIP Com_Printf = (Com_Printf_t)0x806B760;
 Com_DPrintf_t _STRIP Com_DPrintf = (Com_DPrintf_t)0x806B79C;
 Com_Error_t _STRIP Com_Error = (Com_Error_t)0x806B93C;
@@ -65,7 +66,7 @@ Cmd_ArgvBuffer_t Cmd_ArgvBuffer = (Cmd_ArgvBuffer_t)0x805B27C;
 Cmd_TokenizeString_t Cmd_TokenizeString = (Cmd_TokenizeString_t)0x805B398;
 VM_Call_t VM_Call = (VM_Call_t)0x8092158;
 #else 
-Cmd_AddCommand_t Cmd_AddCommand = (Cmd_AddCommand_t)0x806043E;
+_Cmd_AddCommand_t _Cmd_AddCommand = (_Cmd_AddCommand_t)0x806043E;
 Com_Printf_t Com_Printf = (Com_Printf_t)0x806FC10;
 Com_DPrintf_t Com_DPrintf = (Com_DPrintf_t)0x806FC5F;
 Com_Error_t Com_Error = (Com_Error_t)0x806FE74;

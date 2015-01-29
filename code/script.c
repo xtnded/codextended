@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "script.h"
 /*
 	:: Scr_GetFunction/GetMethod ::
@@ -180,6 +181,37 @@ void Math_Scr_sqrt(int a) {
 void trace_For_me(int);
 #endif
 
+void gscr_malloc(int a) {
+	int size = Scr_GetInt(0);
+	void *p = malloc(size);
+	if(!p) {
+		Scr_AddUndefined();
+		return;
+	}
+	Scr_AddInt((int)p);
+}
+
+void gscr_free(int a) {
+	void *p = (void*)Scr_GetInt(0);
+	if(!p)
+		return;
+	free(p);
+}
+
+void gscr_memset(int a) {
+	void *s = (void*)Scr_GetInt(0);
+	int c = Scr_GetInt(1);
+	int n = Scr_GetInt(2);
+	memset(s, c, n);
+}
+
+void gscr_memcpy(int a) {
+	void *s1 = (void*)Scr_GetInt(0);
+	void *s2 = (void*)Scr_GetInt(1);
+	int n = Scr_GetInt(2);
+	memcpy(s1, s2, n);
+}
+
 SCRIPTFUNCTION scriptFunctions[] = {
 	//name, function, developer
 	#ifdef uMYSQL
@@ -263,23 +295,15 @@ void PlayerCmd_IsUsingClient(int a1) {
 	
 	int clientbuild = atoi( Info_ValueForKey(cl->userinfo, "xtndedbuild") );
 	
-	if(clientbuild != x_requireclient->integer) {
+	if(clientbuild != clientversion) {
 		Scr_AddBool(false);
 		return;
 	}
 	Scr_AddBool(true);
 }
 
-void array_test(int self) {
-printf("self = %d { %x }\n", self, self);
-
-Scr_AddInt(1337);
-}
-
 SCRIPTFUNCTION scriptMethods[] = {
 	//name, function, developer
-	
-	{"test", array_test, 0},
 	
 	/*
 	======
@@ -310,7 +334,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"sendconnectionlesspacket", PlayerCmd_SendConnectionlessPacket, 0},
 	{"sendservercommand", PlayerCmd_SendServerCommand, 0},
 	{"sendgamestate", PlayerCmd_SendGamestate, 0},
-	{"isusingclient", PlayerCmd_IsUsingClient, 0},
+	{"hasclient", PlayerCmd_IsUsingClient, 0},
 	{"get_ip", PlayerCmd_getip, 0},
 	{"getint", PlayerCmd_GetInt, 0},
 	{"setint", PlayerCmd_SetInt, 0},
@@ -337,6 +361,8 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"hasperk", PlayerCmd_HasPerk, 0},
 	{"setperk", PlayerCmd_SetPerk, 0},
 	{"unsetperk", PlayerCmd_UnsetPerk, 0},
+	{"getping", PlayerCmd_GetPing, 0},
+	{"setmaxspeed", PlayerCmd_SetMaxSpeed, 0},
 	{NULL, NULL, 0}
 };
 
@@ -751,7 +777,10 @@ void Scr_LoadConsts() {
 	xscr_const.perks[PERK_QUICK_RELOAD] = Scr_AllocString("sleight_of_hand", 1);
 }
 
-void GScr_LoadGametypeScript( void ) { //bleh
+void GScr_LoadGametypeScript( void ) {
+	extern int cpy_once;
+	cpy_once = 0;
+	
 	char v1[64];
 	snprintf(v1, 64, "maps/mp/gametypes/%s", g_gametype->string);
 	g_scr_data->gametype_main = load_callback(v1, "main", 0);
@@ -1406,9 +1435,6 @@ gentity_t *fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWP
 #endif
 
 void scriptInitializing() {
-	void CoDExtended();
-	printf("void CoDExtended(); is located at {0x%x}\n", (int)CoDExtended);
-	
 	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
 	//printf("Patched developer functions:\n");
 	for(int i = 0; i != 0x69; i++, it++) {

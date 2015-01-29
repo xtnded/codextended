@@ -14,9 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
-#if PATCH == 1
+#if CODPATCH == 1
 MSG_BeginReading_t MSG_BeginReading = (MSG_BeginReading_t)0x807F174;
 MSG_ReadLong_t MSG_ReadLong = (MSG_ReadLong_t)0x807F2F0;
 MSG_ReadStringLine_t MSG_ReadStringLine = (MSG_ReadStringLine_t)0x807F3FC;

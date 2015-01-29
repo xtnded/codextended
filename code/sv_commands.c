@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 
 /*
@@ -383,8 +384,6 @@ void SV_Kick_f( void ) {
 	}
 }
 
-aSingleBan* bl_push();
-
 void SV_BanProcess(client_t* cl, int type, const char* reason) {
 	const char* file = (type == IPBAN) ? "ipbans.txt" : "guidbans.txt";
 	FILE* f = fopen(file, "a");
@@ -409,15 +408,12 @@ void SV_BanProcess(client_t* cl, int type, const char* reason) {
 	
 	int k;
 	
-	aSingleBan* cur = banlist;
-	
-	while(cur!=NULL) {
+	list_each(banInfo_t*, cur, banlist) {
 		if((cur->guid == guid && guid != 0 && cur->type == GUIDBAN) || (cur->type == IPBAN && NET_CompareBaseAdr(cl->remoteAddress, cur->adr))) {
 			Com_Printf("%s has already been banned.\n", cl->name);
 			fclose(f);
 			return;
 		}
-		cur=cur->next;
 	}
 	
 	if(!guid && type==GUIDBAN) {
@@ -425,14 +421,15 @@ void SV_BanProcess(client_t* cl, int type, const char* reason) {
 		return;
 	}
 	
-	aSingleBan* add = bl_push();
+	banInfo_t* add = (banInfo_t*)xalloc(sizeof(banInfo_t));
+	_list_add(&banlist, add);
 	add->type = type;
 	
 	if(type==IPBAN) {
 		add->adr = cl->remoteAddress;
-		fprintf(f, "%s\n", ip);
+		fprintf(f, "%s:%s\n", ip, reason);
 	} else if(type == GUIDBAN) {
-		fprintf(f, "%d\n", guid);
+		fprintf(f, "%d:%s\n", guid, reason);
 		add->guid = guid;
 	}
 	
@@ -541,22 +538,23 @@ void SV_UnbanGUID_f() {
 		return;
 	}
 	
-	aSingleBan* cur = banlist;
+	LinkedList it = banlist;
 	int guid = atoi( Cmd_Argv( 1 ) );
 	
 	FILE* f = fopen("guidbans.txt", "w");
 	
 	if(f) {
-		while(cur!=NULL) {
-			if(cur->type == GUIDBAN) {
-				if(cur->guid == guid) {
-					Com_Printf("GUID '%d' has been unbanned.\n", cur->guid);
-					cur=cur->next;
+		while(it != NULL) {
+			banInfo_t *info = (banInfo_t*)it->data;
+			if(info->type == GUIDBAN) {
+				if(info->guid == guid) {
+					Com_Printf("GUID '%d' has been unbanned.\n", info->guid);
+					it = it->next;
 					continue;
 				}
-				fprintf(f, "%d\n", cur->guid);
+				fprintf(f, "%d:%s\n", info->guid, info->reason);
 			}
-			cur=cur->next;
+			it = it->next;
 		}
 	
 		fclose(f);
@@ -612,7 +610,7 @@ void SV_UnbanIP_f() {
 		return;
 	}
 	
-	aSingleBan *current = banlist;
+	LinkedList it = banlist;
 	
 	char* ip = Cmd_Argv(1);
 	netadr_t ipadr;
@@ -622,16 +620,17 @@ void SV_UnbanIP_f() {
 	
 	if(f) {
 		
-		while(current!=NULL) {
-			if(current->type == IPBAN) {
-				if(NET_CompareBaseAdr(current->adr, ipadr)) {
+		while(it != NULL) {
+			banInfo_t *info = (banInfo_t*)it->data;
+			if(info->type == IPBAN) {
+				if(NET_CompareBaseAdr(info->adr, ipadr)) {
 					Com_Printf("IP '%s' has been unbanned.\n", ip);
-					current=current->next;
+					it = it->next;
 					continue;
 				}
-				fprintf(f, "%s\n", NET_BaseAdrToString(current->adr));
+				fprintf(f, "%s:%s\n", NET_BaseAdrToString(info->adr), info->reason);
 			}
-			current = current->next;
+			it = it->next;
 		}
 	
 		fclose(f);
@@ -688,29 +687,32 @@ void SV_UnbanIP_f() {
 
 void SV_BanIP_f() {
 	if(Cmd_Argc()!=2) {
-		Com_Printf("Usage: banip <ip>\n");
+		Com_Printf("Usage: banip <ip> [reason]\n");
 		return;
 	}
 	
 	char* ip = Cmd_Argv(1);
+	char *reason = Cmd_Argv(2);
 	netadr_t adr;
 	
 	NET_StringToAdr(ip, &adr);
 	
 	client_t* cl;
 	
-	for(int i = 0; i < sv_maxclients->integer; i++) {
-		cl=getclient(i);
-		if(!cl->state)	continue;
-		if(NET_CompareBaseAdr(adr, cl->remoteAddress)) {
-			SV_DropClient(cl, "banned");
-			break;
+	if(sv_running->integer) {
+		for(int i = 0; i < sv_maxclients->integer; i++) {
+			cl = getclient(i);
+			if(!cl->state)	continue;
+			if(NET_CompareBaseAdr(adr, cl->remoteAddress)) {
+				SV_DropClient(cl, "banned");
+				break;
+			}
 		}
 	}
 	
 	FILE* f = fopen("ipbans.txt", "a");
 	if(f) {
-		fprintf(f,"%s\n",ip);
+		fprintf(f,"%s:%s\n",ip, reason);
 		fclose(f);
 	}
 	
@@ -721,11 +723,12 @@ void SV_BanIP_f() {
 
 void SV_BanGUID_f() {
 	if(Cmd_Argc()!=2) {
-		Com_Printf("Usage: banguid <guid>\n");
+		Com_Printf("Usage: banguid <guid> [reason]\n");
 		return;
 	}
 	
 	int guid = atoi( Cmd_Argv(1) );
+	char *reason = Cmd_Argv(2);
 	
 	if(guid == 0 && !x_authorize->integer) {
 		Com_Printf("Error: You can't ban GUID zero.\n");
@@ -733,18 +736,21 @@ void SV_BanGUID_f() {
 	}
 	
 	client_t* cl;
-	for(int i = 0; i < sv_maxclients->integer; i++) {
-		cl=getclient(i);
-		if(!cl->state)	continue;
-		if(CL_GetGuid(cl) == guid) {
-			SV_DropClient(cl, "banned");
-			break;
+		
+	if(sv_running->integer) {
+		for(int i = 0; i < sv_maxclients->integer; i++) {
+			cl=getclient(i);
+			if(!cl->state)	continue;
+			if(CL_GetGuid(cl) == guid) {
+				SV_DropClient(cl, "banned");
+				break;
+			}
 		}
 	}
 	
 	FILE* f = fopen("guidbans.txt", "a");
 	if(f) {
-		fprintf(f, "%d\n", guid);
+		fprintf(f, "%d:%s\n", guid, reason);
 		fclose(f);
 	}
 	
@@ -805,11 +811,6 @@ void X_ReadBannedList_sub() {
 	X_ReadBannedList(true);
 }
 
-/*
-==================
-SV_AddOperatorCommands
-==================
-*/
 void SV_AddOperatorCommands(void) {
 	static qboolean* initialized = (qboolean*)0x8160680;
 	

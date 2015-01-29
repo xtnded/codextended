@@ -14,9 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
-#if PATCH == 1
+#if CODPATCH == 1
 static Cvar_FindVar_t Cvar_FindVar = (Cvar_FindVar_t)0x806E9B4;
 Cvar_Set_t Cvar_Set = (Cvar_Set_t)0x806ECD4;
 Cvar_Get_t Cvar_Get = (Cvar_Get_t)0x806EA34;
@@ -124,7 +125,7 @@ qboolean is_in_set(char c) {
 }
 
 cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force ) {
-	cvar_t * (*ret)();
+	cvar_t * (*ret)(const char*,const char*,int);
 	*(int*)&ret = 0x806ECD4;
 	/*
 	// for hostname clean on propose of rafi but it's useless if it's opensource..

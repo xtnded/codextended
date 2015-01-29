@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
@@ -442,6 +443,8 @@ void PlayerCmd_GetGuid(int a1);
 void PlayerCmd_SetPerk(int);
 void PlayerCmd_UnsetPerk(int);
 void PlayerCmd_HasPerk(int);
+void PlayerCmd_SetMaxSpeed(int);
+void PlayerCmd_GetPing(int);
 
 /*
 =============

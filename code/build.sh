@@ -13,9 +13,6 @@ info()
 
 	http://github.com/riicchhaarrd/CoDExtended
 	http://cod1.eu/
-	
-	Thanks to kung foo man and his project 'libcod'
-	https://github.com/kungfooman/libcod
 EOF
 }
 
@@ -97,8 +94,8 @@ fi
 compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 
 if [ $DEBUG = true ]; then
-compiler="$cc -DxDEBUG -g -w -Wl,--exclude-libs,ALL"
-#compiler="$cc -DxDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
+compiler="$cc -DxDEBUG -DDEBUG -g -w -Wl,--exclude-libs,ALL"
+#compiler="$cc -DxDEBUG -DDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 fi
 
 if [ $uMYSQL = true ]; then
@@ -114,9 +111,9 @@ DEFINES+="-DBUILD_ECMASCRIPT "
 fi
 
 if [ $PATCHVERSION = 5 ]; then
-DEFINES+="-DPATCH=5 "
+DEFINES+="-DCODPATCH=5 "
 else
-DEFINES+="-DPATCH=1 "
+DEFINES+="-DCODPATCH=1 "
 fi
 
 params="$DEFINES -std=c99 -I. -m32 -fPIC -Wno-write-strings"
@@ -136,6 +133,7 @@ $compiler $params -c files.c -o obj/files.o
 $compiler $params -c cmd.c -o obj/cmd.o
 $compiler $params -c msg.c -o obj/msg.o
 $compiler $params -c curl.c -o obj/curl.o
+
 echo "[GAME]"
 $compiler $params -c shared.c -o obj/shared.o
 $compiler $params -c script.c -o obj/script.o
@@ -149,6 +147,7 @@ $compiler $params -c sv_client.c -o obj/sv_client.o
 $compiler $params -c sv_world.c -o obj/sv_world.o
 $compiler $params -c sv_game.c -o obj/sv_game.o
 $compiler $params -c sv_init.c -o obj/sv_init.o
+$compiler $params -c net_chan.c -o obj/net_chan.o
 $compiler $params -c sv_main.c -o obj/sv_main.o
 $compiler $params -c x_clientcmds.c -o obj/x_clientcmds.o
 $compiler $params -c unix_net.c -o obj/unix_net.o
@@ -198,5 +197,5 @@ $compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -Os -s -lz 
 fi
 fi
 #rm -rf ./obj
-find /home/ext/obj -name '*.o' ! -name 'duktape.o' -delete
+find ./obj -name '*.o' ! -name 'duktape.o' -delete
 echo "Done."

@@ -14,29 +14,13 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "script.h"
 #include "server.h"
 
 void PlayerCmd_getip(int a1) {
-	/*char userinfo[MAX_STRING_CHARS];
-	getuserinfo(a1, userinfo, sizeof(userinfo));
-	
-	char* ip = Info_ValueForKey(userinfo, "ip");
-	if(NULL == ip) {
-		Scr_AddString("");
-	} else {
-		char* tok = strtok(ip, ":");
-		if(tok)
-			Scr_AddString(tok);
-		else
-			Scr_AddString("");
-	}*/
 	client_t* cl = getclient(a1);
-	if(cl) {
-		char ip[16];
-		get_client_ip(a1, &ip[0]);
-		Scr_AddString(ip);
-	}
+	Scr_AddString(NET_BaseAdrToString(cl->remoteAddress));
 }
 
 void PlayerCmd_SetPerk(int self) {
@@ -121,6 +105,23 @@ void PlayerCmd_renamebot(int a1) {
 		memcpy(&cl->name, key, 32);
 		cl->name[31] = '\0';
 	}
+}
+
+void PlayerCmd_SetMaxSpeed(int self) {
+	gentity_t *ent = &g_entities[self];
+	if(!ent->client)
+		return;
+	gclient_t *gclient = ent->client;
+	*(float*)((int)gclient + 68) = Scr_GetFloat(0);
+}
+
+void PlayerCmd_GetPing(int self) {
+	client_t *cl = getclient(self);
+	if(!cl) {
+		Scr_AddInt(0);
+		return;
+	}
+	Scr_AddInt(cl->ping);
 }
 
 void PlayerCmd_ispure(int a1) {

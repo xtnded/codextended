@@ -14,43 +14,22 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "shared.h"
 
 void CoDExtended();
 
-#ifdef _WIN32
-extern "C" DLL_EXPORT void xtnded() {
-}
-#endif
-
-#ifdef _WIN32
-BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-#elif defined __linux__
-void __attribute__ ((constructor)) codextended_load(void) {
-#endif
-	#ifdef _WIN32
-		//if(lpvReserved!=NULL)
-      //  return 0;
-		switch(fdwReason) {
-			case DLL_PROCESS_ATTACH:
-				DisableThreadLibraryCalls(hinstDLL);
-				#endif
-				
-				CoDExtended();
-				#ifdef _WIN32
-			break;
-			
-			case DLL_PROCESS_DETACH:
-				COD_Destructor();
-			break;
-		}
-		return 1;
-	#endif
+int __attribute__((visibility ("default"))) codextended_module_load() {
+	CoDExtended();
+	return BUILDNUMBER;
 }
 
-// Odd, isn't it? 1.5 destructor works
-#if PATCH == 5
-void __attribute__ ((destructor)) codextended_unload( void ) {
+void __attribute__ ((constructor)) __attribute__((visibility ("default"))) codextended_load(void) {
+	CoDExtended();
+}
+// 1.5 destructor works?? or stdout is closed? cba to redo destruct
+#if CODPATCH == 5
+void __attribute__ ((destructor)) __attribute__((visibility ("default"))) codextended_unload( void ) {
 	COD_Destructor();
 }
 #endif

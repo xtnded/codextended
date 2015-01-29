@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 #include <sys/stat.h>
 
@@ -23,73 +24,34 @@ SV_GetConfigstring_t SV_GetConfigstring = (SV_GetConfigstring_t)0x808B05C;
 netadr_t authorizeAddress;
 netadr_t masterAddress;
 
-aSingleBan *banlist = NULL;
-
-bool bl_create() {
-	if(banlist != NULL) {
-		//printf("ERROR: Banlist is not NULL.\n");
-		return 0;
-	}
-	banlist = (aSingleBan*)malloc(sizeof(aSingleBan));
-	banlist->next = NULL;
-	return 1;
-}
-
-void bl_clear() {
-	if(banlist == NULL) {
-		//Com_Printf("ERROR: Trying to clear an empty banlist.\n");
-		return;
-	}
-	aSingleBan *tmp = NULL;
-	aSingleBan *cur = banlist;
-	while( cur != NULL ) {
-		tmp = cur;
-		cur = cur->next;
-		free( tmp );
-		tmp = NULL;
-	}
-	banlist = NULL;
-}
-
-aSingleBan* bl_push() {
-	if(banlist == NULL) {
-		//printf("ERROR: Trying to push a value onto a NULLed banlist.\n");
-		return NULL;
-	}
-	
-	aSingleBan *cur = banlist;
-	while(1) {
-		if(cur->next == NULL) {
-			cur->next = (aSingleBan*)malloc(sizeof(aSingleBan));
-			cur->next->next = NULL;
-			return cur->next;
-		}
-		cur = cur->next;
-	}
-	return NULL;
-}
+LinkedList banlist = NULL;
 
 void X_ReadBannedList(bool print_t) {
 	FILE *f;
 	netadr_t adr;
-	aSingleBan *ban;
+	banInfo_t *ban;
 	char buf[256];
 	char* bufp = NULL;
 	
-	bl_clear();
-	
-	bl_create();
+	list_clear(&banlist);
 	
 	f = fopen("ipbans.txt", "r");
 	if(f) {
 		while(fgets(buf, sizeof(buf), f)) {
+			char *reason = strchr(buf, ':');
+			if(reason != NULL)
+				*reason++ = '\0';
 			bufp = utrim(buf);
 			if(!strlen(bufp))
 				continue;
 			NET_StringToAdr(bufp, &adr);
-			ban = bl_push();
+			ban = (banInfo_t*)xalloc(sizeof(banInfo_t));
+			*ban->reason = 0;
 			ban->type = IPBAN;
 			ban->adr = adr;
+			if(reason != NULL)
+				strncpy(ban->reason, reason, sizeof(ban->reason));
+			_list_add(&banlist, ban);
 			if(print_t)
 				printf("Added IP '%s' to the list.\n", NET_BaseAdrToString(adr));
 		}
@@ -105,9 +67,11 @@ void X_ReadBannedList(bool print_t) {
 				continue;
 			if(atoi(bufp) == 0)
 				continue;
-			ban = bl_push();
+			ban = (banInfo_t*)xalloc(sizeof(banInfo_t));
+			*ban->reason = 0;
 			ban->type = GUIDBAN;
 			ban->guid = atoi( bufp ) ;
+			_list_add(&banlist, ban);
 			if(print_t)
 				cprintf(PRINT_INFO, "Added GUID '%s' to the list.\n", bufp);
 		}
@@ -115,43 +79,11 @@ void X_ReadBannedList(bool print_t) {
 	}
 }
 
-netadr_t x_master;
-char x_mastername[14];
-
-void MA_UpdateRequest() {
-	
-	int len;
-	const char *data = "updaterequest";
-	len = strlen(data);
-	
-	NET_SendPacket(NS_SERVER, len, (void*)data, x_master);
-}
-
-void MA_UpdateHandler(netadr_t *from, msg_t *msg) {
-	if ( !NET_CompareBaseAdr( *from, x_master ) )
-		return;
-	
-	
-}
-
-void __dlfile() {
-	if(Cmd_Argc()<1) {
-		printf("argc fail\n");
-		return;
-	}
-	char *local = "./download_temp_file";
-	char *url = Cmd_Argv(1);
-	
-	int download_file(const char *remoteName, const char *localName);
-	if(!download_file(url,local))
-	cprintf(PRINT_ERR, "error downloading file..\n");
-}
-
 void SV_Init( void ) {
 	void (*init)( void );
-	#if PATCH == 1
+	#if CODPATCH == 1
 	*(int*)&init = 0x808A94C;
-	#else if PATCH == 5
+	#else if CODPATCH == 5
 	*(int*)&init = 0x80913B3;
 	#endif
 	
@@ -159,9 +91,6 @@ void SV_Init( void ) {
 	
 	if ( NET_StringToAdr( x_mastername, &x_master ) )
 		x_master.port = BigShort( 20510 );
-		
-	if(x_master.type != NA_BAD)
-		MA_UpdateRequest();
 	
 	X_ReadBannedList(true);
 	
@@ -204,9 +133,51 @@ void SV_Init( void ) {
 	shortversion = Cvar_Get("shortversion", "1.1", 68);
 	dedicated = Cvar_Get("dedicated", "2", 64);
 	x_globalbans = Cvar_Get("x_globalbans", "1", 0);
-	x_requireclient = Cvar_Get("x_requireclient", "1", 0);
-	x_requireveritas = Cvar_Get("x_requireveritas", "0", 0);
-	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", 0);
+	x_requireclient = Cvar_Get("x_requireclient", "0", CVAR_ARCHIVE);
+	x_requireveritas = Cvar_Get("x_requireveritas", "0", CVAR_ARCHIVE);
+	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", CVAR_ARCHIVE);
+	x_connectmessage = Cvar_Get("x_connectmessage", "", CVAR_ARCHIVE);
+	cl_allowDownload = Cvar_Get("cl_allowDownload", "0", CVAR_SYSTEMINFO);
+	
+	Cvar_Get("rate", "25000", CVAR_SYSTEMINFO);
+	Cvar_Get("snaps", "40", CVAR_SYSTEMINFO);
+	
+	void Com_DPrintf_2(const char*,...);
+	__call(0x808743B, (int)Com_DPrintf_2);
+	__nop(0x8087447, 5); //call to sendclientgamestate
+	void MSG_WriteLong_2(msg_t *msg, int v);
+	__call(0x8086003, (int)MSG_WriteLong_2);
+	__nop(0x8086008, 0x8086057); //for( configstrings loop < 2048
+	
+	void SV_ExecuteClientMessage(client_t *cl, msg_t *msg);
+	__call(0x808CA57, (int)SV_ExecuteClientMessage);
+	
+	if(x_requireclient->integer && sv_allowDownload->integer) {
+		Cvar_Set("cl_allowDownload", "1");
+		
+		const char *FS_ReferencedUpdateName();
+		const char *FS_UpdateChecksum();
+		const char *FS_UpdateName();
+		
+		__jmp(0x80717A4, (int)FS_UpdateChecksum);
+		__jmp(0x8071664, (int)FS_UpdateChecksum);
+		__jmp(0x80716CC, (int)FS_ReferencedUpdateName);
+		__jmp(0x8071600, (int)FS_UpdateChecksum); //FS_LoadedPakChecksums
+		__jmp(0x8071580, (int)FS_UpdateName); //FS_LoadedPakNames
+		
+		struct stat st;
+		char *localName = va("./%s.pk3", FS_ReferencedUpdateName());
+		if(stat(localName, &st)) {
+			if(!download_file(CL_UPDATE_PAK_LINK, localName)) {
+				cprintf(PRINT_ERR|PRINT_UNDERLINE, "Error! Trying to use client as requirement, cannot download update pak!\n");
+				COD_Destructor();
+			}
+			((void(*)(int))0x80621E4)(0);
+		}
+	}
+	
+	extern cvar_t *x_cl_adsair;
+	x_cl_adsair = Cvar_Get("x_cl_adsair", "1", 0);
 	
 	cvar_t *x_nopbots = Cvar_Get("x_nopbots", "0", 0);
 	/*
@@ -214,17 +185,11 @@ void SV_Init( void ) {
 	*/
 	
 	if(x_nopbots->integer) {
-	
-	__nop(0x808D152, 5);
-	__nop(0x808D492, 5);
-	
+		__nop(0x808D152, 5);
+		__nop(0x808D492, 5);
 	}
 	
-	cl_allowDownload = Cvar_Get("cl_allowDownload", "0", CVAR_SYSTEMINFO);
-	Cvar_Get("rate", "25000", CVAR_SYSTEMINFO);
-	Cvar_Get("snaps", "40", CVAR_SYSTEMINFO);
-	
-	#if PATCH == 5
+	#if CODPATCH == 5
 	sv_disableClientConsole = Cvar_Get("sv_disableClientConsole", "0", 8);
 	#endif
 	
@@ -232,7 +197,8 @@ void SV_Init( void ) {
 	
 	x_contents = Cvar_Get("x_contents", "-1", 0);
 	
-	Cvar_Get("codextended", "This server is powered by CoDExtended.", CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
+	Cvar_Get("codextended", va("CoDExtended v%d", CURRENTBUILD), CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
+	//Cvar_Get("codextended", "This server is powered by CoDExtended.", CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
 	
 	x_bannedmessage = Cvar_Get("x_bannedmsg", "You have been banned from this server.", 0);
 	
@@ -273,146 +239,3 @@ void SV_SpawnServer( char *server ) {
 	
 }
 #endif
-
-//adding this to prevent of creating a new file net_chan.c
-Netchan_Setup_t Netchan_Setup = (Netchan_Setup_t)0x808119C;
-
-#if PATCH == 1
-NET_OutOfBandPrint_t NET_OutOfBandPrint = (NET_OutOfBandPrint_t)0x8080920;
-#else
-NET_OutOfBandPrint_t NET_OutOfBandPrint = (NET_OutOfBandPrint_t)0x8080920;
-#endif
-NET_SendPacket_t NET_SendPacket = (NET_SendPacket_t)0x8080D28;
-
-#define MAX_MSGLEN              32768
-
-/*
-===============
-NET_OutOfBandPrint
-
-Sends a text message in an out-of-band datagram
-================
-*/
-/*
-void QDECL NET_OutOfBandPrint( netsrc_t sock, netadr_t adr, const char *format, ... ) {
-	va_list argptr;
-	char string[MAX_MSGLEN];
-
-	// set the header
-	string[0] = -1;
-	string[1] = -1;
-	string[2] = -1;
-	string[3] = -1;
-
-	va_start( argptr, format );
-	vsnprintf( string + 4, sizeof( string ) - 4, format, argptr );
-	va_end( argptr );
-
-	// send the datagram
-	NET_SendPacket( sock, strlen( string ), string, adr );
-}
-*/
-
-#if PATCH == 1
-NET_StringToAdr_t NET_StringToAdr = (NET_StringToAdr_t)0x8080C38;
-#else if PATCH == 5
-NET_StringToAdr_t NET_StringToAdr = (NET_StringToAdr_t)0x80844E0;
-#endif
-
-const char  *NET_AdrToString (netadr_t a) {
-    static  char    s[64];
-
-    if (a.type == NA_LOOPBACK) {
-        Com_sprintf (s, sizeof(s), "loopback");
-    } else if (a.type == NA_BOT) {
-        Com_sprintf (s, sizeof(s), "bot");
-    } else if (a.type == NA_IP) {
-        Com_sprintf (s, sizeof(s), "%i.%i.%i.%i:%hu",
-            a.ip[0], a.ip[1], a.ip[2], a.ip[3], BigShort(a.port));
-    } else {
-        Com_sprintf (s, sizeof(s), "%02x%02x%02x%02x.%02x%02x%02x%02x%02x%02x:%hu",
-        a.ipx[0], a.ipx[1], a.ipx[2], a.ipx[3], a.ipx[4], a.ipx[5], a.ipx[6], a.ipx[7], a.ipx[8], a.ipx[9], 
-        BigShort(a.port));
-    }
-
-    return s;
-}
-
-const char  *NET_BaseAdrToString (netadr_t a) {
-    static  char    s[64];
-
-    if (a.type == NA_LOOPBACK) {
-        Com_sprintf (s, sizeof(s), "loopback");
-    } else if (a.type == NA_BOT) {
-        Com_sprintf (s, sizeof(s), "bot");
-    } else if (a.type == NA_IP) {
-        Com_sprintf (s, sizeof(s), "%i.%i.%i.%i",
-            a.ip[0], a.ip[1], a.ip[2], a.ip[3]);
-    } else {
-        Com_sprintf (s, sizeof(s), "%02x%02x%02x%02x.%02x%02x%02x%02x%02x%02x",
-        a.ipx[0], a.ipx[1], a.ipx[2], a.ipx[3], a.ipx[4], a.ipx[5], a.ipx[6], a.ipx[7], a.ipx[8], a.ipx[9]);
-    }
-
-    return s;
-}
-
-qboolean    NET_CompareAdr( netadr_t a, netadr_t b ) {
-	if ( a.type != b.type ) {
-		return qfalse;
-	}
-
-	if ( a.type == NA_LOOPBACK ) {
-		return qtrue;
-	}
-
-	if ( a.type == NA_IP ) {
-		if ( a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2] && a.ip[3] == b.ip[3] && a.port == b.port ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
-
-	if ( a.type == NA_IPX ) {
-		if ( ( memcmp( a.ipx, b.ipx, 10 ) == 0 ) && a.port == b.port ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
-
-	Com_Printf( "NET_CompareAdr: bad address type\n" );
-	return qfalse;
-}
-
-
-bool    NET_IsLocalAddress( netadr_t adr ) {
-	return adr.type == NA_LOOPBACK;
-}
-
-
-qboolean    NET_CompareBaseAdr( netadr_t a, netadr_t b ) {
-	if ( a.type != b.type ) {
-		return qfalse;
-	}
-
-	if ( a.type == NA_LOOPBACK ) {
-		return qtrue;
-	}
-
-	if ( a.type == NA_IP ) {
-		if ( a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2] && a.ip[3] == b.ip[3] ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
-
-	if ( a.type == NA_IPX ) {
-		if ( ( memcmp( a.ipx, b.ipx, 10 ) == 0 ) ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
-
-
-	Com_Printf( "NET_CompareBaseAdr: bad address type\n" );
-	return qfalse;
-}

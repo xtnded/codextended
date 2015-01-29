@@ -14,8 +14,21 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 #include <sys/time.h>
+
+char **configstrings = (char**)0x8355678;
+
+void (*MSG_Init)( msg_t *buf, byte *data, int length ) = (void (*)(msg_t*,byte*,int))0x807EEB8;
+void (*MSG_WriteLong)(msg_t*,int) = (void(*)(msg_t*,int))0x807F0EC;
+void (*MSG_WriteString)(msg_t*,const char*) = (void(*)(msg_t*,const char*))0x807A620;
+void (*MSG_WriteByte)(msg_t*,int) = (void(*)(msg_t*,int))0x807F090;
+void (*MSG_WriteShort)(msg_t*,int) = (void(*)(msg_t*,int))0x807F0BC;
+void (*MSG_WriteBigString)(msg_t*,const char*) = (void(*)(msg_t*,const char*))0x807A758;
+void (*SV_SendMessageToClient)(msg_t*,client_t*) = (void(*)(msg_t*,client_t*))0x808F680;
+
+int clientversion = 0;
 
 x_client x_clients[64];
 x_challenge x_challenges[MAX_CHALLENGES];
@@ -94,6 +107,9 @@ void ucmd_ascii( client_t *cl ) {
 	#endif
 }
 
+void SV_DoneDownload_f(client_t*);
+void SV_NextDownload_f(client_t *cl);
+
 static ucmd_t ucmds[] = {
 	{"userinfo", (void*)0x8087B28},
 	{"disconnect", (void*)0x8087AF8},
@@ -115,10 +131,8 @@ static ucmd_t ucmds[] = {
 
 client_t *clients = (client_t*)svsclients_ptr;
 
-typedef void (*SV_SendClientGameState_t)(client_t*);
 typedef void (*SV_SendClientSnapshot_t)(client_t*);
 
-SV_SendClientGameState_t SV_SendClientGameState = (SV_SendClientGameState_t)0x8085EEC;
 SV_SendClientSnapshot_t SV_SendClientSnapshot = (SV_SendClientSnapshot_t)0x808F844;
 
 SV_StopDownload_f_t SV_StopDownload_f = (SV_StopDownload_f_t)0x8087960;
@@ -215,16 +229,13 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 	r = Cmd_Argv( 3 );          // reason
 	guid = atoi(Cmd_Argv(4));
 	
-	
-	aSingleBan* cur = banlist;
 	if(guid!=0) {
-		while(cur!=NULL) {
+		list_each(banInfo_t*, cur, banlist) {
 			if(cur->type == GUIDBAN && guid == cur->guid) {
 				printf("Banned GUID [%d] with IP [%s] tried to connect.\n", guid, NET_BaseAdrToString(challenges[i].adr));
 				NET_OutOfBandPrint( NS_SERVER, challenges[i].adr, "error\n%s", x_bannedmessage->string);
 				return;
 			}
-			cur=cur->next;
 		}
 	}
 	
@@ -275,13 +286,6 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 static time_t connect_t = 0;
 
 void repeat_annoy(client_t *cl) {
-	
-	void (*MSG_Init)( msg_t *buf, byte *data, int length ) = (void (*)(msg_t*,byte*,int))0x807EEB8;
-	void (*MSG_WriteLong)(msg_t*,int) = (void(*)(msg_t*,int))0x807F0EC;
-	void (*MSG_WriteString)(msg_t*,const char*) = (void(*)(msg_t*,const char*))0x807A620;
-	void (*MSG_WriteByte)(msg_t*,int) = (void(*)(msg_t*,int))0x807F090;
-	void (*SV_SendMessageToClient)(msg_t*,client_t*) = (void(*)(msg_t*,client_t*))0x808F680;
-	
 	byte msg_buf[16384];
 	msg_t msg;
 	
@@ -299,11 +303,343 @@ void repeat_annoy(client_t *cl) {
 	SV_SendMessageToClient(&msg, cl);
 }
 
+void SV_SendDownloadDone(client_t *cl) { //let's fake that the downloads are done so it'll reload the file system
+	byte msg_buf[16384];
+	msg_t msg;
+	
+	MSG_Init( &msg, msg_buf, sizeof( msg_buf ) );
+	
+	MSG_WriteLong( &msg, cl->lastClientCommand );
+	
+	MSG_WriteByte(&msg,svc_configstring);
+	
+	char systeminfo[BIG_INFO_STRING];
+	strcpy(systeminfo, configstrings[1]);
+	char tmp[1024];
+	strcpy(tmp, Info_ValueForKey(systeminfo, "sv_paks"));
+	
+	char *i;
+	for(i = tmp; *i && *i != ' '; i++);
+	*i = 0;
+	Info_SetValueForKey(systeminfo, "sv_paks", tmp);
+	strcpy(tmp, Info_ValueForKey(systeminfo, "sv_pakNames"));
+	for(i = tmp; *i && *i != ' '; i++);
+	*i = 0;
+	Info_SetValueForKey(systeminfo, "sv_pakNames", tmp);
+	
+	//MSG_WriteLong(&msg, *(int*)((int)cl + 67088) + 1);
+	MSG_WriteShort(&msg, 1);
+	MSG_WriteBigString(&msg, systeminfo);
+	MSG_WriteByte(&msg,svc_EOF); //end?
+	
+	SV_SendMessageToClient(&msg, cl);
+}
+
+#define _SV_SendClientGameState(cl) ((void(*)(client_t*))0x8085EEC)(cl);
+	
+
+client_t *last_cl = NULL;
+
+const char *FS_ReferencedPakChecksums();
+const char *FS_LoadedPakPureChecksums();
+const char *FS_ReferencedPakNames();
+const char *FS_LoadedPakNames();
+const char *FS_LoadedPakChecksums();
+
+void Info_RemoveKey_Big( char *s, const char *key ) {
+	char    *start;
+	char pkey[BIG_INFO_KEY];
+	char value[BIG_INFO_VALUE];
+	char    *o;
+
+	if ( strlen( s ) >= BIG_INFO_STRING ) {
+		Com_Error( ERR_DROP, "Info_RemoveKey_Big: oversize infostring [%s] [%s]", s, key );
+	}
+
+	if ( strchr( key, '\\' ) ) {
+		return;
+	}
+
+	while ( 1 )
+	{
+		start = s;
+		if ( *s == '\\' ) {
+			s++;
+		}
+		o = pkey;
+		while ( *s != '\\' )
+		{
+			if ( !*s ) {
+				return;
+			}
+			*o++ = *s++;
+		}
+		*o = 0;
+		s++;
+
+		o = value;
+		while ( *s != '\\' && *s )
+		{
+			if ( !*s ) {
+				return;
+			}
+			*o++ = *s++;
+		}
+		*o = 0;
+
+		if ( !Q_stricmp( key, pkey ) ) {
+			strcpy( start, s );  // remove this part
+			return;
+		}
+
+		if ( !*s ) {
+			return;
+		}
+	}
+
+}
+
+void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
+	char newi[BIG_INFO_STRING];
+
+	if ( strlen( s ) >= BIG_INFO_STRING ) {
+		Com_Error( ERR_DROP, "Info_SetValueForKey: oversize infostring [%s] [%s] [%s]", s, key, value );
+	}
+
+	if ( strchr( key, '\\' ) || strchr( value, '\\' ) ) {
+		Com_Printf( "Can't use keys or values with a \\\n" );
+		return;
+	}
+
+	if ( strchr( key, ';' ) || strchr( value, ';' ) ) {
+		Com_Printf( "Can't use keys or values with a semicolon\n" );
+		return;
+	}
+
+	if ( strchr( key, '\"' ) || strchr( value, '\"' ) ) {
+		Com_Printf( "Can't use keys or values with a \"\n" );
+		return;
+	}
+
+	Info_RemoveKey_Big( s, key );
+	if ( !value || !strlen( value ) ) {
+		return;
+	}
+
+	Com_sprintf( newi, sizeof( newi ), "\\%s\\%s", key, value );
+
+	if ( strlen( newi ) + strlen( s ) > BIG_INFO_STRING ) {
+		Com_Printf( "BIG Info string length exceeded\n" );
+		return;
+	}
+
+	strcat( s, newi );
+}
+
+void SV_SendClientGameState(client_t *cl) {
+	last_cl = cl;
+	
+	((void(*)(client_t*))0x8085EEC)(cl);
+}
+
+int cpy_once = 0;
+void MSG_WriteLong_2(msg_t *msg, int v) {
+	client_t *cl = last_cl;
+	
+	MSG_WriteLong( msg, *(int*)((int)cl + 67084));
+	int start;
+	
+	int clientbuild = atoi( Info_ValueForKey(cl->userinfo, "xtndedbuild") );
+	
+	static char cs[BIG_INFO_STRING];
+	memset(cs, 0, sizeof(cs));
+	size_t sz;
+	
+	// write the configstrings
+	for ( start = 0 ; start < 2048 ; start++ ) {
+		if ( configstrings[start][0] ) {
+			MSG_WriteByte( msg, svc_configstring );
+			MSG_WriteShort( msg, start );
+			if(start == 1 && sv_allowDownload->integer && x_requireclient->integer && clientbuild >= clientversion) {
+					//if(!cpy_once) {
+						strcpy(cs, configstrings[start]);
+						Info_SetValueForKey_Big(cs, "sv_paks", FS_LoadedPakChecksums());
+						Info_SetValueForKey_Big(cs, "sv_pakNames", FS_LoadedPakNames());
+						Info_SetValueForKey_Big(cs, "sv_referencedPakNames", FS_ReferencedPakNames());
+						Info_SetValueForKey_Big(cs, "sv_referencedPaks", FS_ReferencedPakChecksums());
+						//cpy_once = 1;
+					//}
+					if(cl->state == CS_ACTIVE)
+						Info_SetValueForKey_Big(cs, "cl_allowDownload", "0");
+					else
+						Info_SetValueForKey_Big(cs, "cl_allowDownload", "1");
+					
+					MSG_WriteBigString( msg, cs );
+					printf("this is called!!!\n");
+			} else {
+			if(start==1)
+				printf("configstrings[1] = %s\n", configstrings[start]);
+				MSG_WriteBigString( msg, configstrings[start] );
+			}
+		}
+	}
+}
+
+void SV_ExecuteClientMessage(client_t *cl, msg_t *msg) {
+	last_cl = cl;
+	#if 0
+	byte msg_buf[16384];
+	//msg_t msg;
+	
+	MSG_Init( &msg, msg_buf, sizeof( msg_buf ) );
+	void (*MSG_ReadBitsCompress)(byte*, msg_t*, int) = (void (*)(byte*,msg_t*, int))0x807F23C;
+	
+	MSG_ReadBitsCompress(msg->data + msg->readcount, msg, msg->cursize - msg->readcount);
+	#endif
+	
+	((void(*)(client_t*,msg_t*))0x80872EC)(cl, msg);
+}
+
+#if 0
+void __cdecl SV_ExecuteClientMessage(int a1, int a2)
+{
+  MSG_Init(&s, (int)&v16, 16384);
+  v19 = sub_807F23C(*(_DWORD *)(a2 + 4) + *(_DWORD *)(a2 + 16), (int)&v16, *(_DWORD *)(a2 + 12) - *(_DWORD *)(a2 + 16)); //MSG_ReadBitsCompress
+  v2 = *(_DWORD *)(a1 + 370936);
+  if ( v2 == *(_DWORD *)dword_80E30C0 || *(_BYTE *)(a1 + 68196) )
+  {
+    while ( 1 )
+    {
+      v14 = sub_807F18C((int)&s, 2);
+      v15 = v14;
+      if ( v14 == 3 )
+        break;
+      if ( v14 != 2 )
+        break;
+      if ( !sub_8086E08(a1, (int)&s) || *(_DWORD *)a1 == 1 )
+        return;
+    }
+    if ( *(_DWORD *)(dword_83B6758 + 32) )
+    {
+      if ( *(_DWORD *)(a1 + 338092) == 2 )
+      {
+        *(_DWORD *)(a1 + 68372) = -1;
+        *(_DWORD *)a1 = 4;
+        SV_SendClientSnapshot(a1);
+        SV_DropClient(a1, (int)"EXE_UNPURECLIENTDETECTED");
+      }
+    }
+    if ( v15 )
+    {
+      if ( v15 == 1 )
+      {
+        SV_UserMove(a1, (int)&s, 0);
+      }
+      else
+      {
+        if ( v15 != 3 )
+          Com_Printf(
+            "WARNING: bad command byte %i for client %i\n",
+            v15,
+            125928895 * (a1 - (_DWORD)dword_83B67AC) >> 2);
+      }
+    }
+    else
+    {
+      SV_UserMove(a1, (int)&s, 1);
+    }
+  }
+  else
+  {
+    if ( (unsigned __int8)(v2 & 0xF0) == (unsigned __int8)(dword_80E30C0[0] & 0xF0) )
+    {
+      if ( *(_DWORD *)a1 == 3 )
+      {
+        sub_80BFEA0(1);
+        Com_DPrintf("Going from CS_PRIMED to CS_ACTIVE for %s\n", a1 + 68164);
+        *(_DWORD *)a1 = 4;
+        v3 = 125928895 * (a1 - (_DWORD)dword_83B67AC) >> 2;
+        v4 = SV_GentityNum(125928895 * (a1 - (_DWORD)dword_83B67AC) >> 2);
+        *(_DWORD *)v4 = v3;
+        *(_DWORD *)(a1 + 68160) = v4;
+        *(_DWORD *)(a1 + 68356) = -1;
+        *(_DWORD *)(a1 + 68372) = dword_83B67A4;
+        memcpy((void *)(a1 + 67108), (const void *)(a1 + 67108), 0x18u);
+        VM_Call(
+          (int)dword_80E30C4,
+          3,
+          125928895 * (a1 - (_DWORD)dword_83B67AC) >> 2,
+          v5,
+          v6,
+          v7,
+          v8,
+          v9,
+          v10,
+          v11,
+          v12,
+          v13,
+          v16,
+          v17);
+      }
+    }
+    else
+    {
+      if ( *(_DWORD *)(a1 + 67096) > *(_DWORD *)(a1 + 67100) )
+      {
+        Com_DPrintf("%s : dropped gamestate, resending\n", a1 + 68164);
+        SV_SendClientGameState(a1);
+      }
+    }
+  }
+}
+
+#endif
+
+void Com_DPrintf_2(const char* fmt, ...) {
+	SV_SendClientGameState(last_cl);
+}
+
+void SV_NextDownload_f(client_t *cl) {
+	last_cl = cl;
+	#define MAX_DOWNLOAD_WINDOW 8
+	int block = atoi( Cmd_Argv( 1 ) );
+
+	int *downloadClientBlock = (int*)((int)cl + 68272);
+	int *downloadBlockSize = (int*)((int)cl + 68316);
+	int *downloadSendTime = (int*)((int)cl + 68352);
+	
+	((void(*)(client_t*))0x8086168)(cl);
+	#if 0
+	
+	if ( block == *downloadClientBlock ) {
+		Com_DPrintf( "clientDownload: %d : client acknowledge of block %d\n", get_client_number(cl), block );
+
+		// Find out if we are done.  A zero-length block indicates EOF
+		//if ( downloadBlockSize[*downloadClientBlock % MAX_DOWNLOAD_WINDOW] == 0 ) {
+		if(!*(int*)((int)cl + 68316 + 4 * *downloadClientBlock % MAX_DOWNLOAD_WINDOW)) {
+			Com_Printf( "clientDownload: %d : file \"%s\" completed\n", get_client_number(cl), cl->downloadName );
+			SV_SendClientGameState(cl);
+			
+			((void(*)(client_t*))0x80878F4)(cl); //SV_CloseDownload
+			return;
+		}
+
+		*downloadSendTime = svs_time;
+		*downloadClientBlock++;
+		return;
+	}
+	// We aren't getting an acknowledge for the correct block, drop the client
+	// FIXME: this is bad... the client will never parse the disconnect message
+	//			because the cgame isn't loaded yet
+	SV_DropClient( cl, "broken download" );
+	#endif
+}
+
 void SV_DirectConnect( netadr_t* from ) {
 	void (*call)(netadr_t);
-	#if PATCH == 1
+	#if CODPATCH == 1
 	*(int*)&call = 0x8085498;
-	#else if PATCH == 5
+	#else if CODPATCH == 5
 	*(int*)&call = 0x8089E7E;
 	#endif
 	
@@ -318,15 +654,13 @@ void SV_DirectConnect( netadr_t* from ) {
 		return;
 	}
 	
-	aSingleBan* cur = banlist;
-	
-	while(cur!=NULL) {
+	list_each(banInfo_t*, cur, banlist) {
 		if(cur->type == IPBAN && NET_CompareBaseAdr(*from, cur->adr)) {
-			NET_OutOfBandPrint( NS_SERVER, *from, "error\n%s", x_bannedmessage->string);
+			char *reason = (*cur->reason) ? cur->reason : x_bannedmessage->string;
+			NET_OutOfBandPrint( NS_SERVER, *from, "error\n%s", reason);
 			printf("Banned IP [%s] tried to connect.\n", NET_BaseAdrToString(*from));
 			return;
 		}
-		cur=cur->next;
 	}
 	
 	/*
@@ -650,9 +984,9 @@ gotnewcl:
 
 void SV_GetChallenge( netadr_t* from ) {
 	void (*chall)(netadr_t);
-	#if PATCH == 1
+	#if CODPATCH == 1
 	*(int*)&chall = 0x8084D90;
-	#else if PATCH == 5
+	#else if CODPATCH == 5
 	*(int*)&chall = 0x80889D0;
 	#endif
 	
@@ -731,7 +1065,7 @@ void SV_GetChallenge( netadr_t* from ) {
 	msg[37] = 0;
 	
 	if(svs_time - xc->time < SHOWMSG_MSEC) {
-		NET_OutOfBandPrint( NS_SERVER, *from, "print\n%s\n", x_print_connect_message[0] != '\0' ? x_print_connect_message : msg);
+		NET_OutOfBandPrint( NS_SERVER, *from, "print\n%s - %s\n", x_print_connect_message[0] != '\0' ? x_print_connect_message : msg, x_connectmessage->string);
 		return;
 	}
 	
@@ -1014,6 +1348,7 @@ void SV_BeginDownload(client_t* cl) {
 			return;
         }
     }
+	
     SV_BeginDownload_f(cl);
 }
 
@@ -1040,14 +1375,6 @@ int get_client_number(client_t* cl) {
 	return (((int)&cl->state - *(int*)svsclients_ptr) / clientsize);
 }
 
-void get_client_ip(int num, char* ip) {
-    client_t *cl = getclient(num);
-    if(cl) {
-		char ipbuffer[16];
-        sprintf(ipbuffer, "%d.%d.%d.%d", cl->remoteAddress.ip[0], cl->remoteAddress.ip[1], cl->remoteAddress.ip[2], cl->remoteAddress.ip[3]);
-		strncpy(ip, ipbuffer, 15);
-    }
-}
 const char *__cdecl FS_LoadedPakPureChecksums( void );
 
 extern int pak_num;
@@ -1299,20 +1626,6 @@ void SV_DumpUcmd() {
 void ClientBegin(int clientNum) {
 	void (*begin)(int)  = (void(*)(int))GAME("ClientBegin");
 	begin(clientNum);
-	/*
-	client_t *cl = getclient(clientNum);
-	
-	void (*donedl)(client_t*) = (void(*)(client_t*))0x80879FC;
-	
-	//char *codclient = Info_ValueForKey(cl->userinfo, "xtnded");
-	
-	//if((!codclient || !*codclient) && x_requireclient->integer) {
-	
-	if(x_requireclient->integer && !xtnded_clients[clientNum].clientusage) {
-		SV_SendServerCommand(cl, 1, "v cl_allowdownload \"1\"");
-		SV_SendServerCommand(cl, 1, "v rate \"25000\"");
-		donedl(cl);
-	}*/
 }
 
 /*
@@ -1335,18 +1648,17 @@ void php() {
 */
 
 #if 0
-
 void clientInit() {
-	
+	/*
 	ucmd_t  *u;
 	for ( u = ucmds ; u->name ; u++ ) {
 		if(!strcmp("download", u->name)) {
 			u->func = SV_BeginDownload;
-		}/* else if(!strcmp("cp", u->name)) {
+		} else if(!strcmp("cp", u->name)) {
 			u->func = SV_VerifyPaks_f;
-		}*/
+		}
 		printf("ucmd: %s [%x]\n", u->name, (int)u->func);
-	}
+	}*/
 	
 	//*(int*)0x80EE704 = (int)SV_BeginDownload;
 	#ifdef xDEBUG
@@ -1354,5 +1666,4 @@ void clientInit() {
 	Cmd_AddCommand("dclient", Cmd_DumpClient_f);
 	#endif
 }
-
 #endif

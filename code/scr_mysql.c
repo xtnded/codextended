@@ -14,6 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "script.h"
 #ifdef uMYSQL
 void GScr_mysql_get_connection(int a1) {
@@ -41,6 +42,8 @@ void GScr_mysql_real_connect(int entityIndex) {
     int port = Scr_GetInt(5);
     if(m != NULL) {
         MYSQL *c = mysql_real_connect(m, hostname, username, password, database, port, NULL, 0);
+		my_bool reconnect = 1;
+		mysql_options(&c, MYSQL_OPT_RECONNECT, &reconnect);
         Scr_AddInt((int)c);
     } else {
         Scr_AddUndefined();
