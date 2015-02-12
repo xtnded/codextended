@@ -92,6 +92,11 @@ void ScriptEnt_callback(int a1) {
 }
 #endif
 
+void ScriptEnt_GetPosition(int self) {
+	gentity_t *ent = &g_entities[self];
+	Scr_AddVector(ent->s.pos.trBase);
+}
+
 void ScriptEnt_SetLight(int ent) {
 	gentity_t *e = &g_entities[ent];
 	int r, g, b, i;

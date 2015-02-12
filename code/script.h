@@ -445,6 +445,7 @@ void PlayerCmd_UnsetPerk(int);
 void PlayerCmd_HasPerk(int);
 void PlayerCmd_SetMaxSpeed(int);
 void PlayerCmd_GetPing(int);
+void PlayerCmd_SetMoveSpeedScale(int);
 
 /*
 =============

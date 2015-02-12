@@ -50,6 +50,12 @@ int FS_IsPakFile(char *name) {
 	return 0;
 }
 
+int FS_CLUpdateFile(char *basename) {
+	if(strstr(basename, "zzz_zxtn_client") != NULL)
+		return 1;
+	return 0;
+}
+
 bool FS_IsServerFile(char* basename) {
 	if(strstr(basename, "srv") != NULL)
 		return 1;
@@ -87,7 +93,7 @@ const char *FS_LoadedPakChecksums() {
 		sprintf(fs_game, check);
 	for(search = fs_searchpaths->next; search; search = search->next) {
 		if(search->pak) {
-			if(FS_IsServerFile(search->pak->pakBasename))
+			if(FS_IsServerFile(search->pak->pakBasename) || FS_CLUpdateFile(search->pak->pakBasename))
 				continue;
 			if ( *info ) {
 				sprintf(info, "%s%s", info, " " );
@@ -113,7 +119,7 @@ const char *FS_LoadedPakPureChecksums( void ) {
 		sprintf(fs_game, check);
 	for(search = fs_searchpaths->next; search; search = search->next) {
 		if(search->pak) {
-			if(FS_IsServerFile(search->pak->pakBasename))
+			if(FS_IsServerFile(search->pak->pakBasename) || FS_CLUpdateFile(search->pak->pakBasename))
 				continue;
 			if ( *info ) {
 				sprintf(info, "%s%s", info, " " );
@@ -143,7 +149,7 @@ const char *FS_ReferencedPakChecksums() {
 		sprintf(fs_game, check);
 	for(search = fs_searchpaths->next; search; search = search->next) {
 		if(search->pak) {
-			if(FS_IsServerFile(search->pak->pakBasename))
+			if(FS_IsServerFile(search->pak->pakBasename) || FS_CLUpdateFile(search->pak->pakBasename))
 				continue;
 			if ( *info ) {
 				sprintf(info, "%s%s", info, " " );
@@ -170,7 +176,7 @@ const char *FS_ReferencedPakNames() {
 		sprintf(fs_game, check);
 	for(search = fs_searchpaths->next; search; search = search->next) {
 		if(search->pak) {
-			if(FS_IsServerFile(search->pak->pakBasename))
+			if(FS_IsServerFile(search->pak->pakBasename) || FS_CLUpdateFile(search->pak->pakBasename))
 				continue;
 			if ( *info ) {
 				sprintf(info, "%s%s", info, " " );
@@ -223,7 +229,7 @@ const char *FS_LoadedPakNames() {
 		sprintf(fs_game, check);
 	for(search = fs_searchpaths->next; search; search = search->next) {
 		if(search->pak) {
-			if(FS_IsServerFile(search->pak->pakBasename))
+			if(FS_IsServerFile(search->pak->pakBasename) || FS_CLUpdateFile(search->pak->pakBasename))
 				continue;
 			if ( *info ) {
 				sprintf(info, "%s%s", info, " " );

@@ -115,6 +115,14 @@ void PlayerCmd_SetMaxSpeed(int self) {
 	*(float*)((int)gclient + 68) = Scr_GetFloat(0);
 }
 
+void PlayerCmd_SetMoveSpeedScale(int self) {
+	gentity_t *ent = &g_entities[self];
+	if(!ent->client)
+		return;
+	gclient_t *gclient = ent->client;
+	*(float*)((int)gclient + 848) = Scr_GetFloat(0);
+}
+
 void PlayerCmd_GetPing(int self) {
 	client_t *cl = getclient(self);
 	if(!cl) {

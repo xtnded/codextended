@@ -73,9 +73,6 @@ static void PM_Weapon( void ) {
 	int *weaponDelay = (int*)((int)xm->ps + 48);
 	int prestate = *weaponstate;
 	
-	void (*o)() = (void(*)())GAME("PM_Weapon");
-	o();
-	
 	playerState_t *ps = xm->ps;
 	
 	int clientNum = *(int*)((int)ps + 172);
@@ -83,6 +80,36 @@ static void PM_Weapon( void ) {
 	gentity_t *ent = &g_entities[clientNum];
 	
 	gclient_t *gclient = ent->client;
+	
+	void (*o)() = (void(*)())GAME("PM_Weapon");
+	o();
+	
+	#if 1
+	if((cl->lastUsercmd.buttons & 0x40) == 0x40) { //usebuttonpressed
+		if(!xclients[clientNum].sprinting) {
+			
+			*(int*)((int)gclient + 180) = WEAPON_RECHAMBERING;
+			*(int*)((int)gclient + 980) = WEAP_ALTSWITCHFROM;
+			
+			*(float*)((int)gclient + 848) = 1.35; //runspeedscale?
+			//*(int*)((int)gclient + 828) = //prone
+			//*(int*)((int)gclient + 832) = //crouch;
+			//*(int*)((int)gclient + 836) = 100;//standing;
+			xclients[clientNum].sprinting = 1;
+			return;
+		}
+	} else {
+		if(xclients[clientNum].sprinting) {
+			*(int*)((int)gclient + 180) = WEAPON_READY;
+			*(int*)((int)gclient + 980) = WEAP_IDLE;
+			*(float*)((int)gclient + 848) = 1; //runspeedscale?
+			xclients[clientNum].sprinting = 0;
+			
+			return;
+		}
+	}
+	#endif
+	
 	//prob shouldnt include interrupts
 	if(xclients[clientNum].perks[PERK_QUICK_RELOAD] && (prestate == WEAPON_RELOADING || prestate == WEAPON_RELOAD_END || prestate == WEAPON_RELOAD_START || prestate == WEAPON_RECHAMBERING) && (!*weaponDelay || !*weaponTime)) {
 		*(int*)((int)gclient + 980) = 17;

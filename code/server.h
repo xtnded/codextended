@@ -358,6 +358,7 @@ typedef struct {
 	qboolean muted; //can this player chat?
 	
 	int perks[MAX_PERKS];
+	int sprinting;
 } xtnded_client, x_client;
 
 #define xclient_t x_client

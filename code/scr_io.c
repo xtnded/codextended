@@ -15,4 +15,9 @@
     along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+	//TODO
+		move from script.c to here
+*/
+
 #include "script.h"

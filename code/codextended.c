@@ -40,11 +40,27 @@
 MYSQL *db = NULL;
 #endif
 
+FILE *logfile = NULL;
+
+void Log(const char *s) {
+	if(!logfile) {
+		logfile = fopen("codextended.log", "w");
+		if(!logfile)
+			return;
+	}
+	
+	fprintf(logfile, "%s", s);
+}
+
 void uCoDExtended() {
 	static int freed = 0;
 	if(freed)
 		return;
 	freed = 1;
+	
+	if(logfile != NULL)
+		fclose(logfile);
+	
 	#if CODPATCH == 1
 	list_clear(&banlist);
 	#endif
@@ -181,11 +197,14 @@ int splashscreen() {
 }
 #endif
 
+char *Scr_AddSourceBuffer(char *filename, char* a2, int a3);
+
 void CoDExtended() {
 	static int loaded = 0;
 	if(loaded)
 		return;
 	loaded = 1;
+	unsetenv("LD_PRELOAD");
 	signal(SIGSEGV, crash_handler);
 	setbuf(stdout, NULL);
 	mprotect((void *)0x08048000, 0x135000, PROT_READ | PROT_WRITE | PROT_EXEC);
@@ -218,6 +237,9 @@ void CoDExtended() {
 	
 	__call(0x806BA27, (int)Cbuf_Init);
 	__call(0x806C724, (int)Cbuf_Init);
+	
+	__call(0x8092D38, (int)Scr_AddSourceBuffer);
+	__call(0x809A1A0, (int)Scr_AddSourceBuffer);
 	
 	SVC_CHANDELIER[0] = 'z';
 	SVC_CHANDELIER[1] = 'c';

@@ -302,6 +302,8 @@ void PlayerCmd_IsUsingClient(int a1) {
 	Scr_AddBool(true);
 }
 
+void ScriptEnt_GetPosition(int);
+
 SCRIPTFUNCTION scriptMethods[] = {
 	//name, function, developer
 	
@@ -310,7 +312,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	ENTITY
 	======
 	*/
-	
+	{"getposition", ScriptEnt_GetPosition, 0},
 	{"setbounds", ScriptEnt_SetBounds, 0},
 	{"setsize", ScriptEnt_SetBounds, 0},
 	{"settakedamage", ScriptEnt_SetTakeDamage, 0},
@@ -363,6 +365,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"unsetperk", PlayerCmd_UnsetPerk, 0},
 	{"getping", PlayerCmd_GetPing, 0},
 	{"setmaxspeed", PlayerCmd_SetMaxSpeed, 0},
+	{"setmovespeedscale", PlayerCmd_SetMoveSpeedScale, 0},
 	{NULL, NULL, 0}
 };
 
@@ -1054,7 +1057,7 @@ int _fire_rocket(gentity_t *self, vec3_t start, vec3_t dir) {
 	return ent;
 }
 
-gitem_t *_bg_itemlist;
+gitem_t *bg_itemlist;
 
 #ifdef xDEBUG
 void __db() {
@@ -1517,7 +1520,7 @@ void scriptInitializing() {
 	hudelems = (unsigned char*)GAME("g_hudelems");
 	__jmp(GAME("G_LocalizedStringIndex"), (int)X_LocalizedStringIndex);
 	
-	_bg_itemlist = (gitem_t*)GAME("bg_itemlist");
+	bg_itemlist = (gitem_t*)GAME("bg_itemlist");
 	
 	CallSpawnEntity = (CallSpawnEntity_t)GAME("G_CallSpawnEntity");
 	

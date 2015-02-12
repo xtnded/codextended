@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include "x_util.h"
+#include "util.h"
 #include "surfaceflags.h"
 
 #include "build.txt"
@@ -65,14 +65,22 @@ typedef unsigned char boolean;
 
 //static int ( QDECL * syscall )( int arg, ... ) = ( int ( QDECL * )( int, ... ) )0x8087DCC;
 
-#define CL_UPDATE_PAK_LINK "http://cod1.eu/xtnded/codextended_client.pk3"
-#define CL_UPDATE_PAK_BASENAME "zzz_zxtn_client"
-#define CL_UPDATE_PAK_NAME "main/zzz_zxtn_client"
+#define CL_UPDATE_PAK_LINK "http://cod1.eu/xtnded/updateclients/codextended_client2.pk3"
+#define CL_UPDATE_PAK_BASENAME "zzz_zxtn_client2"
+#define CL_UPDATE_PAK_NAME "main/zzz_zxtn_client2"
 #define CL_UPDATE_PAK_CHECKSUM "-1500537913"
+#define CL_UPDATE_PAK_VERSION 2
 
 #define NOP 0x90
 #define VERSION_STRING "Call of Duty Extended %.1f\n"
 #define EXTENDEDVERSION 1f
+
+static void* (*Z_MallocInternal)(size_t) = (void*(*)(size_t))0x80681E8;
+static void (*Z_FreeInternal)(void*) = (void(*)(void*))0x8068224;
+
+static void* (*Hunk_AllocateTempMemoryHighInternal)(size_t) = (void*(*)(size_t))0x806823C;
+static void* (*Hunk_ReallocateTempMemory)(size_t) = (void*(*)(size_t))0x806859C;
+static void (*Hunk_FreeTempMemory)(void*) = (void(*)(void*))0x8068624;
 
 #define NUMVERTEXNORMALS    162
 
@@ -595,7 +603,7 @@ typedef struct gclient_s gclient_t;
 
 typedef struct entityState_s {
 	int number;
-	int eType; //4
+	entityType_t eType; //4
 	int eFlags; //8
 	trajectory_t pos; //12
 	trajectory_t apos; //48

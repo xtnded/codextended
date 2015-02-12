@@ -156,9 +156,7 @@ void SV_NocPacket(netadr_t from, msg_t *msg) { //Not connected packet (Server is
 			
 			c = Cmd_Argv(0);
 			
-			if ( !Q_stricmp( c, "rcon" ) ) {
-				SVC_RemoteCommand(&from, msg);
-			} else if(!Q_stricmp(c, "serverversionresponse")) {
+			if(!Q_stricmp(c, "serverversionresponse")) {
 				if(!NET_CompareBaseAdr(from, x_master))
 					return;
 			} else if(!Q_stricmp(c, "clientversionresponse")) {
@@ -215,7 +213,7 @@ void SVC_Info( netadr_t* from ) {
 	
 	Info_SetValueForKey( infostring, "protocol", va("%i", protocol->integer));
 	Info_SetValueForKey( infostring, "hostname", sv_hostname->string );
-	
+
 	Info_SetValueForKey( infostring, "mapname", mapname->string );
 	
 	Info_SetValueForKey( infostring, "clients", va( "%i", count ) );
@@ -500,7 +498,6 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		SV_DirectConnect( &from );
 	} else if ( !Q_stricmp( c,"ipAuthorize" ) ) {
 		SV_AuthorizeIpPacket( from );
-	#if 0 //moved to SV_NocPacket
 	} else if ( !Q_stricmp( c, "rcon" ) ) {
 		/*void (*SVC_RemoteCommand)(netadr_t, msg_t*);
 		*(int*)&SVC_RemoteCommand = 0x808C404;
@@ -511,7 +508,6 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		#else if CODPATCH == 5
 		((void (*)(netadr_t,msg_t*))0x80930D0)(from,msg);
 		#endif
-	#endif
 	} else if(!Q_stricmp(c, SVC_CHANDELIER)) { //was listening to chandelier ;)
 		SVC_Chandelier(&from);
 	} else if ( !Q_stricmp( c,"disconnect" ) ) {

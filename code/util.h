@@ -99,6 +99,11 @@ static LinkedList _list_add(LinkedList *list, void *data) {
 	return n;
 }
 
+// You must free the result if result is non-NULL.
+char *str_replace(char *orig, char *rep, char *with);
+size_t filesize(const char* file);
+int startsWith(const char *str, const char *pre);
+
 /*
 	Hooking
 */

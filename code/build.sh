@@ -94,7 +94,7 @@ fi
 compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 
 if [ $DEBUG = true ]; then
-compiler="$cc -DxDEBUG -DDEBUG -g -w -Wl,--exclude-libs,ALL"
+compiler="$cc -g -w -Wl,--exclude-libs,ALL"
 #compiler="$cc -DxDEBUG -DDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 fi
 
@@ -122,7 +122,17 @@ params="$DEFINES -std=c99 -I. -m32 -fPIC -Wno-write-strings"
 mkdir -p bin
 mkdir -p obj
 
-echo "Compiling..."
+echo -e "\nCOMPILING"
+
+#echo "[CPPP]"
+#for f in cppp/*.c; do
+#	filename=$(basename "$f")
+#	extension="${filename##*.}"
+#	filename="${filename%.*}"
+#	$compiler $params -c cppp/$filename.c -o obj/$filename.o
+#done
+
+
 echo "[ROOT]"
 $compiler $params -c init.c -o obj/init.o
 $compiler $params -c librarymodule.c -o obj/librarymodule.o
@@ -133,13 +143,14 @@ $compiler $params -c files.c -o obj/files.o
 $compiler $params -c cmd.c -o obj/cmd.o
 $compiler $params -c msg.c -o obj/msg.o
 $compiler $params -c curl.c -o obj/curl.o
-
+$compiler $params -c util.c -o obj/util.o
 echo "[GAME]"
 $compiler $params -c shared.c -o obj/shared.o
 $compiler $params -c script.c -o obj/script.o
 $compiler $params -c bg_pmove.c -o obj/bg_pmove.o
 $compiler $params -c bg_misc.c -o obj/bg_misc.o
 $compiler $params -c g_utils.c -o obj/g_utils.o
+$compiler $params -c g_spawn.c -o obj/g_spawn.o
 $compiler $params -c q_math.c -o obj/q_math.o
 echo "[SERVER]"
 $compiler $params -c sv_commands.c -o obj/sv_commands.o
@@ -152,6 +163,7 @@ $compiler $params -c sv_main.c -o obj/sv_main.o
 $compiler $params -c x_clientcmds.c -o obj/x_clientcmds.o
 $compiler $params -c unix_net.c -o obj/unix_net.o
 echo "[SCRIPT]"
+$compiler $params -c pre.c -o obj/pre.o
 $compiler $params -c scr_method_player.c -o obj/scr_method_player.o
 $compiler $params -c scr_string.c -o obj/scr_string.o
 $compiler $params -c scr_fields.c -o obj/scr_fields.o
@@ -197,5 +209,5 @@ $compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -Os -s -lz 
 fi
 fi
 #rm -rf ./obj
-find ./obj -name '*.o' ! -name 'duktape.o' -delete
+find /home/ext/obj -name '*.o' ! -name 'duktape.o' -delete
 echo "Done."

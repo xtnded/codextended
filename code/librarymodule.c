@@ -74,6 +74,9 @@ void set_game_ptr( void *ret ) {
 	
 	void BG_Link();
 	BG_Link();
+	
+	void init_g_spawn();
+	init_g_spawn();
 	set_trap_func_ptr();
 	scriptInitializing();
 	
