@@ -6,30 +6,27 @@ CoDExtended is free software: you can redistribute it and/or modify it under the
 
 Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
 
-[ Windows Standalone (Patch 1.1 & 1.5 in one binary, altough the older MDLL variant only supports 1.5) ]
+[ *nix setup ]
 
-1. Copy CoDExtended.exe into your Call of Duty folder
-2. Run your Call of Duty server
-3. Run CoDExtended.exe (After 5 seconds it'll automatically close)
-4. Load any map e.g /map mp_carentan
-5. The tool should be now working and you can use it's possibilities.
+Binary release:
+	http://cod1.eu/codextended.so
 
-[ Linux ]
+{Building the binary}
 
-Binary releases;
-http://cod1.eu/codextended.so
+Install these packages if you don't have them yet.
 
-1. Compile the .so
-2. Copy over the compiled library "codextended.so" to your Call of Duty folder where cod_lnxded is located.
-*3. Download the xtnded_server.pk3 and modify it to your needs (it's for the callbacks) [http://cod1.eu/xtnded/xtnded_server.pk3] 
-4. Add this to your starting line (Library path may be not needed)
-* may not be needed.
+apt-get install build-essential
+apt-get install libssl-dev
+apt-get install libcurl4-openssl-dev
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
+[If you're on x86_64 then you would add :i386 after the package]
 
-3. Run the server like you normally would
+Run build.sh	
 
-:: Features
+Your startup commandline for your Call of Duty dedicated server would look something like this.
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=/path/to/codextended.so ./cod_lnxded
+
+Features:
 
 - GSC > C/C++
 - Extending the functions/methods of the default GSC script
@@ -37,16 +34,12 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=codextended.so ./cod_lnxded
 - Various callbacks e.g ClientCommand
 - Bugfixes e.g (q3dirtrav)
 - Much more unlisted features
-
-:: Player Features
 - Collision (If the collision is turned off then you can stand ontop of other people. ;])
 - Velocity altering
 - Instead of the self.angles > self getplayerangles() which returns better angles
 - Play player-animation(s) with a script
-
-:: Entity features
 - Entity collision and damage feedback
 
 For any questions feel free to ask me on xfire: phpcod or steam: riicchhaarrd
 
-Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 2/4 linux memory modification) (https://github.com/kungfooman/libcod)
+Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 2 memory modification) (https://github.com/kungfooman/libcod)
