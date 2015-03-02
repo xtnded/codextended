@@ -26,6 +26,15 @@
 #include "shared.h"
 #include "script.h"
 
+/*
+    pthreads for HeartBeat in threads
+    unistd for using sleep while development/testing 
+    //Nuke (t-knapp)
+*/
+
+#include <pthread.h>
+//#include <unistd.h>
+
 #if CODPATCH == 1
 #define svsclients_ptr 0x83B67AC
 #define clientsize 370940
@@ -133,6 +142,12 @@ typedef struct {
 } challenge_t;
 
 #pragma pack(push, 1)
+
+//Argument struct passed to heartbeat thread
+typedef struct {
+    const char *hbname;
+    netadr_t adr;
+} heartbeat_t;
 
 typedef int sharedEntity_t;
 
