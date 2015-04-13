@@ -1437,7 +1437,84 @@ gentity_t *fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWP
 
 #endif
 
+void _Scr_GetGenericField(int a1, int a2, int a3) {
+//	printf("Scr_GetGenericField: a1 = %x, a2 = %x, a3= %x\n", a1, a2, a3);
+	
+	switch(a2) {
+		case 0:
+			Scr_AddInt(*(int*)(a3 + a1));
+		break;
+		
+		case 1:
+			Scr_AddFloat(*(float*)(a3 + a1));
+		break;
+		
+		case 2:
+			char *s = (char*)(a3 + a1);
+			printf("AddString: %s\n", s);
+			if(a3 == 0x21B4) { //name offset in structure
+				//do stuff
+			}
+			//check for NULL e.g?
+			if(s == NULL)
+				Scr_AddString("");
+			else
+				Scr_AddString(s);
+		break;
+		
+		case 3: {
+			void (*Scr_AddConstString)(short) = (void(*)(short))GAME("Scr_AddConstString");
+			short index = *(short*)(a3 + a1);
+			if(index) {
+				Scr_AddConstString(index);
+				//printf("AddConstString: %s\n", SL_ConvertToString(index));
+			}
+		}
+		break;
+		
+		case 4: {
+			float *vec = (float*)(a3 + a1);
+			Scr_AddVector(vec);
+		//	printf("vector: x: %f, y: %f, z: %f\n", vec[0], vec[1], vec[2]);
+		}
+		break;
+		
+		case 5: {
+			gentity_t *ent = *(gentity_t**)(a3 + a1);
+			if(ent)
+				Scr_AddEntity(ent);
+		}
+		break;
+		
+		case 6: {
+			float org[3] = {0, *(float*)(a3 + a1), 0};
+			Scr_AddVector(org);
+		}
+		break;
+		
+		case 7: {
+			void (*Scr_AddObject)(short) = (void(*)(short))GAME("Scr_AddObject");
+			short index = *(short*)(a3 + a1);
+			if(index)
+				Scr_AddObject(index);
+		}
+		break;
+		
+		case 8: {
+			unsigned char modelindex = *(unsigned char*)(a3 + a1);
+			const char* (*get_model_name_from_index)(unsigned char) = (const char*(*)(unsigned char))GAME("G_ModelName");
+			const char *modelname = get_model_name_from_index(modelindex);
+			Scr_AddString(modelname);
+			//printf("ModelName: %s\n", modelname);
+		}		
+		break;
+	}
+}
+
 void scriptInitializing() {
+	
+//	__jmp(GAME("Scr_GetGenericField"), _Scr_GetGenericField);
+	
 	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
 	//printf("Patched developer functions:\n");
 	for(int i = 0; i != 0x69; i++, it++) {
