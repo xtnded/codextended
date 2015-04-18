@@ -303,7 +303,36 @@ void SVC_Status( netadr_t* from ) {
 	NET_OutOfBandPrint( NS_SERVER, *from, "statusResponse\n%s\n%s", infostring, status );
 }
 
+//Threads for masterserver heartbeats
+pthread_t * pthreads_hb = NULL;
+
+void *thread_SendHeartBeat(void *arg) {
+    heartbeat_t *pHeartBeat = (heartbeat_t*) arg;
+
+    /*
+    Com_Printf( "    pHeartBeat->hbname: '%s'\n", pHeartBeat->hbname );
+    Com_Printf( "    pHeartBeat->adr.type: '%d'\n", pHeartBeat->adr.type );
+    Com_Printf( "    pHeartBeat->adr.ip: '%d.%d.%d.%d'\n", 
+		pHeartBeat->adr.ip[0], 
+		pHeartBeat->adr.ip[1], 
+		pHeartBeat->adr.ip[2], 
+		pHeartBeat->adr.ip[3] );
+    */
+    //sleep(5);
+    NET_OutOfBandPrint( NS_SERVER, pHeartBeat->adr, "heartbeat %s\n", pHeartBeat->hbname );
+    
+    free(pHeartBeat);
+    
+    return NULL;
+}
+
 void SV_MasterHeartBeat(const char* hbname) {
+	//Init threads for masterserver heartbeats
+        if(pthreads_hb == NULL){
+	    Com_Printf( "Creating %d threads for heartbeats\n", MAX_MASTER_SERVERS );
+	    pthreads_hb = malloc(sizeof(pthread_t) * MAX_MASTER_SERVERS);
+	}
+  
 	static netadr_t adr[MAX_MASTER_SERVERS + 1];
 	int i;
 	
@@ -351,7 +380,19 @@ void SV_MasterHeartBeat(const char* hbname) {
 		}
 		
 		Com_Printf( "Sending heartbeat to %s\n", sv_master[i]->string );
-		NET_OutOfBandPrint( NS_SERVER, adr[i], "heartbeat %s\n", hbname );
+		//sleep(2); //Simulate high latency
+		//NET_OutOfBandPrint( NS_SERVER, adr[i], "heartbeat %s\n", hbname );
+		
+		//Start 'fire-and-forget' thread for every sv_master to avoid lags (~5000ms) if master times out
+		heartbeat_t *pHeartBeat = malloc(sizeof(heartbeat_t));
+		pHeartBeat->hbname = hbname;
+		pHeartBeat->adr = adr[i];
+		
+		//Detached thread => no memory leaks
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_create (&pthreads_hb[i], &attr, thread_SendHeartBeat, pHeartBeat);
 	}
 	
 	//#ifdef xPOWERED

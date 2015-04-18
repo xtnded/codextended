@@ -94,7 +94,7 @@ fi
 compiler="$cc -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 
 if [ $DEBUG = true ]; then
-compiler="$cc -g -w -Wl,--exclude-libs,ALL"
+compiler="$cc -g -w -Wl,--exclude-libs,ALL -D_REENTRANT -lpthread"
 #compiler="$cc -DxDEBUG -DDEBUG -Os -O1 -O3 -s -fvisibility=hidden -w -Wl,--exclude-libs,ALL"
 fi
 
@@ -209,5 +209,5 @@ $compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -Os -s -lz 
 fi
 fi
 #rm -rf ./obj
-find /home/ext/obj -name '*.o' ! -name 'duktape.o' -delete
+find ./obj -name '*.o' ! -name 'duktape.o' -delete
 echo "Done."
