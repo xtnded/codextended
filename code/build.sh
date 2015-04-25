@@ -209,5 +209,5 @@ $compiler -m32 -shared -L/lib32 -L./lib -o ./bin/codextended.so $obj -Os -s -lz 
 fi
 fi
 #rm -rf ./obj
-find /home/ext/obj -name '*.o' ! -name 'duktape.o' -delete
+find ./obj -name '*.o' ! -name 'duktape.o' -delete
 echo "Done."
