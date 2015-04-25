@@ -1439,7 +1439,7 @@ gentity_t *fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWP
 
 void _Scr_GetGenericField(int a1, int a2, int a3) {
 //	printf("Scr_GetGenericField: a1 = %x, a2 = %x, a3= %x\n", a1, a2, a3);
-	
+	char *s = NULL;//gcc error init stuff etc
 	switch(a2) {
 		case 0:
 			Scr_AddInt(*(int*)(a3 + a1));
@@ -1450,7 +1450,7 @@ void _Scr_GetGenericField(int a1, int a2, int a3) {
 		break;
 		
 		case 2:
-			char *s = (char*)(a3 + a1);
+			s = (char*)(a3 + a1);
 			printf("AddString: %s\n", s);
 			if(a3 == 0x21B4) { //name offset in structure
 				//do stuff
