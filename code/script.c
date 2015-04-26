@@ -1519,7 +1519,7 @@ unsigned short (*GetVariableName)(unsigned short) = (unsigned short(*)(unsigned 
 unsigned short (*GetNextVariable)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3028; //idk original funcname
 unsigned short (*get_var_by_idx)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3210;
 
-unsigned short GetArrayKeys(int index) {
+unsigned short Scr_GetArray(int index) {
 	int *params = (int*)0x82F5944;
 	int stack = *(int*)0x82F5948;
 	int base = (stack - 8 * index);
@@ -1544,7 +1544,7 @@ unsigned short GetArrayKeys(int index) {
 }
 
 void Scr_GetArrayKeys(int a) {
-	unsigned short arrIndex = GetArrayKeys(0);
+	unsigned short arrIndex = Scr_GetArray(0);
 	
 	Scr_MakeArray();
 
