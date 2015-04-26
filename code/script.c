@@ -212,6 +212,8 @@ void gscr_memcpy(int a) {
 	memcpy(s1, s2, n);
 }
 
+void Scr_GetArrayKeys(int a);
+
 SCRIPTFUNCTION scriptFunctions[] = {
 	//name, function, developer
 	#ifdef uMYSQL
@@ -272,6 +274,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"debugtrace", trace_For_me, 0},
 	#endif
     {"md5", GScr_md5, 0},
+    {"getarraykeys", Scr_GetArrayKeys, 0},
     {"creturn", GScr_return, 0},
     {"cmd_argc", GScr_Cmd_Argc, 0},
     {"cmd_argv", GScr_Cmd_Argv, 0},
@@ -1510,6 +1513,102 @@ void _Scr_GetGenericField(int a1, int a2, int a3) {
 		break;
 	}
 }
+
+
+unsigned short (*GetVariableName)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3060;
+unsigned short (*GetNextVariable)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3028; //idk original funcname
+unsigned short (*get_var_by_idx)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3210;
+
+unsigned short GetArrayKeys(int index) {
+	int *params = (int*)0x82F5944;
+	int stack = *(int*)0x82F5948;
+	int base = (stack - 8 * index);
+	int vartype = *(int*)(base + 4);
+	int *params2 = (int*)0x82F5888;
+	//printf("params=%d,params2=%d\n",*params,*params2);
+
+
+	//printf("stack type = %s\n", Scr_GetVariableType(*(int*)(base + 4)));
+
+	if(*params > index) {
+		//printf("stack type = %s(%d)\n", Scr_GetVariableType(vartype), vartype);
+		//printf("base = 0x%x\n", base);
+		//raise(SIGINT);
+		if(vartype == VT_OBJECT)
+			return *(unsigned short*)base;
+	}
+	//error param doesn't exist.
+	//Scr_Error("error parameter does not exist!\n");
+	printf("scr_error\n");
+	return 0;
+}
+
+void Scr_GetArrayKeys(int a) {
+	unsigned short arrIndex = GetArrayKeys(0);
+	
+	Scr_MakeArray();
+
+	unsigned short i, var;
+	for(i = GetNextVariable(arrIndex); i != 0;) {
+		//printf("%d: %s = %s\n", i, SL_ConvertToString(GetVariableName(i)), SL_ConvertToString(var));
+		
+		Scr_AddString(SL_ConvertToString(GetVariableName(i)));
+		Scr_AddArray();
+
+		i = GetNextVariable(i);
+		var = get_var_by_idx(i);
+	}
+}
+
+#if 0
+void Scr_GetArrayKeys2(int a) { //old messy for reference
+	unsigned short (*get_istring_index)(int);
+	*(int*)&get_istring_index = 0x80A846C;
+
+
+	int (*arraysize)(unsigned short) = (int(*)(unsigned short))0x80A3010;
+
+	unsigned short str = get_istring_index(1);
+
+	printf("str = %d (%x), %s\n", str, str, SL_ConvertToString(str));
+
+	int array_index = GetArrayKeys(0); //0x3cff
+	unsigned short (*GetVariableName)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3060;
+	unsigned short (*get_idx)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3028;
+
+	unsigned short (*get_var_by_idx)(unsigned short) = (unsigned short(*)(unsigned short))0x80A3210;
+
+
+	unsigned short i, var;
+	for(i = get_idx(array_index), var = get_var_by_idx(i); i != 0;) {
+		//printf("i (%d) = %s\n", i, SL_ConvertToString(i));
+		
+		printf("%d: %s > %s\n", i, SL_ConvertToString(var), SL_ConvertToString(GetVariableName(i)));
+		i = get_idx(i);
+		var = get_var_by_idx(i);
+	}
+	printf("array name = %s\n", SL_ConvertToString(get_variable_name(array_index)));
+	printf("arraysize = %d(%x)\n",arraysize(array_index),arraysize(array_index));
+
+	int v9 = array_index * 0xc;
+	printf("v9 = %x\n", v9);
+	unsigned char *ast = (unsigned char*)(0x81F17C4 + v9);
+
+	if( (*ast & 0x1f) != 0xf) {
+
+		printf("not an array!\n");
+		Scr_AddUndefined();
+		return;
+	}
+
+	VariableValue *arr = (VariableValue*)(0x81F17C0 + v9);
+	printf("arr =  %x\n", arr);
+	raise(SIGINT);
+	Scr_MakeArray();
+	Scr_AddString("hoi");
+	Scr_AddArray();
+}
+#endif
 
 void scriptInitializing() {
 	
