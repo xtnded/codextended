@@ -15,9 +15,7 @@ Binary release:
 
 Install these packages if you don't have them yet.
 
-apt-get install build-essential
-apt-get install libssl-dev
-apt-get install libcurl4-openssl-dev
+apt-get install build-essential libssl-dev libcurl4-openssl-dev
 
 [If you're on x86_64 then you would add :i386 after the library packages ]
 
