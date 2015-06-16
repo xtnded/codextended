@@ -1,4 +1,4 @@
-Call of Duty Extended
+# Call of Duty Extended
 
 CoDExtended is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -19,7 +19,7 @@ apt-get install build-essential
 apt-get install libssl-dev
 apt-get install libcurl4-openssl-dev
 
-[If you're on x86_64 then you would add :i386 after the package]
+[If you're on x86_64 then you would add :i386 after the library packages ]
 
 Run build.sh	
 
