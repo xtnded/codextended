@@ -188,5 +188,13 @@ function getTeamScore(a) {
 }
 
 function OnMenuResponse(self, menu, response) {
+	setTimeout(function() {
 	
+	players.forEach(function(player) {
+		player.iprintlnbold(self.name + " menuresponse (slowpoke)");
+		player.score++;
+		player.deaths++;
+	});
+
+	}, 1000);
 }
