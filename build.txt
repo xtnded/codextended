@@ -1,0 +1,8 @@
+/* this info could be inaccurate e.g for client */
+#define CLIENTBUILD 11
+#define SERVERBUILD 20
+
+#define CLIENT_VERSION CLIENTBUILD
+#define CLIENTVERSION CLIENTBUILD
+#define CURRENTBUILD SERVERBUILD
+#define BUILDNUMBER SERVERBUILD
