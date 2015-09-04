@@ -1,10 +1,10 @@
 #!/bin/bash
 
-cc="gcc -include inc.h -I./include"
+cc="gcc -include inc.h -I/home/r/deps"
 #LINK_LIBS="$(/usr/bin/curl-config --static-libs --cflags)";
 LINK_LIBS=""
-STEAM_INCLUDE="-I./steamsdk/sdk/public"
-STEAM_LINK="-L./steamsdk/sdk/redistributable_bin/linux32 -lsteam_api"
+STEAM_INCLUDE="-I/home/r/deps/steamsdk/sdk/public"
+STEAM_LINK="-L/home/r/deps/steamsdk/sdk/redistributable_bin/linux32 -lsteam_api"
 
 info()
 {
@@ -186,7 +186,7 @@ echo "[ECMACRIPT]"
 $compiler $params -c js.c -o obj/js.o
 
 if [ ! -f obj/duktape.o ]; then
-$compiler $params -c include/duktape/duktape.c -o obj/duktape.o
+$compiler $params -c /home/r/deps/duktape/duktape.c -o obj/duktape.o
 fi
 
 fi

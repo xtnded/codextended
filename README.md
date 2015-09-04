@@ -4,40 +4,31 @@ CoDExtended is free software: you can redistribute it and/or modify it under the
 
 ====
 
-Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features and it fixes known bugs.
+Call of Duty Extended is a modification for Call of Duty 1, which does what it says it extends CoD with new features, increasing limits and fixing bugs.
 
-[ *nix setup ]
-
-Binary release:
-	http://cod1.eu/codextended.so
-
-{Building the binary}
-
-Install these packages if you don't have them yet.
-
-apt-get install build-essential libssl-dev libcurl4-openssl-dev
-
-[If you're on x86_64 then you would add :i386 after the library packages ]
-
-Run build.sh	
+# Usage
 
 Your startup commandline for your Call of Duty dedicated server would look something like this.
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. LD_PRELOAD=/path/to/codextended.so ./cod_lnxded
 
-Features:
+# Building
 
-- GSC > C/C++
-- Extending the functions/methods of the default GSC script
-- New memberfields additions
-- Various callbacks e.g ClientCommand
-- Bugfixes e.g (q3dirtrav)
-- Much more unlisted features
-- Collision (If the collision is turned off then you can stand ontop of other people. ;])
-- Velocity altering
-- Instead of the self.angles > self getplayerangles() which returns better angles
-- Play player-animation(s) with a script
-- Entity collision and damage feedback
+Install GCC and libs if you haven't yet with
+apt-get install build-essential
 
-For any questions feel free to ask me on xfire: phpcod or steam: riicchhaarrd
+[ If you're on x86_64 then you would add :i386 after the library package names ]
+
+Then download and place the dependencies listed under here in the respective directories.
+
+SteamSDK, Duktape
+
+# Questions
+
+If you have any question post a new thread or PM me on http://xtnded.org
+or add me on steam.
+
+Steam: riicchhaarrd
+
+====
 
 Thanks to kung foo man (http://killtube.org) and his libcod project (CoD 2 memory modification) (https://github.com/kungfooman/libcod)
