@@ -635,13 +635,13 @@ duk_ret_t js_playerobj_sendservercommand(duk_context *js_context) {
 }
 
 const duk_function_list_entry player_object_methods[] = {
-	{"getplayerangles", js_playerobj_getplayerangles, 0},
-	{"sendservercommand", js_playerobj_sendservercommand, 1},
+	{"getPlayerAngles", js_playerobj_getplayerangles, 0},
+	{"sendServerCommand", js_playerobj_sendservercommand, 1},
 	{"kick", js_player_kick, 1},
-    {"getname", js_player_getname, 0},
-    {"getscore", js_player_getscore, 0},
-    {"getip", js_player_getip, 0},
-    {"getping", js_player_getping, 0},
+    {"getName", js_player_getname, 0},
+    {"getScore", js_player_getscore, 0},
+    {"getIp", js_player_getip, 0},
+    {"getPing", js_player_getping, 0},
 	{NULL, NULL, 0}
 };
 
@@ -1039,7 +1039,7 @@ void js_execute() {
         */
 
         duk_push_global_object(js_context);
-        duk_get_prop_string(js_context, -1, "consolecommand");
+        duk_get_prop_string(js_context, -1, "ConsoleCommand");
         int argc = Cmd_Argc();
         int arr_idx = duk_push_array(js_context);
         for(int i = 0; i < argc; i++) {
@@ -1047,7 +1047,7 @@ void js_execute() {
             duk_put_prop_index(js_context, arr_idx, i);
         }
         if(duk_pcall(js_context, 1) != 0) {
-			printf("Script Error: %s\n", duk_to_string(js_context, -1));
+			printf("Script Error (ConsoleCommand): %s\n", duk_to_string(js_context, -1));
 		}
         duk_pop(js_context);
     }
@@ -1081,12 +1081,14 @@ void js_load() {
 	js_addfunction("precacheMenu", js_precacheMenu, 1);
 	js_addfunction("makeCvarServerInfo", js_makeCvarServerInfo, 2);
 	js_addfunction("Com_Printf", js_com_printf, 1);
-    js_addfunction("sendservercommand", js_SendServerCommand, 1);
+    js_addfunction("sendServerCommand", js_SendServerCommand, 1);
 	
-    js_addfunction("getcvar", js_getcvar, 1);
-    js_addfunction("setcvar", js_setcvar, 2);
+    js_addfunction("getCvar", js_getcvar, 1);
+    js_addfunction("getDvar", js_getcvar, 1);
+    js_addfunction("setCvar", js_setcvar, 2);
+    js_addfunction("setDvar", js_setcvar, 2);
 	
-    js_addfunction("newhudelem", js_newhudelem, 0);
+    js_addfunction("newHudElem", js_newhudelem, 0);
     js_addfunction("spawn", js_spawn, 2);
     js_addfunction("ent_getorigin", js_ent_getorigin, 1);
     js_addfunction("ent_setorigin", js_ent_setorigin, 2);
@@ -1096,8 +1098,8 @@ void js_load() {
     js_addfunction("dobjupdate", js_dobjupdate, 1);
 	
     js_addfunction("Cmd_ArgvBuffer", js_Cmd_ArgvBuffer, 1);
-    js_addfunction("getconfigstring", js_getconfigstring, 1);
-    js_addfunction("setconfigstring", js_setconfigstring, 2);
+    js_addfunction("getConfigString", js_getconfigstring, 1);
+    js_addfunction("setConfigString", js_setconfigstring, 2);
     js_addfunction("Cmd_Argv", js_Cmd_Argv, 1);
     js_addfunction("Cmd_Argc", js_Cmd_Argc, 0);
     js_addfunction("print", js_com_printf, 1);

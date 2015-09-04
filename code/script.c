@@ -779,7 +779,7 @@ void _Scr_StartupGameType() {
 		if(duk_has_prop_string(js_context, -1, "StartGameType")) {
 			duk_get_prop_string(js_context, -1, "StartGameType");
 			if(duk_pcall(js_context, 0) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (StartGameType): %s\n", duk_to_string(js_context, -1));
 		}
 		duk_pop(js_context);
 	#endif
@@ -794,7 +794,7 @@ void _Scr_LoadGameType() {
 		if(duk_has_prop_string(js_context, -1, "LoadGameType")) {
 			duk_get_prop_string(js_context, -1, "LoadGameType");
 			if(duk_pcall(js_context, 0) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (LoadGameType): %s\n", duk_to_string(js_context, -1));
 		}
 		duk_pop(js_context);
 	#endif
@@ -814,7 +814,7 @@ void _Scr_PlayerConnect(gentity_t *self) {
 			
 			duk_dup(js_context, -2); //copy of player[idx] obj
 			if(duk_pcall(js_context, 1) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (OnPlayerConnect): %s\n", duk_to_string(js_context, -1));
 			duk_pop(js_context);
 		}
 		duk_pop(js_context); //players
@@ -838,7 +838,7 @@ void _Scr_PlayerDisconnect(self)
 			
 			duk_dup(js_context, -2); //copy of player[idx] obj
 			if(duk_pcall(js_context, 1) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (OnPlayerDisconnect): %s\n", duk_to_string(js_context, -1));
 			duk_pop(js_context);
 		}
 		duk_pop(js_context); //players
@@ -923,7 +923,7 @@ void _Scr_PlayerDamage(gentity_t *self, gentity_t *inflictor, gentity_t *attacke
 			}
 			
 			if(duk_pcall(js_context, 10) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (OnPlayerDamage): %s\n", duk_to_string(js_context, -1));
 			duk_pop(js_context);
 		}
 		duk_pop(js_context); //players
@@ -957,7 +957,7 @@ void _Cmd_MenuResponse_f(gentity_t *self) {
 			duk_push_string(js_context, cs);
 			duk_push_string(js_context, Cmd_Argv(3));
 			if(duk_pcall(js_context, 3) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (OnMenuResponse): %s\n", duk_to_string(js_context, -1));
 			duk_pop(js_context);
 		}
 		duk_pop(js_context); //players
@@ -1880,13 +1880,13 @@ void _Scr_RunCurrentThreads() {
 		if(duk_has_prop_string(js_context, -1, "RunFrame")) {
 			duk_get_prop_string(js_context, -1, "RunFrame");
 			if(duk_pcall(js_context, 0) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (RunFrame): %s\n", duk_to_string(js_context, -1));
 		}
 		if(duk_has_prop_string(js_context, -1, "EventLoop_RunFrame")) {
 			duk_get_prop_string(js_context, -1, "EventLoop_RunFrame");
 			
 			if(duk_pcall(js_context, 0) != 0)
-				printf("Script Error: %s\n", duk_to_string(js_context, -1));
+				printf("Script Error (EventLoop_RunFrame): %s\n", duk_to_string(js_context, -1));
 		}
 		
 		duk_pop(js_context);

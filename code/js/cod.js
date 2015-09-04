@@ -8,37 +8,38 @@ function randomIntBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-Player.prototype.setclientcvar = function(cvar, value) {
-	this.sendservercommand("v "+cvar+" \""+value+"\"");
+Player.prototype.setClientCvar = function(cvar, value) {
+	this.sendServerCommand("v "+cvar+" \""+value+"\"");
 };
 
-Player.prototype.closemenu = function() {
-	this.sendservercommand("u");
+Player.prototype.closeMenu = function() {
+	this.sendServerCommand("u");
 };
 
 Player.prototype.suicide = function() {
 	/* kill self */
 };
 
-Player.prototype.openmenu = function(menu) {
+Player.prototype.openMenu = function(menu) {
 	nomouse = 1;
-	menuIndex = getscriptmenuindex(menu);
+	menuIndex = getScriptMenuIndex(menu);
 	if(menuIndex == -1)
 		return;
-	this.sendservercommand("t "+menuIndex+" "+nomouse+"");
+	this.sendServerCommand("t "+menuIndex+" "+nomouse+"");
 };
 
-Player.prototype.iprintlnbold = function(msg) { this.sendservercommand("g \""+msg+"\""); };
-Player.prototype.iprintln = function(msg) { this.sendservercommand("e \""+msg+"\""); };
-function iprintlnbold(msg) { sendservercommand("g \""+msg+"\""); }
-function iprintln(msg) { sendservercommand("e \""+msg+"\""); }
-function isdefined(a) { return a != null; }
+Player.prototype.iPrintLnBold = function(msg) { this.sendServerCommand("g \""+msg+"\""); };
+Player.prototype.iPrintLn = function(msg) { this.sendServerCommand("e \""+msg+"\""); };
+function iPrintLnBold(msg) { sendServerCommand("g \""+msg+"\""); }
+function iPrintLn(msg) { sendServerCommand("e \""+msg+"\""); }
+function isDefined(a) { return a != null; }
+function isPlayer(p) { return p instanceof Player };
 
-function getscriptmenuindex(menu) {
+function getScriptMenuIndex(menu) {
 	base = 1180;
 	var i;
 	for(i = 0; i < 32; i++) {
-		str = getconfigstring(base + i);
+		str = getConfigString(base + i);
 		if(str != menu)
 			continue;
 		return i;
@@ -46,11 +47,11 @@ function getscriptmenuindex(menu) {
 	return -1;
 }
 
-function x_modelindex(modelname) {
+function X_ModelIndex(modelname) {
 	base = 268;
 	var i;
 	for(i = 0; i < 256; i++) {
-		str = getconfigstring(base + i);
+		str = getConfigString(base + i);
 		if(str != modelname)
 			continue;
 		return i;
@@ -58,7 +59,7 @@ function x_modelindex(modelname) {
 	return 0;
 }
 
-function consolecommand(args) {
+function ConsoleCommand(args) {
 	players.forEach(function(self) {
 		//print(self.statusicon);
 		self.statusicon = args[1];
@@ -69,23 +70,23 @@ var game = [];
 
 function StartGameType() {
 	// defaults if not defined in level script
-	if(!isdefined(game["allies"]))
+	if(!isDefined(game["allies"]))
 		game["allies"] = "american";
-	if(!isdefined(game["axis"]))
+	if(!isDefined(game["axis"]))
 		game["axis"] = "german";
 
-	if(!isdefined(game["layoutimage"]))
+	if(!isDefined(game["layoutimage"]))
 		game["layoutimage"] = "default";
 	layoutname = "levelshots/layouts/hud@layout_" + game["layoutimage"];
 	precacheShader(layoutname);
-	setcvar("scr_layoutimage", layoutname);
+	setCvar("scr_layoutimage", layoutname);
 	makeCvarServerInfo("scr_layoutimage", ""); /* does nothing yet */
 
 	// server cvar overrides
-	if(getcvar("scr_allies") != "")
-		game["allies"] = getcvar("scr_allies");	
-	if(getcvar("scr_axis") != "")
-		game["axis"] = getcvar("scr_axis");
+	if(getCvar("scr_allies") != "")
+		game["allies"] = getCvar("scr_allies");	
+	if(getCvar("scr_axis") != "")
+		game["axis"] = getCvar("scr_axis");
 	
 	game["menu_team"] = "team_" + game["allies"] + game["axis"];
 	game["menu_weapon_allies"] = "weapon_" + game["allies"];
@@ -123,7 +124,55 @@ function spawnSpectator() {}
 function spawnPlayer() {}
 
 function OnPlayerDisconnect() {
-	iprintln(self.name + " ^7Disconnected");
+	iPrintLn(self.name + " ^7Disconnected");
+}
+
+function OnPlayerDamage(self, eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitloc) {
+	if(self.sessionteam == "spectator")
+		return;
+	
+	// Don't do knockback if the damage direction was not specified
+	if(!isDefined(vDir))
+		iDFlags |= level.iDFLAGS_NO_KNOCKBACK;
+
+	// Make sure at least one point of damage is done
+	if(iDamage < 1)
+		iDamage = 1;
+	
+	
+	// Do debug print if it's enabled
+	if(getCvar("g_debugDamage"))
+	{
+		print("client:" + self.number + " health:" + self.health +
+			" damage:" + iDamage + " hitLoc:" + sHitLoc);
+	}
+	
+	
+	// Apply the damage to the player
+//	self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
+
+	if(self.sessionstate != "dead")
+	{
+		lpselfnum = self.number;
+		lpselfname = self.name;
+		lpselfteam = self.pers["team"];
+		lpattackerteam = "";
+
+		if(isPlayer(eAttacker))
+		{
+			lpattacknum = eAttacker.number;
+			lpattackname = eAttacker.name;
+			lpattackerteam = eAttacker.pers["team"];
+		}
+		else
+		{
+			lpattacknum = -1;
+			lpattackname = "";
+			lpattackerteam = "world";
+		}
+
+		logPrint("D;" + lpselfnum + ";" + lpselfteam + ";" + lpselfname + ";" + lpattacknum + ";" + lpattackerteam + ";" + lpattackname + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n");
+	}
 }
 
 function OnPlayerConnect(self) {
@@ -133,48 +182,51 @@ function OnPlayerConnect(self) {
 	
 	self.statusicon = "";
 
-	iprintln(self.name + " ^7Connected");
+	iPrintLn(self.name + " ^7Connected");
 	print(self.name + " Connected\n");
 	print("HEY\n");
 	if(game["state"] == "intermission") {
 		spawnIntermission();
 		return;
 	}
-
-	if(isdefined(self.pers["team"]) && self.pers["team"] != "spectator")
+	
+	if(!isDefined(self.pers))
+		self.pers=[];
+	
+	if(isDefined(self.pers["team"]) && self.pers["team"] != "spectator")
 	{
-		self.setclientcvar("scr_showweapontab", "1");
+		self.setClientCvar("scr_showweapontab", "1");
 
 		if(self.pers["team"] == "allies")
 		{
 			self.sessionteam = "allies";
-			self.setclientcvar("g_scriptMainMenu", game["menu_weapon_allies"]);
+			self.setClientCvar("g_scriptMainMenu", game["menu_weapon_allies"]);
 		}
 		else
 		{
 			self.sessionteam = "axis";
-			self.setclientcvar("g_scriptMainMenu", game["menu_weapon_axis"]);
+			self.setClientCvar("g_scriptMainMenu", game["menu_weapon_axis"]);
 		}
 			
-		if(isdefined(self.pers["weapon"]))
+		if(isDefined(self.pers["weapon"]))
 			spawnPlayer();
 		else
 		{
 			spawnSpectator();
 
 			if(self.pers["team"] == "allies")
-				self.openmenu(game["menu_weapon_allies"]);
+				self.openMenu(game["menu_weapon_allies"]);
 			else
-				self.openmenu(game["menu_weapon_axis"]);
+				self.openMenu(game["menu_weapon_axis"]);
 		}
 	}
 	else
 	{
-		self.setclientcvar("g_scriptMainMenu", game["menu_team"]);
-		self.setclientcvar("scr_showweapontab", "0");
+		self.setClientCvar("g_scriptMainMenu", game["menu_team"]);
+		self.setClientCvar("scr_showweapontab", "0");
 		
-		if(!isdefined(self.pers["team"]))
-			self.openmenu(game["menu_team"]);
+		if(!isDefined(self.pers["team"]))
+			self.openMenu(game["menu_team"]);
 
 		self.pers["team"] = "spectator";
 		self.sessionteam = "spectator";
@@ -191,7 +243,7 @@ function OnMenuResponse(self, menu, response) {
 	setTimeout(function() {
 	
 	players.forEach(function(player) {
-		player.iprintlnbold(self.name + " menuresponse (slowpoke)");
+		player.iPrintLnBold(self.name + " menuresponse (slowpoke)");
 		player.score++;
 		player.deaths++;
 	});
