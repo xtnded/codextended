@@ -17,6 +17,8 @@
 
 #include "shared.h"
 
+#ifdef USE_CURL
+
 #include <curl/curl.h>
 #include <curl/types.h>
 #include <curl/easy.h>
@@ -83,3 +85,6 @@ int download_file(const char* remoteName, const char* localName) {
 	printf("\r\n");
 	return 0;
 }
+#else
+int download_file(const char *a, const char *b) {}
+#endif
