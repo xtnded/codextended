@@ -202,7 +202,8 @@ typedef enum {
 	VT_ARRAY, //16
 	VT_DEAD_THREAD, //15
 	VT_DEAD_ENTITY, //17
-	VT_DEAD_OBJECT //18
+	VT_DEAD_OBJECT, //18
+	VT_END_OF_LIST
 } script_variable_type;
 
 typedef void (__cdecl *SCRIPTFUNCTIONCALL)(int);

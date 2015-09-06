@@ -128,10 +128,10 @@ function GSC_LoadGametypeScript() {
 }
 
 function LoadGameType() {
-	print("CALLING LOL\n");
-	
-	GSC.lol();
-	
+	//GSC.lol();
+	setInterval(function() {
+		print("time = " + gettime() + "\n");
+	}, 1000);
 }
 
 /* tdm.gsc at lol() */

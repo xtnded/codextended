@@ -150,6 +150,7 @@ $compiler $params -c util.c -o obj/util.o
 echo "[GAME]"
 $compiler $params -c shared.c -o obj/shared.o
 $compiler $params -c script.c -o obj/script.o
+nasm -f elf script.asm -o obj/script_asm.o
 $compiler $params -c bg_pmove.c -o obj/bg_pmove.o
 $compiler $params -c bg_misc.c -o obj/bg_misc.o
 $compiler $params -c g_utils.c -o obj/g_utils.o

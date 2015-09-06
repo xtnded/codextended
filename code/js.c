@@ -1088,6 +1088,41 @@ void js_fatal_handler(duk_context *c, int code) {
 	COD_Destructor();
 }
 
+int js_gsc_func_args = 0;
+duk_context *js_gsc_duk_context = NULL;
+
+duk_ret_t js_gsc_call_builtin_func(duk_context *c) {
+	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
+	int fIdx = duk_require_int(c, 0);
+	js_gsc_duk_context = c;
+	js_gsc_func_args = 0;
+	//printf("fIdx = %d\n", fIdx);
+	void (*func)() = (void(*)())it[fIdx].call;
+	func();
+	//printf("args = %d\n", js_gsc_func_args);
+	js_gsc_duk_context = NULL;
+	return (js_gsc_func_args > 0);
+}
+
+void js_add_gsc_functions() {
+	duk_push_global_object(js_context);
+	
+	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
+	for(int i = 0; i != 0x69; i++, it++) {
+		if(!strcmp(it->name, "gettime")) {
+			char *funcStr = va("var %s = function() { return GSC_CallBuiltin(%hu, arguments); }", it->name, i);
+			//printf("funcStr = %s\n", funcStr);
+			duk_eval_string(js_context, funcStr);
+			#if 0
+			duk_push_c_function(js_context, js_gsc_call_builtin_func, DUK_VARARGS);
+			duk_put_prop_string(js_context, -2, it->name);
+			#endif
+			//cprintf(PRINT_GOOD|PRINT_UNDERLINE,"Added GSC function %s:%d to JS\n", it->name, i);
+		}
+	}
+	duk_pop(js_context);		
+}
+
 void js_load() {
 	if(js_context != NULL)
 		return;
@@ -1106,6 +1141,7 @@ void js_load() {
 	duk_put_global_string(js_context, "players");
 	
 	js_addfunction("GSC_Call", js_callGSC, DUK_VARARGS);
+	js_addfunction("GSC_CallBuiltin", js_gsc_call_builtin_func, DUK_VARARGS);
 	js_addfunction("GSC_LoadCallback", js_GSC_LoadCallback, 2);
 	js_addfunction("precacheShader", js_precacheShader, 1);
 	js_addfunction("precacheString", js_precacheString, 1);
