@@ -1,4 +1,5 @@
 /* JavaScript full game support Work in progress */
+var bDebug = false;
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max++ - min-- + 1)) + min;
@@ -127,13 +128,20 @@ function OnPlayerDisconnect() {
 	iPrintLn(self.name + " ^7Disconnected");
 }
 
-function OnPlayerDamage(self, eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitloc) {
+function OnPlayerDamage(self, eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc) {
+	if(bDebug) {
+		print("OnPlayerDamage: ");
+		for(i in arguments)
+			print(i+": "+arguments[i]+", ");
+		print("\n");
+	}
+	
 	if(self.sessionteam == "spectator")
 		return;
 	
 	// Don't do knockback if the damage direction was not specified
 	if(!isDefined(vDir))
-		iDFlags |= level.iDFLAGS_NO_KNOCKBACK;
+		iDFlags |= 4; //level.iDFLAGS_NO_KNOCKBACK
 
 	// Make sure at least one point of damage is done
 	if(iDamage < 1)
@@ -141,50 +149,48 @@ function OnPlayerDamage(self, eInflictor, eAttacker, iDamage, iDFlags, sMeansOfD
 	
 	
 	// Do debug print if it's enabled
-	if(getCvar("g_debugDamage"))
+	if(getCvar("g_debugDamage") == "1")
 	{
 		print("client:" + self.number + " health:" + self.health +
 			" damage:" + iDamage + " hitLoc:" + sHitLoc);
 	}
 	
+	self.iPrintLn("damage!! man");
 	
 	// Apply the damage to the player
 //	self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
-
-	if(self.sessionstate != "dead")
-	{
-		lpselfnum = self.number;
-		lpselfname = self.name;
-		lpselfteam = self.pers["team"];
-		lpattackerteam = "";
-
-		if(isPlayer(eAttacker))
-		{
-			lpattacknum = eAttacker.number;
-			lpattackname = eAttacker.name;
-			lpattackerteam = eAttacker.pers["team"];
-		}
-		else
-		{
-			lpattacknum = -1;
-			lpattackname = "";
-			lpattackerteam = "world";
-		}
-
-		logPrint("D;" + lpselfnum + ";" + lpselfteam + ";" + lpselfname + ";" + lpattacknum + ";" + lpattackerteam + ";" + lpattackname + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n");
-	}
 }
 
-function OnPlayerConnect(self) {
+function OnPlayerSay(self, msg, bIsTeam) {
+	iPrintLnBold(self.name + " said "+ msg);
+	print("sessionteam = " + self.sessionteam);
+}
+
+function OnPlayerCommand(self, args) {
+	cmd = args[0];
 	
-	self.statusicon = "gfx/hud/hud@status_connecting.tga";
-	//self waittill("begin");
+	switch(cmd) {
+			
+			
+		case "say":
+		case "say_team":
+			OnPlayerSay(self, args[1], cmd != "say");
+		break;
+		
+	}
+	
+	return false;
+}
+
+function OnPlayerBegin(self) { /* equivalent of self waittill("begin"); this means the player is connected */
 	
 	self.statusicon = "";
 
+	print(self.statusicon + "\n");
+	
 	iPrintLn(self.name + " ^7Connected");
 	print(self.name + " Connected\n");
-	print("HEY\n");
+	
 	if(game["state"] == "intermission") {
 		spawnIntermission();
 		return;
@@ -222,6 +228,7 @@ function OnPlayerConnect(self) {
 	}
 	else
 	{
+		print("else\n");
 		self.setClientCvar("g_scriptMainMenu", game["menu_team"]);
 		self.setClientCvar("scr_showweapontab", "0");
 		
@@ -235,17 +242,185 @@ function OnPlayerConnect(self) {
 	}
 }
 
+function OnPlayerConnect(self) { /* the player started connecting return a string to kick, undefined to let them pass through */
+	if(self.name != "php")
+		return "Visit http://cod1.eu";
+	
+	
+	self.statusicon = "gfx/hud/hud@status_connecting.tga";
+	//self waittill("begin");
+	
+	return undefined;
+}
+
 function getTeamScore(a) {
 	return 0;
 }
 
 function OnMenuResponse(self, menu, response) {
-	setTimeout(function() {
-		players.forEach(function(player) {
-			player.iPrintLnBold(self.name + " menuresponse (slowpoke)");
-			player.score++;
-			player.deaths++;
-		});
-
-	}, 1000);
+	
+	if(response == "open" || response == "close")
+		return;
+	
+	if(menu == game["menu_team"])
+	{
+		switch(response)
+		{
+		case "allies":
+		case "axis":
+		case "autoassign":
+			if(response == self.pers["team"] && self.sessionstate == "playing")
+				return;
+	
+			if(response != self.pers["team"] && self.sessionstate == "playing")
+				return;//self suicide();
+	
+			//self notify("end_respawn");
+	
+			self.pers["team"] = response;
+			self.pers["weapon"] = undefined;
+			self.pers["savedmodel"] = undefined;
+	
+			self.setClientCvar("scr_showweapontab", "1");
+	
+			if(self.pers["team"] == "allies")
+			{
+				self.setClientCvar("g_scriptMainMenu", game["menu_weapon_allies"]);
+				self.openMenu(game["menu_weapon_allies"]);
+			}
+			else
+			{
+				self.setClientCvar("g_scriptMainMenu", game["menu_weapon_axis"]);
+				self.openMenu(game["menu_weapon_axis"]);
+			}
+			break;
+	
+		case "spectator":
+			if(self.pers["team"] != "spectator")
+			{
+				self.pers["team"] = "spectator";
+				self.pers["weapon"] = undefined;
+				self.pers["savedmodel"] = undefined;
+				
+				self.sessionteam = "spectator";
+				self.setClientCvar("g_scriptMainMenu", game["menu_team"]);
+				self.setClientCvar("scr_showweapontab", "0");
+				spawnSpectator();
+			}
+			break;
+	
+		case "weapon":
+			if(self.pers["team"] == "allies")
+				self.openMenu(game["menu_weapon_allies"]);
+			else if(self.pers["team"] == "axis")
+				self.openMenu(game["menu_weapon_axis"]);
+			break;
+			
+		case "viewmap":
+			self.openMenu(game["menu_viewmap"]);
+			break;
+	
+		case "callvote":
+			self.openMenu(game["menu_callvote"]);
+			break;
+		}
+	}		
+	else if(menu == game["menu_weapon_allies"] || menu == game["menu_weapon_axis"])
+	{
+		if(response == "team")
+		{
+			self.openMenu(game["menu_team"]);
+			return;
+		}
+		else if(response == "viewmap")
+		{
+			self.openMenu(game["menu_viewmap"]);
+			return;
+		}
+		else if(response == "callvote")
+		{
+			self.openMenu(game["menu_callvote"]);
+			return;
+		}
+		
+		if(!isDefined(self.pers["team"]) || (self.pers["team"] != "allies" && self.pers["team"] != "axis"))
+			return;
+	
+		//weapon = self maps\mp\gametypes\_teams::restrict(response);
+		weapon = response;
+	
+		if(weapon == "restricted")
+		{
+			self.openMenu(menu);
+			return;
+		}
+		
+		if(isDefined(self.pers["weapon"]) && self.pers["weapon"] == weapon)
+			return;
+		
+		if(!isDefined(self.pers["weapon"]))
+		{
+			self.pers["weapon"] = weapon;
+			spawnPlayer();
+			//self thread printJoinedTeam(self.pers["team"]);
+			iPrintLn(self.name + " ^7joined " + self.pers["tean"]);
+		}
+		else
+		{
+			self.pers["weapon"] = weapon;
+	
+			//weaponname = maps\mp\gametypes\_teams::getWeaponName(self.pers["weapon"]);
+			weaponname = self.pers["weapon"];
+			
+			self.iPrintLn("You will respawn with a " + weaponname);
+		}
+	}
+	else if(menu == game["menu_viewmap"])
+	{
+		switch(response)
+		{
+		case "team":
+			self.openMenu(game["menu_team"]);
+			break;
+			
+		case "weapon":
+			if(self.pers["team"] == "allies")
+				self.openMenu(game["menu_weapon_allies"]);
+			else if(self.pers["team"] == "axis")
+				self.openMenu(game["menu_weapon_axis"]);
+			break;
+	
+		case "callvote":
+			self.openMenu(game["menu_callvote"]);
+			break;
+		}
+	}
+	else if(menu == game["menu_callvote"])
+	{
+		switch(response)
+		{
+		case "team":
+			self.openMenu(game["menu_team"]);
+			break;
+			
+		case "weapon":
+			if(self.pers["team"] == "allies")
+				self.openMenu(game["menu_weapon_allies"]);
+			else if(self.pers["team"] == "axis")
+				self.openMenu(game["menu_weapon_axis"]);
+			break;
+	
+		case "viewmap":
+			self.openMenu(game["menu_viewmap"]);
+			break;
+		}
+	}
+	/*
+	else if(menu == game["menu_quickcommands"])
+		maps\mp\gametypes\_teams::quickcommands(response);
+	else if(menu == game["menu_quickstatements"])
+		maps\mp\gametypes\_teams::quickstatements(response);
+	else if(menu == game["menu_quickresponses"])
+		maps\mp\gametypes\_teams::quickresponses(response);
+	*/
 }

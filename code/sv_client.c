@@ -928,18 +928,24 @@ void SV_DirectConnect( netadr_t from ) {
 	
 	Q_strncpyz(newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 	
+	SV_UserinfoChanged(newcl);
+	
 	void js_push_player_object(client_t *cl);
 	js_push_player_object(newcl);
 	
 	char *denied = (char*)VM_Call(*(int*)0x80E30C4, 2, clientNum, *(unsigned short*)((unsigned)newcl + 370928));
+	extern char onplayerconnect_result[64];
+
+	if(!denied)
+		denied = onplayerconnect_result;
 	
-	if(denied) {
+	if(denied && *denied) {
 		NET_OutOfBandPrint( NS_SERVER, from, "error\n%s", denied );
 		SV_FreeClient(newcl);
 		return;
 	}
 	
-	SV_UserinfoChanged(newcl);
+	//SV_UserinfoChanged(newcl);
 	
 	if(from.type != NA_BOT)
 		challenges[i_challenge].firstPing = 0;
@@ -1229,6 +1235,8 @@ int QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 			break;
 		}
 	}
+	
+	int duk_ret_val = 0;
 
 	if(clientOk) {
 		if(!u->name && *(int*)0x8355260 == 2) {
@@ -1245,23 +1253,29 @@ int QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 			}
 			#endif
 			
-			#define JS_PLAYERCOMMAND "player_command"
+			duk_push_global_object(js_context);
 			
-			#ifdef BUILD_ECMASCRIPT
-			if(strcmp(cmd,"codextended")) {
-				duk_push_global_object(js_context);
-				if(duk_has_prop_string(js_context, -1, JS_PLAYERCOMMAND)) {
-					duk_get_prop_string(js_context, -1, JS_PLAYERCOMMAND);
-					duk_push_int(js_context, clientNum);
-					if(duk_pcall(js_context, 1) != 0)
-						printf("Script Error: %s\n", duk_to_string(js_context, -1));
-					int duk_ret_val = duk_to_int(js_context, -1);
-					if(duk_ret_val)
-						return;
+			duk_get_prop_string(js_context, -1, "players");
+			duk_get_prop_index(js_context, -1, clientNum);
+			if(duk_has_prop_string(js_context, -3, "OnPlayerCommand")) {
+				duk_get_prop_string(js_context, -3, "OnPlayerCommand");
+				
+				duk_dup(js_context, -2); //copy of player[idx] obj
+				int arrIdx = duk_push_array(js_context);
+				for(int i = 0; i < Cmd_Argc(); i++) {
+					duk_push_string(js_context, Cmd_Argv(i));
+					duk_put_prop_index(js_context, arrIdx, i);
 				}
+				if(duk_pcall(js_context, 2) != 0)
+					printf("Script Error (OnPlayerCommand): %s\n", duk_to_string(js_context, -1));
+				duk_ret_val = duk_to_int(js_context, -1);
 				duk_pop(js_context);
 			}
-			#endif
+			duk_pop(js_context); //players
+			duk_pop(js_context);
+			
+			if(duk_ret_val)
+				goto skip_vm_call;
 			
 			if(!Q_stricmp(cmd, "follownext") || !Q_stricmp(cmd, "followprev") || !Q_stricmp(cmd, "gc"))
 				goto skip_vm_call;
@@ -1616,6 +1630,21 @@ void SV_DumpUcmd() {
 void ClientBegin(int clientNum) {
 	void (*begin)(int)  = (void(*)(int))GAME("ClientBegin");
 	begin(clientNum);
+	
+	duk_push_global_object(js_context);
+	
+	duk_get_prop_string(js_context, -1, "players");
+	duk_get_prop_index(js_context, -1, clientNum);
+	if(duk_has_prop_string(js_context, -3, "OnPlayerBegin")) {
+		duk_get_prop_string(js_context, -3, "OnPlayerBegin");
+		
+		duk_dup(js_context, -2); //copy of player[idx] obj
+		if(duk_pcall(js_context, 1) != 0)
+			printf("Script Error (OnPlayerBegin): %s\n", duk_to_string(js_context, -1));
+		duk_pop(js_context);
+	}
+	duk_pop(js_context); //players
+	duk_pop(js_context);
 }
 
 /*

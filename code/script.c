@@ -800,55 +800,59 @@ void _Scr_LoadGameType() {
 	#endif
 }
 
+char onplayerconnect_result[64];
+
 void _Scr_PlayerConnect(gentity_t *self) {
     unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerconnect, 0);
     Scr_FreeThread(ret);
 	
-	#ifdef BUILD_ECMASCRIPT
-		duk_push_global_object(js_context);
+	duk_push_global_object(js_context);
+	
+	duk_get_prop_string(js_context, -1, "players");
+	duk_get_prop_index(js_context, -1, self->s.number);
+	if(duk_has_prop_string(js_context, -3, "OnPlayerConnect")) {
+		duk_get_prop_string(js_context, -3, "OnPlayerConnect");
 		
-		duk_get_prop_string(js_context, -1, "players");
-		duk_get_prop_index(js_context, -1, self->s.number);
-		if(duk_has_prop_string(js_context, -3, "OnPlayerConnect")) {
-			duk_get_prop_string(js_context, -3, "OnPlayerConnect");
-			
-			duk_dup(js_context, -2); //copy of player[idx] obj
-			if(duk_pcall(js_context, 1) != 0)
-				printf("Script Error (OnPlayerConnect): %s\n", duk_to_string(js_context, -1));
-			duk_pop(js_context);
-		}
-		duk_pop(js_context); //players
+		duk_dup(js_context, -2); //copy of player[idx] obj
+		if(duk_pcall(js_context, 1) != 0)
+			printf("Script Error (OnPlayerConnect): %s\n", duk_to_string(js_context, -1));
+		if(duk_get_type(js_context, -1) == DUK_TYPE_UNDEFINED)
+			*onplayerconnect_result = 0;
+		else
+			strncpy(onplayerconnect_result, duk_to_string(js_context, -1), sizeof(onplayerconnect_result));
 		duk_pop(js_context);
-	#endif
+	}
+	duk_pop(js_context); //players
+	duk_pop(js_context);
 }
 
 void _Scr_PlayerDisconnect(self) 
 	gentity_t *self;
-{
+{	
+	duk_push_global_object(js_context);
+	
+	duk_get_prop_string(js_context, -1, "players");
+	duk_get_prop_index(js_context, -1, self->s.number);
+	if(duk_has_prop_string(js_context, -3, "OnPlayerDisconnect")) {
+		duk_get_prop_string(js_context, -3, "OnPlayerDisconnect");
+		
+		duk_dup(js_context, -2); //copy of player[idx] obj
+		if(duk_pcall(js_context, 1) != 0)
+			printf("Script Error (OnPlayerDisconnect): %s\n", duk_to_string(js_context, -1));
+		duk_pop(js_context);
+	}
+	duk_pop(js_context); //players
+	duk_pop(js_context);
+	
     unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerdisconnect, 0);
     Scr_FreeThread(ret);
-	
-	#ifdef BUILD_ECMASCRIPT
-		duk_push_global_object(js_context);
-		
-		duk_get_prop_string(js_context, -1, "players");
-		duk_get_prop_index(js_context, -1, self->s.number);
-		if(duk_has_prop_string(js_context, -3, "OnPlayerDisconnect")) {
-			duk_get_prop_string(js_context, -3, "OnPlayerDisconnect");
-			
-			duk_dup(js_context, -2); //copy of player[idx] obj
-			if(duk_pcall(js_context, 1) != 0)
-				printf("Script Error (OnPlayerDisconnect): %s\n", duk_to_string(js_context, -1));
-			duk_pop(js_context);
-		}
-		duk_pop(js_context); //players
-		duk_pop(js_context);
-	#endif
 }
 
 void _Scr_PlayerDamage(gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int dmgflags, unsigned mod, int weapon, vec3_t point, vec3_t dir, int hitloc) {
-    short (*_G_GetHitLocationString)(int) = (short(*)(int))GAME("G_GetHitLocationString");
-	Scr_AddConstString(G_GetHitLocationString(hitloc));
+    unsigned short (*_G_GetHitLocationString)(int) = (unsigned short(*)(int))GAME("G_GetHitLocationString");
+	void (*Scr_AddConstString)(unsigned short) = (void(*)(unsigned short))GAME("Scr_AddConstString");
+	unsigned short usHitLoc = _G_GetHitLocationString(hitloc);
+	Scr_AddConstString(usHitLoc);
 	int (*getinfo)(int);
 	*(int*)&getinfo = GAME("BG_GetInfoForWeapon");
 	unsigned info = (unsigned)getinfo(weapon);
@@ -874,61 +878,66 @@ void _Scr_PlayerDamage(gentity_t *self, gentity_t *inflictor, gentity_t *attacke
 	unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerdamage, 9);
     Scr_FreeThread(ret);
 	
-	#ifdef BUILD_ECMASCRIPT
-		duk_push_global_object(js_context);
+	duk_push_global_object(js_context);
+	
+	duk_get_prop_string(js_context, -1, "players");
+	duk_get_prop_index(js_context, -1, self->s.number);
+	if(duk_has_prop_string(js_context, -3, "OnPlayerDamage")) {
+		duk_get_prop_string(js_context, -3, "OnPlayerDamage");
 		
-		duk_get_prop_string(js_context, -1, "players");
-		duk_get_prop_index(js_context, -1, self->s.number);
-		if(duk_has_prop_string(js_context, -3, "OnPlayerDamage")) {
-			duk_get_prop_string(js_context, -3, "OnPlayerDamage");
+		//printf("top after pop: %ld\n", (long) duk_get_top(js_context));
+		duk_dup(js_context, -2); //copy of player[idx] obj
+		if(inflictor)
+			duk_get_prop_index(js_context, -4, inflictor->s.number);
+		else
+			duk_push_undefined(js_context);
+		if(attacker)
+			duk_get_prop_index(js_context, -5, attacker->s.number);
+		else
+			duk_push_undefined(js_context);
+		duk_push_int(js_context, damage);
+		duk_push_int(js_context, dmgflags);
+		if(mod < 0x18)
+			duk_push_string(js_context, _modNames[mod]);
+		else
+			duk_push_string(js_context, "badMOD");
+		duk_push_string(js_context, (char*)*(int*)(info + 4));
+		
+		duk_idx_t arrIdx;
+		
+		#define JS_ADD_ARRAY_VECTOR(v) \
+			arrIdx = duk_push_array(js_context); \
+			duk_push_number(js_context, v[0]); \
+			duk_put_prop_index(js_context, arrIdx, 0); \
+			duk_push_number(js_context, v[1]); \
+			duk_put_prop_index(js_context, arrIdx, 1); \
+			duk_push_number(js_context, v[2]); \
+			duk_put_prop_index(js_context, arrIdx, 2);
 			
-			duk_dup(js_context, -2); //copy of player[idx] obj
-			if(inflictor)
-				duk_get_prop_index(js_context, -4, inflictor->s.number);
-			else
-				duk_push_undefined(js_context);
-			if(attacker)
-				duk_get_prop_index(js_context, -5, attacker->s.number);
-			else
-				duk_push_undefined(js_context);
-			duk_push_int(js_context, damage);
-			duk_push_int(js_context, dmgflags);
-			if(mod < 0x18)
-				duk_push_string(js_context, _modNames[mod]);
-			else
-				duk_push_string(js_context, "badMOD");
-			duk_push_string(js_context, (char*)*(int*)(info + 4));
-			
-			duk_idx_t arrIdx;
-			
-			#define JS_ADD_ARRAY_VECTOR(v) \
-				arrIdx = duk_push_array(js_context); \
-				duk_push_number(js_context, v[0]); \
-				duk_put_prop_index(js_context, arrIdx, 0); \
-				duk_push_number(js_context, v[1]); \
-				duk_put_prop_index(js_context, arrIdx, 1); \
-				duk_push_number(js_context, v[2]); \
-				duk_put_prop_index(js_context, arrIdx, 2);
-				
-			if(point) {
-				JS_ADD_ARRAY_VECTOR(point);
-			} else {
-				duk_push_undefined(js_context);
-			}
-			
-			if(dir) {
-				JS_ADD_ARRAY_VECTOR(dir);
-			} else {
-				duk_push_undefined(js_context);
-			}
-			
-			if(duk_pcall(js_context, 10) != 0)
-				printf("Script Error (OnPlayerDamage): %s\n", duk_to_string(js_context, -1));
-			duk_pop(js_context);
+		if(point) {
+			JS_ADD_ARRAY_VECTOR(point);
+		} else {
+			duk_push_undefined(js_context);
 		}
-		duk_pop(js_context); //players
+		
+		if(dir) {
+			JS_ADD_ARRAY_VECTOR(dir);
+		} else {
+			duk_push_undefined(js_context);
+		}
+		
+		char *csHitLoc = SL_ConvertToString(usHitLoc);
+		
+		duk_push_string(js_context, csHitLoc);
+		
+		//printf("top after pop: %ld\n", (long) duk_get_top(js_context));
+		if(duk_pcall(js_context, 10) != 0)
+			printf("Script Error (OnPlayerDamage): %s\n", duk_to_string(js_context, -1));
+		//printf("top after pop: %ld\n", (long) duk_get_top(js_context));
 		duk_pop(js_context);
-	#endif
+	}
+	duk_pop(js_context); //players
+	duk_pop(js_context);
 }
 
 void _Cmd_MenuResponse_f(gentity_t *self) {

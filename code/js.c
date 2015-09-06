@@ -22,11 +22,11 @@
 
 duk_context *js_context = NULL;
 
-static inline unsigned js_this_num(duk_context *js_context) {
-	duk_push_this(js_context);
-	duk_get_prop_string(js_context, -1, "\xff""num");
-	unsigned n = duk_to_int(js_context, -1);
-	duk_pop_2(js_context);
+static inline unsigned js_this_num(duk_context *c) {
+	duk_push_this(c);
+	duk_get_prop_string(c, -1, "\xff""num");
+	unsigned n = duk_to_int(c, -1);
+	duk_pop_2(c);
 	return n;
 }
 
@@ -61,7 +61,7 @@ int js_getint(duk_context* c) {
 }
 
 int js_getliboffset(duk_context* c) {
-    const char* str = duk_require_string(js_context, -1);
+    const char* str = duk_require_string(c, -1);
 	void* p = (void*)dlsym(gamelib, str);
 	duk_push_pointer(c, p);
     return 1;
@@ -109,13 +109,13 @@ int js_getplayer(duk_context* c) {
 	}
 	/*if(!strcmp(str, "int")) {
 		printf("off = %d\n", *(int*)off);
-		duk_push_int(js_context, *(int*)off);
+		duk_push_int(c, *(int*)off);
 	} else if(!strcmp(str, "float")) {
-		duk_push_number(js_context, *(float*)off);
+		duk_push_number(c, *(float*)off);
 	} else if(!strcmp(str, "string")) {
-		duk_push_string(js_context, (const char*)off);
+		duk_push_string(c, (const char*)off);
 	} else if(!strcmp(str, "byte")) {
-		duk_push_int(js_context, *(byte*)off);
+		duk_push_int(c, *(byte*)off);
 	}*/
 	return 1;
 }
@@ -144,19 +144,19 @@ void js_error(const char* str, int fatal) {
 
 int js_Cmd_ArgvBuffer(duk_context *c) {
 	if(!duk_has_prop(c,-1)) {
-		duk_push_string(js_context,"");
+		duk_push_string(c,"");
 		return;
 	}
 	int index = duk_require_int(c, 0);
 	if(index > Cmd_Argc() || index < 0) {
-		duk_push_string(js_context, "");
+		duk_push_string(c, "");
 		return 0;
 	}
 	
     char cmd[MAX_STRING_CHARS];
     Cmd_ArgvBuffer(index, cmd, sizeof(cmd));
 	
-	duk_push_string(js_context,cmd);
+	duk_push_string(c,cmd);
 	return 1;
 }
 
@@ -166,8 +166,6 @@ int js_player_getname(duk_context *c) {
 		return 0;
 	
 	client_t* cl = getclient(player);
-	if(!cl->state)
-		return 0;
 	duk_push_string(c,cl->name);
 	return 1;
 }
@@ -322,7 +320,7 @@ void (*TRAP_LinkEntity)(gentity_t*);
 
 int js_ent_setorigin(duk_context *c) {
 	vec3_t org;
-	int ent_idx = duk_require_int(js_context,0);
+	int ent_idx = duk_require_int(c,0);
 	
 	float x,y,z;
 	duk_get_prop_string(c, 1, "x");
@@ -354,7 +352,7 @@ int js_ent_setorigin(duk_context *c) {
 int js_ent_getorigin(duk_context *c) {
 	vec3_t org;
 
-	int ent_idx = duk_require_int(js_context,0);
+	int ent_idx = duk_require_int(c,0);
 	
 	gentity_t *ent = &g_entities[ent_idx];
 	
@@ -365,13 +363,13 @@ int js_ent_getorigin(duk_context *c) {
 	
 	ENT_GET(ent, ORIGIN_OFF, org, sizeof(org));
 	
-	int obj_idx = duk_push_object(js_context);
-	duk_push_number(js_context, org[0]);
-    duk_put_prop_string(js_context, obj_idx, "x");
-	duk_push_number(js_context, org[1]);
-    duk_put_prop_string(js_context, obj_idx, "y");
-	duk_push_number(js_context, org[2]);
-    duk_put_prop_string(js_context, obj_idx, "z");
+	int obj_idx = duk_push_object(c);
+	duk_push_number(c, org[0]);
+    duk_put_prop_string(c, obj_idx, "x");
+	duk_push_number(c, org[1]);
+    duk_put_prop_string(c, obj_idx, "y");
+	duk_push_number(c, org[2]);
+    duk_put_prop_string(c, obj_idx, "z");
 	return 1;
 }
 
@@ -590,19 +588,19 @@ int js_spawn(duk_context *c) {
 
 int js_Cmd_Argv(duk_context *c) {
 	int index = duk_require_int(c,0);
-	duk_push_string(js_context,Cmd_Argv(index));
+	duk_push_string(c,Cmd_Argv(index));
 	return 1;
 }
 
 int js_Cmd_Argc(duk_context *c) {
 	int argc = Cmd_Argc();
-	duk_push_int(js_context,argc);
+	duk_push_int(c,argc);
 	return 1;
 }
 
-duk_ret_t js_playerobj_getplayerangles(duk_context *js_context) {
+duk_ret_t js_playerobj_getplayerangles(duk_context *c) {
 	vec3_t org;
-	int ent_idx = js_this_num(js_context);
+	int ent_idx = js_this_num(c);
 	
 	gentity_t *ent = &g_entities[ent_idx];
 	
@@ -613,22 +611,22 @@ duk_ret_t js_playerobj_getplayerangles(duk_context *js_context) {
 	
 	ENT_GET(ent, ORIGIN_OFF, org, sizeof(org));
 	
-	int obj_idx = duk_push_object(js_context);
-	duk_push_number(js_context, org[0]);
-    duk_put_prop_string(js_context, obj_idx, "x");
-	duk_push_number(js_context, org[1]);
-    duk_put_prop_string(js_context, obj_idx, "y");
-	duk_push_number(js_context, org[2]);
-    duk_put_prop_string(js_context, obj_idx, "z");
+	int obj_idx = duk_push_object(c);
+	duk_push_number(c, org[0]);
+    duk_put_prop_string(c, obj_idx, "x");
+	duk_push_number(c, org[1]);
+    duk_put_prop_string(c, obj_idx, "y");
+	duk_push_number(c, org[2]);
+    duk_put_prop_string(c, obj_idx, "z");
 	return 1;
 }
 
-duk_ret_t js_playerobj_sendservercommand(duk_context *js_context) {
+duk_ret_t js_playerobj_sendservercommand(duk_context *c) {
 	char *msg;
-	msg = duk_require_string(js_context,0);
+	msg = duk_require_string(c,0);
 	if(!*msg)
 		return;
-	int self = js_this_num(js_context);
+	int self = js_this_num(c);
 	
 	SV_SendServerCommand( getclient( self ), 0, msg);
 	return 0;
@@ -645,119 +643,90 @@ const duk_function_list_entry player_object_methods[] = {
 	{NULL, NULL, 0}
 };
 
-duk_ret_t js_playerobj_getname(duk_context *js_context) {
-	int self = js_this_num(js_context);
-	
-	client_t *cl = &clients[self];
-	duk_push_string(js_context, cl->name);
-	return 1;
-}
-
-duk_ret_t js_player_get_score(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_score(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int *score = (int*)((unsigned)self->client + 8416);
-	duk_push_int(js_context, *score);
+	duk_push_int(c, *score);
 	return 1;
 }
 
-duk_ret_t js_player_get_deaths(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_deaths(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int *n = (int*)((unsigned)self->client + 0x20E4);
-	duk_push_int(js_context, *n);
+	duk_push_int(c, *n);
 	return 1;
 }
 
-duk_ret_t js_player_get_headicon(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_headicon(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int *n = (int*)((unsigned)self + 148);
-	
-	char cs[MAX_STRING_CHARS] = {0};
-	SV_GetConfigstring(*n + 29, cs, sizeof(cs));
-	duk_push_string(js_context, cs);
-	return 1;
-}
-
-duk_ret_t js_player_set_headicon(duk_context *js_context) {
-	char *s = duk_require_string(js_context, 0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
-	
-	if(!self->client)
-		return 0;
-	
-	if(!*s)
-		return 0;
-	
-	int *n = (int*)((unsigned)self + 148);
-	
-	char cs[MAX_STRING_CHARS] = {0};
-	for(int i = 0; i < 15; i++) {
-		SV_GetConfigstring(i + 29, cs, sizeof(cs));
-		
-		if(!*cs)
-			break;
-		
-		if(!Q_stricmp(cs, s)) {
-			*n = i;
-			break;
-		}
+	if(!*n) {
+		duk_push_string(c, "");
+		return 1;
 	}
+	char cs[MAX_STRING_CHARS] = {0};
+	SV_GetConfigstring(*n + 28, cs, sizeof(cs));
+	duk_push_string(c, cs);
+	return 1;
+}
+
+duk_ret_t js_player_set_headicon(duk_context *c) {
+	char *s = duk_require_string(c, 0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
+	if(!self->client)
+		return 0;
+	
+	int *n = (int*)((unsigned)self + 148);
+	int (*_GScr_GetHeadIconIndex)(char*) = (int(*)(char*))GAME("GScr_GetHeadIconIndex");
+	*n = _GScr_GetHeadIconIndex(s);
 	return 0;
 }
 
-duk_ret_t js_player_get_statusicon(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_statusicon(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int *statusicon = (int*)((unsigned)self->client + 8408);
+	if(!*statusicon) {
+		duk_push_string(c, "");
+		return 1;
+	}
 	char cs[MAX_STRING_CHARS] = {0};
 	SV_GetConfigstring(20 + *statusicon, cs, sizeof(cs));
-	duk_push_string(js_context, cs);
+	duk_push_string(c, cs);
 	return 1;
 }
 
-duk_ret_t js_player_set_statusicon(duk_context *js_context) {
-	char *s = duk_require_string(js_context, 0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_set_statusicon(duk_context *c) {
+	char *s = duk_require_string(c, 0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
-	
-	if(!*s)
-		return 0;
-	
 	int *statusicon = (int*)((unsigned)self->client + 8408);
-	char cs[MAX_STRING_CHARS] = {0};
-	
-	for(int i = 0; i < 8; i++) {
-		SV_GetConfigstring(20 + i, cs, sizeof(cs));
-		if(!*cs)
-			break;
-		if(!Q_stricmp(s,cs)) {
-			*statusicon = i;
-			break;
-		}
-	}
+	int (*_GScr_GetStatusIconIndex)(char*) = (int(*)(char*))GAME("GScr_GetStatusIconIndex");
+	*statusicon = _GScr_GetStatusIconIndex(s);
 	return 0;
 }
 
-duk_ret_t js_player_set_deaths(duk_context *js_context) {
-	int n = duk_require_int(js_context,0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_set_deaths(duk_context *c) {
+	int n = duk_require_int(c,0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
@@ -768,9 +737,9 @@ duk_ret_t js_player_set_deaths(duk_context *js_context) {
 	return 0;
 }
 
-duk_ret_t js_player_set_score(duk_context *js_context) {
-	int nScore = duk_require_int(js_context,0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_set_score(duk_context *c) {
+	int nScore = duk_require_int(c,0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
@@ -784,9 +753,9 @@ duk_ret_t js_player_set_score(duk_context *js_context) {
 	return 0;
 }
 
-duk_ret_t js_player_set_sessionteam(duk_context *js_context) {
-	char *team = duk_require_string(js_context, 0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_set_sessionteam(duk_context *c) {
+	char *team = duk_require_string(c, 0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
@@ -805,9 +774,9 @@ duk_ret_t js_player_set_sessionteam(duk_context *js_context) {
 	return 0;
 }
 
-duk_ret_t js_player_set_sessionstate(duk_context *js_context) {
-	char *state = duk_require_string(js_context, 0);
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_set_sessionstate(duk_context *c) {
+	char *state = duk_require_string(c, 0);
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
@@ -825,43 +794,43 @@ duk_ret_t js_player_set_sessionstate(duk_context *js_context) {
 	return 0;
 }
 	
-duk_ret_t js_player_get_sessionstate(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_sessionstate(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int sessionstate = *(int*)((unsigned)self->client + 8572);
 	if(sessionstate == 1)
-		duk_push_string(js_context, "dead");
+		duk_push_string(c, "dead");
 	else if(sessionstate == 2)
-		duk_push_string(js_context, "spectator");
+		duk_push_string(c, "spectator");
 	else if(sessionstate == 3)
-		duk_push_string(js_context, "intermission");
+		duk_push_string(c, "intermission");
 	else
-		duk_push_string(js_context, "playing");
+		duk_push_string(c, "playing");
 	return 1;
 }
 
-duk_ret_t js_player_get_sessionteam(duk_context *js_context) {
-	gentity_t *self = &g_entities[js_this_num(js_context)];
+duk_ret_t js_player_get_sessionteam(duk_context *c) {
+	gentity_t *self = &g_entities[js_this_num(c)];
 	
 	if(!self->client)
 		return 0;
 	
 	int sessionteam = *(int*)((unsigned)self->client + 8572);
 	if(sessionteam == 1)
-		duk_push_string(js_context, "axis");
+		duk_push_string(c, "axis");
 	else if(sessionteam == 2)
-		duk_push_string(js_context, "allies");
+		duk_push_string(c, "allies");
 	else if(sessionteam == 3)
-		duk_push_string(js_context, "spectator");
+		duk_push_string(c, "spectator");
 	else
-		duk_push_string(js_context, "none");
+		duk_push_string(c, "none");
 	return 1;
 }
 
-duk_ret_t js_playerobj_readonly_set(duk_context *js_context) {
+duk_ret_t js_playerobj_readonly_set(duk_context *c) {
 	printf("Cannot set read-only field!\n");
 	return 0;
 }
@@ -906,7 +875,7 @@ void js_push_player_object(client_t *cl) {
 	duk_push_c_function(js_context, set, 1); \
 	duk_def_prop(js_context, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER)
 	
-	ADD_PLAYER_FIELD("name", js_playerobj_getname, js_playerobj_readonly_set);
+	ADD_PLAYER_FIELD("name", js_player_getname, js_playerobj_readonly_set);
 	ADD_PLAYER_FIELD("sessionteam", js_player_get_sessionteam, js_player_set_sessionteam);
 	ADD_PLAYER_FIELD("sessionstate", js_player_get_sessionstate, js_player_set_sessionstate);
 	ADD_PLAYER_FIELD("score", js_player_get_score, js_player_set_score);
@@ -918,25 +887,25 @@ void js_push_player_object(client_t *cl) {
 	duk_pop(js_context); //global
 }
 
-void update_player_js_data(duk_context *js_context) {
-	duk_push_global_object(js_context);
+void update_player_js_data(duk_context *c) {
+	duk_push_global_object(c);
 	client_t *cl;
 	
-	duk_get_prop_string(js_context, -1, "players");
-	for(int i = 0; i < duk_get_length(js_context, -1); i++) {
-		duk_get_prop_index(js_context, -1, i);
-			duk_get_prop_string(js_context, -1, "name");
-			char *str = duk_get_string(js_context, -1);
+	duk_get_prop_string(c, -1, "players");
+	for(int i = 0; i < duk_get_length(c, -1); i++) {
+		duk_get_prop_index(c, -1, i);
+			duk_get_prop_string(c, -1, "name");
+			char *str = duk_get_string(c, -1);
 			//printf("oldname = %s\n", str);
-			duk_pop(js_context);
+			duk_pop(c);
 			
-			duk_push_string(js_context, "hello");
-			duk_put_prop_string(js_context, -2, "name");
+			duk_push_string(c, "hello");
+			duk_put_prop_string(c, -2, "name");
 			
-		duk_pop(js_context);
+		duk_pop(c);
 	}
-	duk_pop(js_context); //players
-	duk_pop(js_context); //global
+	duk_pop(c); //players
+	duk_pop(c); //global
 }
 
 
@@ -947,8 +916,8 @@ void js_destroy() {
 	}
 }
 
-int js_com_printf(duk_context *js_context) {
-    const char* str = duk_require_string(js_context, -1);
+int js_com_printf(duk_context *c) {
+    const char* str = duk_require_string(c, -1);
     Com_Printf(str);
     return 0;
 }

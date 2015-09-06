@@ -59,8 +59,13 @@ void SV_XStatus_f() {
 			continue;
 			
 		Com_Printf( "%3i ", i ); //num	
-		Com_Printf("%.32s ", xclients[i].mUID); //mUID
-		
+		if(*xclients[i].mUID)
+			Com_Printf("%.32s ", xclients[i].mUID); //mUID
+		else
+		{
+			for(int k = 0; k != 33; k++)
+				Com_Printf(" ");
+		}
 		Com_Printf( "%.15s", cl->name );
 		l = 16 - strlen( cl->name );
 		for ( j = 0 ; j < l ; j++ )
