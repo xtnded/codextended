@@ -482,11 +482,11 @@ SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char** fname, int* fdev) {
 	return fc;
 }
 
-static int load_callback(const char* file, const char* functionname, bool flag) {
+unsigned short load_callback(const char* file, const char* functionname, bool flag) {
     if(!Scr_LoadScript(file) && !flag)
         Com_Error(ERR_DROP, "Could not find script '%s'.", file);
 
-    int v4 = Scr_GetFunctionHandle(file, functionname);
+    unsigned short v4 = Scr_GetFunctionHandle(file, functionname);
     if(!v4 && !flag)
         Com_Error(ERR_DROP, "Could not find label '%s'.", functionname, file);
 	if(!flag || v4)
@@ -996,6 +996,14 @@ void GScr_LoadGametypeScript( void ) {
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
 	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);
 	
+		duk_push_global_object(js_context);
+		if(duk_has_prop_string(js_context, -1, "GSC_LoadGametypeScript")) {
+			duk_get_prop_string(js_context, -1, "GSC_LoadGametypeScript");
+			if(duk_pcall(js_context, 0) != 0)
+				printf("Script Error (GSC_LoadGametypeScript): %s\n", duk_to_string(js_context, -1));
+		}
+		duk_pop(js_context);
+
 	Scr_LoadConsts();
 }
 

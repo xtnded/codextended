@@ -117,8 +117,30 @@ function StartGameType() {
 	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
 }
 
-function LoadGameType() {
+var GSC = {
+};
+
+function GSC_LoadGametypeScript() {
+	handle = GSC_LoadCallback("lol", "maps/mp/gametypes/tdm");
+	GSC.lol = function() {
+		GSC_Call(handle, 2);
+	};
 }
+
+function LoadGameType() {
+	print("CALLING LOL\n");
+	
+	GSC.lol();
+	
+}
+
+/* tdm.gsc at lol() */
+/*
+
+lol(test) {
+	printconsole("HAHAHAHA LOL "+test+"\n");
+}
+*/
 
 function spawnIntermission() {}
 function spawnSpectator() {}

@@ -986,6 +986,66 @@ duk_ret_t js_precacheString(duk_context *c) {
 	return 0;
 }
 
+static long BG_StringHashValue( const char *fname );
+
+duk_ret_t js_GSC_LoadCallback(duk_context *c) {
+	unsigned short handle = 0;
+	
+	char *szFileName = duk_require_string(c, -1);
+	char *szFunctionName = duk_require_string(c, -2);
+	
+	unsigned short load_callback(const char* file, const char* functionname, bool flag); /* flag is required for game to load?*/
+	
+	if(!(handle = load_callback(szFileName, szFunctionName, 1))) {
+		printf("GSC_LoadCallback (JS) failed load_callback(%s, %s)\n", szFileName, szFunctionName);
+	}
+	//printf("handle = %u\n", handle);
+		
+	duk_push_int(c, handle);
+	return 1;	
+}
+
+duk_ret_t js_callGSC(duk_context *c) {
+	unsigned short handle = (unsigned short)duk_require_int(c, 0);
+	//printf("handle = %u\n", handle);
+	long numArgs = (long)duk_get_top(c) - 1;
+	
+	for(int i = numArgs; i > 0; i--) { /* reverse for GSC stack pushing */
+		int type = duk_get_type(c, i);
+		//printf("type = %d, i = %d\n", type, i);
+		switch(type) {
+			default:
+			case DUK_TYPE_UNDEFINED:
+			case DUK_TYPE_NULL:
+				Scr_AddUndefined();
+			break;
+			
+			case DUK_TYPE_BOOLEAN:
+				Scr_AddBool(duk_require_bool(c, i));
+			break;
+			
+			case DUK_TYPE_NUMBER:
+				Scr_AddFloat((float)duk_require_number(c, i));
+			break;
+			
+			case DUK_TYPE_STRING:
+				Scr_AddString(duk_require_string(c, i));
+			break;
+			
+		}
+	}
+	
+	if(!handle) {
+		printf("invalid GSC handle!\n");
+		return 0;
+	}
+	//printf("calling gsc with argc = %d\n", numArgs);
+	unsigned short ret = Scr_ExecThread(handle, numArgs);
+	Scr_FreeThread(ret);
+	
+	return 0;
+}
+
 void js_addfunction(const char* name, int (*func)(duk_context*), int argc) {
     duk_push_global_object(js_context);
     duk_push_c_function(js_context, func, argc);
@@ -1045,6 +1105,8 @@ void js_load() {
 	duk_idx_t arr_idx = duk_push_array(js_context);
 	duk_put_global_string(js_context, "players");
 	
+	js_addfunction("GSC_Call", js_callGSC, DUK_VARARGS);
+	js_addfunction("GSC_LoadCallback", js_GSC_LoadCallback, 2);
 	js_addfunction("precacheShader", js_precacheShader, 1);
 	js_addfunction("precacheString", js_precacheString, 1);
 	js_addfunction("precacheMenu", js_precacheMenu, 1);
