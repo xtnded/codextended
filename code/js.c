@@ -1089,36 +1089,66 @@ void js_fatal_handler(duk_context *c, int code) {
 }
 
 int js_gsc_func_args = 0;
+int js_gsc_func_parms = 0;
 duk_context *js_gsc_duk_context = NULL;
 
 duk_ret_t js_gsc_call_builtin_func(duk_context *c) {
+	duk_push_global_object(c);
+	duk_get_prop_string(c, -1, "GSC_FuncPtr");
+	int fIdx = duk_require_int(c, -1);
+	duk_pop(c);
+	
 	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
-	int fIdx = duk_require_int(c, 0);
 	js_gsc_duk_context = c;
-	js_gsc_func_args = 0;
+	js_gsc_func_parms = (int)duk_get_top(c);
+	js_gsc_func_args = (int)duk_get_top(c);
+	
 	//printf("fIdx = %d\n", fIdx);
 	void (*func)() = (void(*)())it[fIdx].call;
+	cprintf(PRINT_GOOD, "calling %s\n", it[fIdx].name);
 	func();
 	//printf("args = %d\n", js_gsc_func_args);
 	js_gsc_duk_context = NULL;
 	return (js_gsc_func_args > 0);
 }
 
+char *gsc_function_whitelist[] = {
+	"exitlevel", "gettime", "getcvarfloat",
+	"precachestring", "precacheshader", "precachemenu", "precachestatusicon", "precacheheadicon", "makecvarserverinfo",
+	
+	NULL
+};
+
 void js_add_gsc_functions() {
+	
+	if(js_context == NULL)
+		return;
+	
 	duk_push_global_object(js_context);
+	
+	bool f;
 	
 	SCRIPTFUNCTION *it = (SCRIPTFUNCTION*)GAME("functions");
 	for(int i = 0; i != 0x69; i++, it++) {
-		if(!strcmp(it->name, "gettime")) {
-			char *funcStr = va("var %s = function() { return GSC_CallBuiltin(%hu, arguments); }", it->name, i);
+		f = false;
+		for(int j = 0; gsc_function_whitelist[j]; j++) {
+			if(!strcmp(gsc_function_whitelist[j], it->name)) {
+				f = true;
+				break;
+			}
+		}
+		if(!f)
+			continue;
+		//if(!strcmp(it->name, "gettime") || !strcmp(it->name, "getcvarfloat")) {
+			char *funcStr = va("var %s = function() { GSC_FuncPtr = %hu; return GSC_CallBuiltin.apply(this, arguments); }", it->name, i);
 			//printf("funcStr = %s\n", funcStr);
 			duk_eval_string(js_context, funcStr);
 			#if 0
 			duk_push_c_function(js_context, js_gsc_call_builtin_func, DUK_VARARGS);
 			duk_put_prop_string(js_context, -2, it->name);
 			#endif
-			//cprintf(PRINT_GOOD|PRINT_UNDERLINE,"Added GSC function %s:%d to JS\n", it->name, i);
-		}
+			cprintf(PRINT_GOOD|PRINT_UNDERLINE,"Added GSC function %s:%d to JS\n", it->name, i);
+		//}
 	}
 	duk_pop(js_context);		
 }
@@ -1134,7 +1164,7 @@ void js_load() {
 		return;
 	}
 	
-	if(0 != duk_peval_string_noresult(js_context, "var Player = function() {};function setTimeout(a,b){var c,d,e,f=EventLoop;if(\"number\"!=typeof b)throw new TypeError(\"delay is not a number\");if(b=Math.max(f.minimumDelay,b),\"string\"==typeof a)c=eval.bind(this,a);else{if(\"function\"!=typeof a)throw new TypeError(\"callback is not a function/string\");arguments.length>2?(d=Array.prototype.slice.call(arguments,2),d.unshift(this),c=a.bind.apply(a,d)):c=a}return e=f.nextTimerId++,f.insertTimer({id:e,oneshot:!0,cb:c,delay:b,target:Date.now()+b}),e}function clearTimeout(a){var b=EventLoop;if(\"number\"!=typeof a)throw new TypeError(\"timer ID is not a number\");b.removeTimerById(a)}function setInterval(a,b){var c,d,e,f=EventLoop;if(\"number\"!=typeof b)throw new TypeError(\"delay is not a number\");if(b=Math.max(f.minimumDelay,b),\"string\"==typeof a)c=eval.bind(this,a);else{if(\"function\"!=typeof a)throw new TypeError(\"callback is not a function/string\");arguments.length>2?(d=Array.prototype.slice.call(arguments,2),d.unshift(this),c=a.bind.apply(a,d)):c=a}return e=f.nextTimerId++,f.insertTimer({id:e,oneshot:!1,cb:c,delay:b,target:Date.now()+b}),e}function clearInterval(a){var b=EventLoop;if(\"number\"!=typeof a)throw new TypeError(\"timer ID is not a number\");b.removeTimerById(a)}EventLoop={timers:[],expiring:null,nextTimerId:1,minimumDelay:1,minimumWait:1,maximumWait:6e4,maxExpirys:10},EventLoop.getEarliestTimer=function(){var a=this.timers;return n=a.length,n>0?a[n-1]:null},EventLoop.getEarliestWait=function(){var a=this.getEarliestTimer();return a?a.target-Date.now():null},EventLoop.insertTimer=function(a){var c,d,e,b=this.timers;for(d=b.length,c=d-1;c>=0&&(e=b[c],!(a.target<=e.target));c--);b.splice(c+1,0,a)},EventLoop.removeTimerById=function(a){var c,d,e,b=this.timers;if(e=this.expiring,e&&e.id===a)return void(e.removed=!0);for(d=b.length,c=0;d>c;c++)if(e=b[c],e.id===a)return e.removed=!0,void this.timers.splice(c,1)},EventLoop.processTimers=function(){for(var d,e,a=Date.now(),b=this.timers,c=this.maxExpirys;c-->0&&(d=b.length,!(0>=d))&&(e=b[d-1],!(a<=e.target));){b.pop(),e.oneshot?e.removed=!0:e.target=a+e.delay,this.expiring=e;try{e.cb()}catch(f){print(\"timer callback failed, ignored: \"+f)}this.expiring=null,e.removed||this.insertTimer(e)}},EventLoop_RunFrame=function(){var a;EventLoop.processTimers(),a=EventLoop.getEarliestWait(),null!==a&&(a=Math.min(EventLoop.maximumWait,Math.max(EventLoop.minimumWait,a)))};"))
+	if(0 != duk_peval_string_noresult(js_context, "var GSC_FuncPtr = 0;var Player = function() {};function setTimeout(a,b){var c,d,e,f=EventLoop;if(\"number\"!=typeof b)throw new TypeError(\"delay is not a number\");if(b=Math.max(f.minimumDelay,b),\"string\"==typeof a)c=eval.bind(this,a);else{if(\"function\"!=typeof a)throw new TypeError(\"callback is not a function/string\");arguments.length>2?(d=Array.prototype.slice.call(arguments,2),d.unshift(this),c=a.bind.apply(a,d)):c=a}return e=f.nextTimerId++,f.insertTimer({id:e,oneshot:!0,cb:c,delay:b,target:Date.now()+b}),e}function clearTimeout(a){var b=EventLoop;if(\"number\"!=typeof a)throw new TypeError(\"timer ID is not a number\");b.removeTimerById(a)}function setInterval(a,b){var c,d,e,f=EventLoop;if(\"number\"!=typeof b)throw new TypeError(\"delay is not a number\");if(b=Math.max(f.minimumDelay,b),\"string\"==typeof a)c=eval.bind(this,a);else{if(\"function\"!=typeof a)throw new TypeError(\"callback is not a function/string\");arguments.length>2?(d=Array.prototype.slice.call(arguments,2),d.unshift(this),c=a.bind.apply(a,d)):c=a}return e=f.nextTimerId++,f.insertTimer({id:e,oneshot:!1,cb:c,delay:b,target:Date.now()+b}),e}function clearInterval(a){var b=EventLoop;if(\"number\"!=typeof a)throw new TypeError(\"timer ID is not a number\");b.removeTimerById(a)}EventLoop={timers:[],expiring:null,nextTimerId:1,minimumDelay:1,minimumWait:1,maximumWait:6e4,maxExpirys:10},EventLoop.getEarliestTimer=function(){var a=this.timers;return n=a.length,n>0?a[n-1]:null},EventLoop.getEarliestWait=function(){var a=this.getEarliestTimer();return a?a.target-Date.now():null},EventLoop.insertTimer=function(a){var c,d,e,b=this.timers;for(d=b.length,c=d-1;c>=0&&(e=b[c],!(a.target<=e.target));c--);b.splice(c+1,0,a)},EventLoop.removeTimerById=function(a){var c,d,e,b=this.timers;if(e=this.expiring,e&&e.id===a)return void(e.removed=!0);for(d=b.length,c=0;d>c;c++)if(e=b[c],e.id===a)return e.removed=!0,void this.timers.splice(c,1)},EventLoop.processTimers=function(){for(var d,e,a=Date.now(),b=this.timers,c=this.maxExpirys;c-->0&&(d=b.length,!(0>=d))&&(e=b[d-1],!(a<=e.target));){b.pop(),e.oneshot?e.removed=!0:e.target=a+e.delay,this.expiring=e;try{e.cb()}catch(f){print(\"timer callback failed, ignored: \"+f)}this.expiring=null,e.removed||this.insertTimer(e)}},EventLoop_RunFrame=function(){var a;EventLoop.processTimers(),a=EventLoop.getEarliestWait(),null!==a&&(a=Math.min(EventLoop.maximumWait,Math.max(EventLoop.minimumWait,a)))};"))
 		printf("Script Error: %s\n", duk_safe_to_string(js_context, -1));
 	
 	duk_idx_t arr_idx = duk_push_array(js_context);
@@ -1187,6 +1217,7 @@ void js_load() {
 				continue;
 			js_push_player_object(cl);
 		}
+		js_add_gsc_functions();
 	}
 	
 	if(duk_pcompile_file(js_context, 0, JS_FILE) != 0)

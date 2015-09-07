@@ -1929,8 +1929,8 @@ typedef struct {
 const static scr_func_helper_pair scr_func_helper_names[] = {
 	{"GetBool",               VT_INT},
 	{"GetInt",                VT_INT},
-	{"GetAnim",               VT_ANIMATION},
-	{"GetAnimTree",           VT_ANIMATION},
+	{"GetAnim",               VT_END_OF_LIST},
+	{"GetAnimTree",           VT_END_OF_LIST},
 	{"GetFloat",              VT_FLOAT},
 	{"GetString",             VT_STRING},
 	{"GetConstString",        VT_LOCALIZED_STRING},
@@ -1939,10 +1939,10 @@ const static scr_func_helper_pair scr_func_helper_names[] = {
 	{"GetConstIString",       VT_LOCALIZED_STRING},
 	{"GetVector",             VT_VECTOR},
 	{"GetFunc",               VT_FUNCTION},
-	{"GetEntityNum",          VT_INT},
-	{"GetType",               VT_INT},
-	{"GetPointerType",        VT_INT},
-	{"GetNumParam",           VT_INT},
+	{"GetEntityNum",          VT_END_OF_LIST},
+	{"GetType",               VT_END_OF_LIST},
+	{"GetPointerType",        VT_END_OF_LIST},
+	{"GetNumParam",           VT_END_OF_LIST},
 	{"AddBool",               VT_INT},
 	{"AddInt",                VT_INT},
 	{"AddFloat",              VT_FLOAT},
@@ -2078,8 +2078,12 @@ typedef union {
 	void *p;
 } UnionValue;
 
+static vec3_t UnionVector;
+extern duk_context *js_gsc_duk_context;
+extern int js_gsc_func_args;
+			
 void gsc_hook_to_js_cb(int a1, int a2, UnionValue value /*float acted weird on smth else*/) {
-	//printf("addr = %02X\n", addr);
+	//printf("addr = %02X\n", a1);
 	
 	int *scr_funcs = (int*)0x8161200;
 	/* for getting the func from the cod_lnxded instead of game.so */
@@ -2101,64 +2105,132 @@ void gsc_hook_to_js_cb(int a1, int a2, UnionValue value /*float acted weird on s
 			
 			//int type = gsc_gettype(0);
 			int type = scr_func_helper_names[i].type; /* we should be able to get the type without having to put it on stack */
-			extern duk_context *js_gsc_duk_context;
-			extern int js_gsc_func_args;
-			#if 1
-			switch(type) {
-				
-				case VT_STRING: {
-					//printf("%s(%s)\n", szFuncName, (char*)value.s);
-					if(js_gsc_duk_context)
-						duk_push_string(js_gsc_duk_context, value.s);
-				} break;
-				
-				case VT_INT: {
-					if(js_gsc_duk_context) {
-						//printf("%s(%d)\n", szFuncName, (int)value.i);
+			
+			if(strstr(szFuncName, "Add")) {
+				switch(type) {
 					
-						duk_push_int(js_gsc_duk_context, value.i);
-					}
-				} break;
-				
-				case VT_FLOAT: {
-					//printf("%s(%f)\n", szFuncName, value.f);
-					if(js_gsc_duk_context)
-						duk_push_number(js_gsc_duk_context, (double)value.f);
-				} break;
-				
-				case VT_UNDEFINED: {
-					//printf("%s()\n");
-					if(js_gsc_duk_context)
-						duk_push_undefined(js_gsc_duk_context);
-				} break;
-				
-				case VT_VECTOR: {
-					duk_idx_t arrIdx;
+					case VT_STRING: {
+						//printf("%s(%s)\n", szFuncName, (char*)value.s);
+						if(js_gsc_duk_context)
+							duk_push_string(js_gsc_duk_context, value.s);
+					} break;
 					
-					#define JS_ADD_ARRAY_VECTOR(v) \
-						arrIdx = duk_push_array(js_gsc_duk_context); \
-						duk_push_number(js_gsc_duk_context, v[0]); \
-						duk_put_prop_index(js_gsc_duk_context, arrIdx, 0); \
-						duk_push_number(js_gsc_duk_context, v[1]); \
-						duk_put_prop_index(js_gsc_duk_context, arrIdx, 1); \
-						duk_push_number(js_gsc_duk_context, v[2]); \
-						duk_put_prop_index(js_gsc_duk_context, arrIdx, 2);
-					float *vec = (float*)value.fp;
-					//printf("%s(%f,%f,%f)\n", vec[0],vec[1],vec[2]);
-					if(js_gsc_duk_context) {
-						JS_ADD_ARRAY_VECTOR(value.fp);
-					}
-				} break;
-				
-			}
-			#endif
-			if(js_gsc_duk_context) {
-				++js_gsc_func_args;
-				//printf("js_gsc_func_args = %d\n", js_gsc_func_args);
+					case VT_INT: {
+						if(js_gsc_duk_context) {
+							//printf("%s(%d)\n", szFuncName, (int)value.i);
+						
+							duk_push_int(js_gsc_duk_context, value.i);
+						}
+					} break;
+					
+					case VT_FLOAT: {
+						//printf("%s(%f)\n", szFuncName, value.f);
+						if(js_gsc_duk_context)
+							duk_push_number(js_gsc_duk_context, (double)value.f);
+					} break;
+					
+					case VT_UNDEFINED: {
+						//printf("%s()\n");
+						if(js_gsc_duk_context)
+							duk_push_undefined(js_gsc_duk_context);
+					} break;
+					
+					case VT_VECTOR: {
+						duk_idx_t arrIdx;
+						
+						#define JS_ADD_ARRAY_VECTOR(v) \
+							arrIdx = duk_push_array(js_gsc_duk_context); \
+							duk_push_number(js_gsc_duk_context, v[0]); \
+							duk_put_prop_index(js_gsc_duk_context, arrIdx, 0); \
+							duk_push_number(js_gsc_duk_context, v[1]); \
+							duk_put_prop_index(js_gsc_duk_context, arrIdx, 1); \
+							duk_push_number(js_gsc_duk_context, v[2]); \
+							duk_put_prop_index(js_gsc_duk_context, arrIdx, 2);
+						float *vec = (float*)value.fp;
+						//printf("%s(%f,%f,%f)\n", vec[0],vec[1],vec[2]);
+						if(js_gsc_duk_context) {
+							JS_ADD_ARRAY_VECTOR(value.fp);
+						}
+					} break;
+					
+				}
+				if(js_gsc_duk_context) {
+					++js_gsc_func_args;
+					//printf("js_gsc_func_args = %d\n", js_gsc_func_args);
+					return;
+				}
+				UnionValue (*o)() = (UnionValue(*))scr_funcs[i];
+				return o();
+			} else {
+				//printf("%s(%i) (%s) => ", szFuncName, value.i, js_gsc_duk_context != NULL ? "JavaScript" : "GSC");
+				//printf("js_gsc_duk_context = %02X\n", js_gsc_duk_context);
+	
+				UnionValue uv;
+				switch(type) {
+					
+					case VT_STRING: {
+						if(js_gsc_duk_context) {
+							//printf("uv.s = duk_require_string(js_gsc_duk_context, %d);", value.i);
+							uv.s = duk_require_string(js_gsc_duk_context, value.i);
+							//printf("%s \n", uv.s);
+						}
+					} break;
+					
+					case VT_INT: {
+						if(js_gsc_duk_context) {
+							uv.i = duk_require_int(js_gsc_duk_context, value.i);
+							//printf("%i ", uv.i);
+						}
+					} break;
+					
+					case VT_FLOAT: {
+						if(js_gsc_duk_context) {
+							uv.f = (float)duk_require_number(js_gsc_duk_context, value.i);
+							//printf("%f ", uv.f);
+						}
+					} break;
+					
+					default: {
+						if(js_gsc_duk_context)
+							printf("UNSUPPORTED TYPE %s\n", Scr_GetVariableType(type));
+					} break;
+					/*
+					case VT_VECTOR: {
+						if(js_gsc_duk_context) {
+							
+							duk_get_prop_index(js_gsc_duk_context, -1, * value.i * -1);
+							UnionVector[0] = duk_require_int(js_gsc_duk_context, -1);
+							duk_pop(js_gsc_duk_context);
+							duk_get_prop_index(js_gsc_duk_context, -1, 1);
+							UnionVector[1] = duk_require_int(js_gsc_duk_context, -1);
+							duk_pop(js_gsc_duk_context);
+							duk_get_prop_index(js_gsc_duk_context, -1, 2);
+							UnionVector[2] = duk_require_int(js_gsc_duk_context, -1);
+							duk_pop(js_gsc_duk_context);
+
+							uv.fp = UnionVector;
+							printf("(%f, %f, %f) ", uv.fp[0],uv.fp[1],uv.fp[2]);
+						}
+					} break;
+					*/
+				}
+				void *result ;
+				if(js_gsc_duk_context) {
+					js_gsc_func_args--;
+					gsc_hook_caller = (unsigned)uv.p;
+					//printf("| done\n");
+					return;
+				}
+				void *(*o)(int) = (void*(*)(int))scr_funcs[i];
+				result = o(value.i);
+				//printf("| done\n");
+				#if 0
+				if(strstr(szFuncName, "GetString"))
+					printf("String = %s\n", result);
+				#endif
+				gsc_hook_caller = (unsigned)result;
 				return;
 			}
-			UnionValue (*o)() = (UnionValue(*))scr_funcs[i];
-			return o();
 		}
 	}
 	
@@ -2179,6 +2251,42 @@ void gsc_hook_to_js_cb(int a1, int a2, UnionValue value /*float acted weird on s
 	#endif
 }
 
+int _Scr_GetType(int a1) {
+	if(js_gsc_duk_context)
+		return duk_get_type(js_gsc_duk_context, a1);
+	int (*o)(int) = (int(*)(int))0x80A9928;
+	return o(a1);
+}
+
+int get_gsc_type_for_duk(int type) {
+	switch(type) {
+		case DUK_TYPE_NUMBER:
+			return VT_FLOAT;
+		case DUK_TYPE_STRING:
+			return VT_STRING;
+		case DUK_TYPE_UNDEFINED:
+			return VT_UNDEFINED;
+		default:
+			return VT_INT;
+	}
+}
+
+int _Scr_GetPointerType(int a1) {
+	if(js_gsc_duk_context)
+		return get_gsc_type_for_duk(duk_get_type(js_gsc_duk_context, a1));
+	int (*o)(int) = (int(*)(int))0x80A8C1C;
+	return o(a1);
+}
+
+int _Scr_GetNumParam() {
+	extern int js_gsc_func_parms;
+	if(js_gsc_duk_context)
+		return js_gsc_func_parms;
+	
+	int (*o)() = (int(*)())0x80A99B8;
+	return o();
+}
+
 void gsc_hook_to_js() {
 	/* hook all scr_ value funcs */
 	
@@ -2188,13 +2296,28 @@ void gsc_hook_to_js() {
 	bool f = false;
 	
 	for(int i = 0; scr_func_helper_names[i].name; i++) {
+		if(scr_func_helper_names[i].type == VT_END_OF_LIST)
+			continue;
+		#if 0
 		if(!f) {
 			if(!strstr(scr_func_helper_names[i].name, "Add"))
 				continue;
 			f = true;
 		}
+		#endif
 		__call_ret(GAME(va("Scr_%s", scr_func_helper_names[i].name)), (unsigned)GetAddStuffAddr());
 	}
+	
+	/* 3 manual isnt that bad hehe */
+	#if 0
+	{"GetType",               VT_END_OF_LIST},
+	{"GetPointerType",        VT_END_OF_LIST},
+	{"GetNumParam",           VT_END_OF_LIST},
+	#endif
+	
+	__jmp(GAME("Scr_GetType"), _Scr_GetType);
+	__jmp(GAME("Scr_GetPointerType"), _Scr_GetPointerType);
+	__jmp(GAME("Scr_GetNumParam"), _Scr_GetNumParam);
 }
 
 #include <netinet/in.h>

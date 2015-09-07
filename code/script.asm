@@ -36,6 +36,11 @@ _Scr_AddStuff:
 	mov [gsc_hook_caller], eax
 	
 	call gsc_hook_to_js_cb
+	cmp [gsc_hook_caller], eax
+	je ret_now
+	mov eax, [gsc_hook_caller]
+	
+	ret_now:
 	retn
 ;	push ebp
 ;	mov ebp, esp
