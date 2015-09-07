@@ -1105,7 +1105,7 @@ duk_ret_t js_gsc_call_builtin_func(duk_context *c) {
 	
 	//printf("fIdx = %d\n", fIdx);
 	void (*func)() = (void(*)())it[fIdx].call;
-	cprintf(PRINT_GOOD, "calling %s\n", it[fIdx].name);
+	//cprintf(PRINT_GOOD, "calling %s\n", it[fIdx].name);
 	func();
 	//printf("args = %d\n", js_gsc_func_args);
 	js_gsc_duk_context = NULL;
@@ -1115,6 +1115,10 @@ duk_ret_t js_gsc_call_builtin_func(duk_context *c) {
 char *gsc_function_whitelist[] = {
 	"exitlevel", "gettime", "getcvarfloat",
 	"precachestring", "precacheshader", "precachemenu", "precachestatusicon", "precacheheadicon", "makecvarserverinfo",
+	
+	"randomint", "randomfloat", "randomintrange", "randomfloatrange",
+	
+	"println", "iprintln", "iprintlnbold", "print3d",
 	
 	NULL
 };
