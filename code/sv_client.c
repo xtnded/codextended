@@ -91,7 +91,7 @@ void ucmd_ascii( client_t *cl ) {
 	*/
 	NET_OutOfBandPrint(NS_SERVER, cl->netchan.remoteAddress, "print\n%s", send);
 	#endif
-	#ifdef BUILD_ECMASCRIPT
+	#if 0
 	duk_push_global_object(js_context);
 	if(duk_has_prop_string(js_context, -1, "ucmd_ascii")) {
 		duk_get_prop_string(js_context, -1, "ucmd_ascii");
@@ -1252,7 +1252,7 @@ int QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 				Scr_FreeThread(result);
 			}
 			#endif
-			
+			#ifdef BUILD_ECMASCRIPT
 			duk_push_global_object(js_context);
 			
 			duk_get_prop_string(js_context, -1, "players");
@@ -1273,7 +1273,7 @@ int QDECL SV_ClientCommand(client_t *cl, msg_t *msg) {
 			}
 			duk_pop(js_context); //players
 			duk_pop(js_context);
-			
+			#endif
 			if(duk_ret_val)
 				goto skip_vm_call;
 			
@@ -1628,8 +1628,11 @@ void SV_DumpUcmd() {
 #endif
 
 void ClientBegin(int clientNum) {
+
 	void (*begin)(int)  = (void(*)(int))GAME("ClientBegin");
 	begin(clientNum);
+
+	#ifdef BUILD_ECMASCRIPT
 	
 	duk_push_global_object(js_context);
 	
@@ -1645,6 +1648,8 @@ void ClientBegin(int clientNum) {
 	}
 	duk_pop(js_context); //players
 	duk_pop(js_context);
+	
+	#endif
 }
 
 /*

@@ -118,7 +118,7 @@ public:
 #endif
 		SteamGameServer()->LogOff();
 		SteamGameServer_Shutdown();
-		printf("~CoDSteamServer() Deconstructed!!!!!!!!!!!\n");
+		//printf("~CoDSteamServer() Deconstructed!!!!!!!!!!!\n");
 	}
 
 	bool IsConnectedToSteam()		{ return m_bConnectedToSteam; }
@@ -151,7 +151,8 @@ private:
 
 void CoDSteamServer::OnSteamServersConnected( SteamServersConnected_t *pLogonSuccess )
 {
-	printf("CoDSteamServer::OnSteamServersConnected(...)\n");
+	//printf("CoDSteamServer::OnSteamServersConnected(...)\n");
+	printf("SteamServer Connected\n");
 	m_bConnectedToSteam = true;
 
 	// log on is not finished until OnPolicyResponse() is called
@@ -169,7 +170,8 @@ void CoDSteamServer::OnSteamServersConnectFailure( SteamServerConnectFailure_t *
 
 void CoDSteamServer::OnSteamServersDisconnected( SteamServersDisconnected_t *pLoggedOff )
 {
-	printf("CoDSteamServer::OnSteamServersDisconnected(...)\n");
+	//printf("CoDSteamServer::OnSteamServersDisconnected(...)\n");
+	printf("SteamServer Disconnected.\n");
 	m_bConnectedToSteam = false;
 }
 

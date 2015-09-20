@@ -1115,8 +1115,9 @@ duk_ret_t js_gsc_call_builtin_func(duk_context *c) {
 char *gsc_function_whitelist[] = {
 	"exitlevel", "gettime", "getcvarfloat",
 	"precachestring", "precacheshader", "precachemenu", "precachestatusicon", "precacheheadicon", "makecvarserverinfo",
-	
+	"map_restart",
 	"randomint", "randomfloat", "randomintrange", "randomfloatrange",
+	"distance", "distancesquared", "length", "lengthsquared", "closer", "vectordot", "vectornormalize", "vectortoangles", "anglestoup", "anglestoright", "anglestoforward",
 	
 	"println", "iprintln", "iprintlnbold", "print3d",
 	
@@ -1151,7 +1152,7 @@ void js_add_gsc_functions() {
 			duk_push_c_function(js_context, js_gsc_call_builtin_func, DUK_VARARGS);
 			duk_put_prop_string(js_context, -2, it->name);
 			#endif
-			cprintf(PRINT_GOOD|PRINT_UNDERLINE,"Added GSC function %s:%d to JS\n", it->name, i);
+			//cprintf(PRINT_GOOD|PRINT_UNDERLINE,"Added GSC function %s:%d to JS\n", it->name, i);
 		//}
 	}
 	duk_pop(js_context);		

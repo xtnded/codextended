@@ -251,13 +251,15 @@ void SV_Init( void ) {
 void SV_Shutdown(char *finalmsg) {
 	void (*o)(char*) = (void(*)(char*))0x808AD8C;
 	o(finalmsg);
-	
+	#ifdef BUILD_ECMASCRIPT
 	js_destroy();
+	#endif
 }
 
 void SV_SpawnServer(char *server) {
 	void (*spawnserver)(char*) = (void(*)(char*))0x808A220;
 	spawnserver(server);
-	
+	#ifdef BUILD_ECMASCRIPT
 	js_load();
+	#endif
 }

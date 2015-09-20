@@ -490,7 +490,7 @@ unsigned short load_callback(const char* file, const char* functionname, bool fl
     if(!v4 && !flag)
         Com_Error(ERR_DROP, "Could not find label '%s'.", functionname, file);
 	if(!flag || v4)
-		printf("callback[%s] = %x\n", functionname, v4);
+		cprintf(PRINT_GOOD|PRINT_UNDERLINE,"callback[%s] = %x\n", functionname, v4);
     return v4;
 }
 
@@ -805,7 +805,7 @@ char onplayerconnect_result[64];
 void _Scr_PlayerConnect(gentity_t *self) {
     unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerconnect, 0);
     Scr_FreeThread(ret);
-	
+	#ifdef BUILD_ECMASCRIPT
 	duk_push_global_object(js_context);
 	
 	duk_get_prop_string(js_context, -1, "players");
@@ -824,11 +824,13 @@ void _Scr_PlayerConnect(gentity_t *self) {
 	}
 	duk_pop(js_context); //players
 	duk_pop(js_context);
+	#endif
 }
 
 void _Scr_PlayerDisconnect(self) 
 	gentity_t *self;
 {	
+	#ifdef BUILD_ECMASCRIPT
 	duk_push_global_object(js_context);
 	
 	duk_get_prop_string(js_context, -1, "players");
@@ -843,6 +845,7 @@ void _Scr_PlayerDisconnect(self)
 	}
 	duk_pop(js_context); //players
 	duk_pop(js_context);
+	#endif
 	
     unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerdisconnect, 0);
     Scr_FreeThread(ret);
@@ -877,7 +880,7 @@ void _Scr_PlayerDamage(gentity_t *self, gentity_t *inflictor, gentity_t *attacke
 	if(inflictor) Scr_AddEntity(inflictor); else Scr_AddUndefined();
 	unsigned short ret = Scr_ExecEntThread(self->s.number, 0, g_scr_data->playerdamage, 9);
     Scr_FreeThread(ret);
-	
+	#ifdef BUILD_ECMASCRIPT
 	duk_push_global_object(js_context);
 	
 	duk_get_prop_string(js_context, -1, "players");
@@ -938,6 +941,7 @@ void _Scr_PlayerDamage(gentity_t *self, gentity_t *inflictor, gentity_t *attacke
 	}
 	duk_pop(js_context); //players
 	duk_pop(js_context);
+	#endif
 }
 
 void _Cmd_MenuResponse_f(gentity_t *self) {
@@ -995,7 +999,7 @@ void GScr_LoadGametypeScript( void ) {
 	extern int callbackEntityDamage, callbackEntityKilled;
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
 	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);
-	
+	#ifdef BUILD_ECMASCRIPT
 		duk_push_global_object(js_context);
 		if(duk_has_prop_string(js_context, -1, "GSC_LoadGametypeScript")) {
 			duk_get_prop_string(js_context, -1, "GSC_LoadGametypeScript");
@@ -1003,6 +1007,7 @@ void GScr_LoadGametypeScript( void ) {
 				printf("Script Error (GSC_LoadGametypeScript): %s\n", duk_to_string(js_context, -1));
 		}
 		duk_pop(js_context);
+	#endif
 
 	Scr_LoadConsts();
 }
@@ -1912,6 +1917,8 @@ void _Scr_RunCurrentThreads() {
 	
 }
 
+#ifdef BUILD_ECMASCRIPT
+
 static void __call_ret(unsigned int off, unsigned int loc) {
 	mprotect((void *)off, 6, PROT_READ | PROT_WRITE | PROT_EXEC);
 	int foffset = loc - (off + 5);
@@ -2194,25 +2201,25 @@ void gsc_hook_to_js_cb(int a1, int a2, UnionValue value /*float acted weird on s
 						if(js_gsc_duk_context)
 							printf("UNSUPPORTED TYPE %s\n", Scr_GetVariableType(type));
 					} break;
-					/*
+					
 					case VT_VECTOR: {
 						if(js_gsc_duk_context) {
 							
-							duk_get_prop_index(js_gsc_duk_context, -1, * value.i * -1);
-							UnionVector[0] = duk_require_int(js_gsc_duk_context, -1);
+							duk_get_prop_string(js_gsc_duk_context, value.i, "x");
+							UnionVector[0] = (float)duk_to_number(js_gsc_duk_context,-1);
 							duk_pop(js_gsc_duk_context);
-							duk_get_prop_index(js_gsc_duk_context, -1, 1);
-							UnionVector[1] = duk_require_int(js_gsc_duk_context, -1);
+							duk_get_prop_string(js_gsc_duk_context, value.i, "y");
+							UnionVector[1] = (float)duk_to_number(js_gsc_duk_context,-1);
 							duk_pop(js_gsc_duk_context);
-							duk_get_prop_index(js_gsc_duk_context, -1, 2);
-							UnionVector[2] = duk_require_int(js_gsc_duk_context, -1);
+							duk_get_prop_string(js_gsc_duk_context, value.i, "z");
+							UnionVector[2] = (float)duk_to_number(js_gsc_duk_context,-1);
 							duk_pop(js_gsc_duk_context);
 
 							uv.fp = UnionVector;
-							printf("(%f, %f, %f) ", uv.fp[0],uv.fp[1],uv.fp[2]);
+							//printf("(%f, %f, %f) ", uv.fp[0],uv.fp[1],uv.fp[2]);
 						}
 					} break;
-					*/
+					
 				}
 				void *result ;
 				if(js_gsc_duk_context) {
@@ -2319,20 +2326,24 @@ void gsc_hook_to_js() {
 	__jmp(GAME("Scr_GetPointerType"), _Scr_GetPointerType);
 	__jmp(GAME("Scr_GetNumParam"), _Scr_GetNumParam);
 }
-
+#endif
 #include <netinet/in.h>
 
 void scriptInitializing() {
+	#ifdef BUILD_ECMASCRIPT
 	void js_add_gsc_functions();
 	js_add_gsc_functions();
+	#endif
 	
 	memcpy((void*)&rct_bytes[0], (void*)GAME("Scr_RunCurrentThreads"), 5);
 	__jmp(GAME("Scr_RunCurrentThreads"), (unsigned)_Scr_RunCurrentThreads);
 	
-	if(CSteamServer_Init(INADDR_ANY, 8766, 28960, 25011, "1.0.0.0"))
+	if(CSteamServer_Init(INADDR_ANY, 8766, 28960, 25011, "1.0.0.0"));
+	/*
 		printf("CSteamServer_Init worked\n");
 	else
 		printf("CSteamServer_Init failed!\n");
+	*/
 	
 //	__jmp(GAME("Scr_GetGenericField"), _Scr_GetGenericField);
 	
@@ -2461,8 +2472,9 @@ void scriptInitializing() {
 	Scr_GetType = (Scr_GetType_t)dlsym(gamelib, "Scr_GetType");
 	Scr_GetPointerType = (Scr_GetPointerType_t)dlsym(gamelib, "Scr_GetPointerType");
 	Scr_GetEntity = (Scr_GetEntity_t)GAME("Scr_GetEntity");
-	
+	#ifdef BUILD_ECMASCRIPT
 	gsc_hook_to_js();
+	#endif
 	
 	Scr_AddInt = (Scr_AddInt_t)dlsym(gamelib, "Scr_AddInt");
 	Scr_AddFloat = (Scr_AddFloat_t)dlsym(gamelib, "Scr_AddFloat");
