@@ -145,9 +145,11 @@ SV_DropClient_t SV_DropClient = (SV_DropClient_t)0x8085CF4;
 void (*SV_FreeClient_o)(client_t*) = (void(*)(client_t*))0x808D34C;
 
 void SV_FreeClient(client_t *cl) {
+	#ifdef BUILD_ECMASCRIPT
 	void js_remove_player_object(client_t *cl);
 	js_remove_player_object(cl);
-	
+	#endif
+
 	/*void (*free_script_stuff)(unsigned short) = (void(*)(unsigned short))0x80A3BE4;
 	free_script_stuff(cl->scriptId);
 	cl->scriptId = 0;
@@ -929,10 +931,12 @@ void SV_DirectConnect( netadr_t from ) {
 	Q_strncpyz(newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 	
 	SV_UserinfoChanged(newcl);
-	
+
+	#ifdef BUILD_ECMASCRIPT
 	void js_push_player_object(client_t *cl);
 	js_push_player_object(newcl);
-	
+	#endif
+
 	char *denied = (char*)VM_Call(*(int*)0x80E30C4, 2, clientNum, *(unsigned short*)((unsigned)newcl + 370928));
 	extern char onplayerconnect_result[64];
 
