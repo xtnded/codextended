@@ -70,7 +70,7 @@ void Scr_trim(int a1) {
 	
 	char *str = Scr_GetString(0);
 	
-	char *tmp = (char*)xmalloc(strlen(str) + 1);
+	char *tmp = (char*)malloc(strlen(str) + 1);
 	size_t tmp_idx = 0;
 	
 	size_t str_size = strlen(str);
