@@ -43,7 +43,7 @@ void GScr_mysql_real_connect(int entityIndex) {
     if(m != NULL) {
         MYSQL *c = mysql_real_connect(m, hostname, username, password, database, port, NULL, 0);
 		my_bool reconnect = 1;
-		mysql_options(&c, MYSQL_OPT_RECONNECT, &reconnect);
+		mysql_options(c, MYSQL_OPT_RECONNECT, &reconnect);
         Scr_AddInt((int)c);
     } else {
         Scr_AddUndefined();
