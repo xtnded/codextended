@@ -186,11 +186,11 @@ obj="$(ls obj/*.o)"
 
 if [ $uMYSQL = true ]; then
 if [ $DEBUG = true ]; then
-$compiler -m32 -shared -L/lib32 -L/home/lib -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -o ../bin/codextended.so $obj -Os -lz $LINK_LIBS $STEAM_LINK -ldl -lm -Wall
+$compiler -m32 -shared -L/lib32 -L/home/lib `mysql_config --libs --include` -o ../bin/codextended.so $obj -Os -lz $LINK_LIBS $STEAM_LINK -ldl -lm -Wall
 else
-$compiler -m32 -shared -L/lib32 -L/home/lib -lmysqlclient -L/usr/lib/mysql -I/usr/include/mysql -o ../bin/codextended.so $obj -Os -s -lz $LINK_LIBS $STEAM_LINK -ldl -lm -Wall
+$compiler -m32 -shared -L/lib32 -L/home/lib `mysql_config --libs --include` -o ../bin/codextended.so $obj -Os -s -lz $LINK_LIBS $STEAM_LINK -ldl -lm -Wall
 fi
-#$compiler -m32 -shared -L/lib32 `mysql_config --libs` -I/usr/include/mysql -o ../bin/codextended.so $obj -Os -s -lz $LINK_LIBS -ldl -lm -Wall
+#$compiler -m32 -shared -L/lib32 `mysql_config --libs` `mysql_config --include` -o ../bin/codextended.so $obj -Os -s -lz $LINK_LIBS -ldl -lm -Wall
 else
 if [ $DEBUG = true ]; then
 $compiler -m32 -shared -L/lib32 -L./lib -o ../bin/codextended.so $obj -lz $LINK_LIBS $STEAM_LINK -ldl -lm -Wall
