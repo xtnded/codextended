@@ -262,6 +262,53 @@ void SV_Say_f( void ) {
 	call();
 }
 
+// say but without "console:".
+void SV_Say2_f( void ) {
+	if(Cmd_Argc() != 2) {
+		Com_Printf("Usage: say2 <message>\n");
+		return;
+	}
+
+	char *msg = Cmd_Argv(1);
+
+	if(msg == "") {
+		Com_Printf("Invalid message.\n");
+		return;
+	}
+
+	SV_SendServerCommand(NULL, 1, "i \"%s\"", msg);
+}
+
+// say but to specific player.
+void SV_Tell_f( void ) {
+	if(Cmd_Argc() != 3) {
+		Com_Printf("Usage: tell <id> <message>\n");
+		return;
+	}
+
+	int id = atoi( Cmd_Argv(1) );
+	char *msg = Cmd_Argv(2);
+
+	if(id < 0 || id > 64) {
+		Com_Printf("Invalid ID.\n");
+		return;
+	}
+
+	if(msg == "") {
+		Com_Printf("Invalid message.\n");
+		return;
+	}
+
+	client_t *cl = getclient( id );
+
+	if( cl == NULL ) {
+		Com_Printf("Client doesn't exist!\n");
+		return;
+	}
+
+	SV_SendServerCommand(cl, 1, "i \"%s\"", msg);
+}
+
 void SV_StringUsage_f( void ) {
 	void (*call)( void );
 	*(int*)&call = 0x8084D74;
@@ -805,4 +852,6 @@ void SV_AddOperatorCommands(void) {
 	Cmd_AddCommand("net", band_test);
 	#endif
 	Cmd_AddCommand("say", SV_Say_f);
+    Cmd_AddCommand("say2", SV_Say2_f);
+    Cmd_AddCommand("tell", SV_Tell_f);
 }
