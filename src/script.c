@@ -272,6 +272,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"fsize", GScr_fsize, 0},
     {"strpos", GScr_strpos, 0},
     {"salt_password", GScr_salt_password, 0},
+    {"configstringindex", GScr_configstringindex, 0},
 	{NULL, NULL, 0}
 };
 
@@ -551,6 +552,25 @@ void GScr_salt_password(int a1) {
 	char* password = Scr_GetString(0);
 	char* salt = Scr_GetString(1);
 	Scr_AddString(get_pass_hash(password, salt));
+}
+
+void GScr_configstringindex(int a1) {
+    char* str = Scr_GetString(0);
+    int min = Scr_GetInt(1);
+    int max = Scr_GetInt(2);
+
+    int i;
+    char cs[MAX_INFO_STRING];
+
+    for(i = 1; i < max; i++) {
+        SV_GetConfigstring(i, cs, sizeof(cs));
+        if(!strcasecmp(str, cs)) {
+            Scr_AddInt(i);
+            return;
+        }
+    }
+
+    Scr_AddInt(0);
 }
 
 void GScr_strpos(int a1) {

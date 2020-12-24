@@ -177,7 +177,7 @@ void Cmd_FindConfigstringIndex() {
 
 void Cmd_GetConfigstrings() {
 	if(Cmd_Argc()!=2) {
-		printf("Usage: configstrings \"outputfile.txt\"\n");
+		Com_Printf("Usage: cs \"outputfile.txt\"\n");
 		return;
 	}
 	

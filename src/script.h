@@ -363,6 +363,7 @@ void GScr_Cmd_Argc(int);
 void GScr_return(int);
 
 void GScr_salt_password(int a1);
+void GScr_configstringindex(int);
 void GScr_strpos(int);
 
 void GScr_SpawnAnimEnt(int);
