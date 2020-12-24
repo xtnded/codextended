@@ -200,6 +200,8 @@ extern x##_t x
 #define SanitizeString xtn_SanitizeString
 #define sv_killserver xtn_sv_killserver
 #define SV_Say_f xtn_SV_Say_f
+#define SV_Say2_f xtn_SV_Say2_f
+#define SV_Tell_f xtn_SV_Tell_f
 #define MSG_Init xtn_MSG_Init
 #define repeat_annoy xtn_repeat_annoy
 #define _VectorNormalize2 xtn__VectorNormalize2
