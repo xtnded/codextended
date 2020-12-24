@@ -280,6 +280,7 @@
 #define PlayerCmd_backButtonPressed xtn_PlayerCmd_backButtonPressed
 #define MSG_WriteBigString xtn_MSG_WriteBigString
 #define Cmd_GetConfigstrings xtn_Cmd_GetConfigstrings
+#define Cmd_FindConfigstringIndex xtn_Cmd_FindConfigstringIndex
 #define PlayerCmd_HasPerk xtn_PlayerCmd_HasPerk
 #define GScr_fread xtn_GScr_fread
 #define is_in_set xtn_is_in_set

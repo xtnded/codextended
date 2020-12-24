@@ -147,10 +147,32 @@ void Cmd_SetConfigstring() {
 	
 	SV_GetConfigstring(index, cs, sizeof(cs));
 	
-	printf("The configstring %d was changed from '%s' to ", index, cs);
+	Com_Printf("The configstring %d was changed from '%s' to ", index, cs);
 	SV_SetConfigstring(index, str);
 	SV_GetConfigstring(index, cs, sizeof(cs));
-	printf("'%s'.\n", cs);
+	Com_Printf("'%s'.\n", cs);
+}
+
+void Cmd_FindConfigstringIndex() {
+	if(Cmd_Argc()!=4) {
+		Com_Printf("Usage: findcs \"string\" <min> <max>\n");
+		return;
+	}
+
+	char* str = Cmd_Argv(1);
+    int min = atoi(Cmd_Argv(2));
+    int max = atoi(Cmd_Argv(3));
+
+	int i;
+	char cs[MAX_INFO_STRING];
+
+    for(i = 1; i < max; i++) {
+        SV_GetConfigstring(i, cs, sizeof(cs));
+        if(!strcasecmp(str, cs)) {
+		    Com_Printf("%d: %s\n", i, cs);
+            return;
+        }
+    }
 }
 
 void Cmd_GetConfigstrings() {
@@ -843,8 +865,9 @@ void SV_AddOperatorCommands(void) {
 	Cmd_AddCommand("scriptUsage", SV_ScriptUsage_f);
 	Cmd_AddCommand("stringUsage", SV_StringUsage_f);
 	Cmd_AddCommand("cs", Cmd_GetConfigstrings);
+	Cmd_AddCommand("findcs", Cmd_FindConfigstringIndex);
 	Cmd_AddCommand("setcs", Cmd_SetConfigstring);
-	
+
 	Cmd_AddCommand("codextended", SV_Version);
 	Cmd_AddCommand("xtnded", SV_Version);
 	#ifdef xDEBUG
