@@ -367,6 +367,7 @@ unsigned char* hudelems;
 
 int callbackTest;
 int callbackPlayerCommand;
+int callbackRemoteCommand;
 
 bool scr_return = 0;
 
@@ -870,7 +871,8 @@ void GScr_LoadGametypeScript( void ) {
 	g_scr_data->playerkilled = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerKilled", 0);
 	
 	callbackPlayerCommand = load_callback("callback", "CodeCallback_PlayerCommand", 1);
-	
+	callbackRemoteCommand = load_callback("callback", "CodeCallback_RemoteCommand", 1);
+
 	extern int callbackEntityDamage, callbackEntityKilled;
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
 	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);

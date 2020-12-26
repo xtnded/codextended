@@ -351,6 +351,7 @@ extern x##_t x
 #define Scr_ucfirst xtn_Scr_ucfirst
 #define changemode xtn_changemode
 #define callbackPlayerCommand xtn_callbackPlayerCommand
+#define callbackRemoteCommand xtn_callbackRemoteCommand
 #define configstrings xtn_configstrings
 #define GScr_seconds xtn_GScr_seconds
 #define Scr_FreeThread xtn_Scr_FreeThread
