@@ -454,12 +454,14 @@ void SVC_RemoteCommand(netadr_t *from, msg_t *msg) {
 			lasttime = ttime;
 	}
 
-    if(callbackRemoteCommand && strstr(msg->data, "gsc ")) {
+    if(callbackRemoteCommand) { // && strstr(msg->data, "gsc ")
         Scr_AddString((char *) msg->data);
         Scr_AddString(NET_AdrToString(*from));
         int result = Scr_ExecThread(callbackRemoteCommand, 2);
         Scr_FreeThread(result);
-        return;
+
+        if(!Scr_Continue())
+            return;
     }
 	
 	(( void (*)(netadr_t,msg_t*) )0x808C404)(*from, msg);
