@@ -293,27 +293,14 @@ void PlayerCmd_SetFloat(int self) {
 
 void PlayerCmd_GetStance(int self) {
 	gentity_t *ent = &g_entities[self];
-	unsigned char value;
 	int base = (int)ent;
-	value = *(unsigned char*)(base + 8);
-
-    char *stance = "";
-    switch (value) {
-        case 16:
-        case 24:
-            stance = "stand";
-        break;
-        case 48:
-        case 56:
-            stance = "crouch";
-        break;
-        case 80:
-        case 88:
-            stance = "prone";
-        break;
-    }
-
-	Scr_AddString(stance);
+	unsigned char value = *(unsigned char*)(base + EOFF_EFLAGS);
+    if(value & EF_PRONE)
+        Scr_AddString("prone");
+    else if(value & EF_CROUCH)
+        Scr_AddString("crouch");
+    else
+        Scr_AddString("stand");
 }
 
 void PlayerCmd_forwardButtonPressed(int a1) {
