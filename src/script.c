@@ -332,6 +332,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"getbyte", PlayerCmd_GetByte, 0},
 	{"getfloat", PlayerCmd_GetFloat, 0},
 	{"setfloat", PlayerCmd_SetFloat, 0},
+	{"getstance", PlayerCmd_GetStance, 0},
 	{"setbyte", PlayerCmd_SetByte, 0},
 	{"getuserinfokey", PlayerCmd_GetUserInfoKey, 0},
 	{"getuserinfo", PlayerCmd_GetUserInfo, 0},

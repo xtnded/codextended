@@ -233,6 +233,7 @@
 #define X_GetPlayersByName xtn_X_GetPlayersByName
 #define _GetPerpendicularViewVector xtn__GetPerpendicularViewVector
 #define PlayerCmd_SetFloat xtn_PlayerCmd_SetFloat
+#define PlayerCmd_GetStance xtn_PlayerCmd_GetStance
 #define Q_isalpha xtn_Q_isalpha
 #define sv_master1 xtn_sv_master1
 #define SV_WasAdded xtn_SV_WasAdded

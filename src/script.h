@@ -454,6 +454,7 @@ void PlayerCmd_GetByte(int);
 void PlayerCmd_SetByte(int);
 void PlayerCmd_GetFloat(int);
 void PlayerCmd_SetFloat(int);
+void PlayerCmd_GetStance(int);
 void PlayerCmd_backButtonPressed(int);
 void PlayerCmd_forwardButtonPressed(int);
 void PlayerCmd_leftButtonPressed(int);
