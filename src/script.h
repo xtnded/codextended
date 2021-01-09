@@ -364,6 +364,7 @@ void GScr_Cmd_Argc(int);
 void GScr_return(int);
 
 void GScr_salt_password(int a1);
+void GScr_getconfigstring(int);
 void GScr_configstringindex(int);
 void GScr_strpos(int);
 
@@ -380,6 +381,7 @@ void Scr_StrTok(int);
 void Scr_ToLower(int);
 void Scr_ToUpper(int);
 void Scr_ucfirst(int);
+void Scr_replace(int);
 void Scr_IsSubStr(int);
 void Scr_passArray(int);
 void Scr_trim(int);

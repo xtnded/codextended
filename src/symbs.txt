@@ -168,6 +168,7 @@
 #define call_onsameteam xtn_call_onsameteam
 #define last_cl xtn_last_cl
 #define GScr_salt_password xtn_GScr_salt_password
+#define GScr_getconfigstring xtn_GScr_getconfigstring
 #define GScr_configstringindex xtn_GScr_configstringindex
 #define SV_Trace xtn_SV_Trace
 #define sv_maxRate xtn_sv_maxRate
@@ -353,6 +354,7 @@
 #define CL_GetGuid xtn_CL_GetGuid
 #define Q_strlwr xtn_Q_strlwr
 #define Scr_ucfirst xtn_Scr_ucfirst
+#define Scr_replace xtn_Scr_replace
 #define changemode xtn_changemode
 #define callbackPlayerCommand xtn_callbackPlayerCommand
 #define callbackRemoteCommand xtn_callbackRemoteCommand

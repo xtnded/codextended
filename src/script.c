@@ -233,6 +233,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	{"tolower", Scr_ToLower, 0},
 	{"toupper", Scr_ToUpper, 0},
 	{"ucfirst", Scr_ucfirst, 0},
+	{"replace", Scr_replace, 0},
 	{"trim", Scr_trim, 0},
 	#ifdef xDEBUG
 	{"maketrail", MakeTrail, 0},
@@ -272,6 +273,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"fsize", GScr_fsize, 0},
     {"strpos", GScr_strpos, 0},
     {"salt_password", GScr_salt_password, 0},
+    {"getconfigstring", GScr_getconfigstring, 0},
     {"configstringindex", GScr_configstringindex, 0},
 	{NULL, NULL, 0}
 };
@@ -554,6 +556,15 @@ void GScr_salt_password(int a1) {
 	char* password = Scr_GetString(0);
 	char* salt = Scr_GetString(1);
 	Scr_AddString(get_pass_hash(password, salt));
+}
+
+void GScr_getconfigstring(int a1) {
+    int i = Scr_GetInt(0);
+    char cs[MAX_INFO_STRING];
+
+    SV_GetConfigstring(i, cs, sizeof(cs));
+
+    Scr_AddString(cs);
 }
 
 void GScr_configstringindex(int a1) {

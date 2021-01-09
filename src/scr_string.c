@@ -172,3 +172,13 @@ void Scr_ucfirst(int a1) {
 	Scr_AddString(s);
 	free(s);
 }
+
+void Scr_replace(int a1) {
+	char* orig = Scr_GetString(0);
+	char* rep = Scr_GetString(1);
+	char* with = Scr_GetString(2);
+
+	char *result = str_replace(orig, rep, with);
+	Scr_AddString(result);
+	free(result);
+}
