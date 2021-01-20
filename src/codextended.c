@@ -398,6 +398,10 @@ void CoDExtended() {
 	//patch unpure crap
 	*(byte*)0x80874A6 = 0xeb;
 	*(byte*)0x80871FD = 0xeb;
+
+	// maybe rewrite it for 20kbs download, libcod?
+	void SV_WriteDownloadToClient(int);
+	__call(0x0808F93A, (int)SV_WriteDownloadToClient);
 	
 	#else
 	

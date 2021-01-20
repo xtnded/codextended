@@ -295,6 +295,7 @@
 #define SV_BeginDownload xtn_SV_BeginDownload
 #define G_Spawn xtn_G_Spawn
 #define SV_Frame xtn_SV_Frame
+#define SV_WriteDownloadToClient xtn_SV_WriteDownloadToClient
 #define SVC_Info xtn_SVC_Info
 #define colorBlue xtn_colorBlue
 #define search_players xtn_search_players
@@ -358,6 +359,7 @@
 #define changemode xtn_changemode
 #define callbackPlayerCommand xtn_callbackPlayerCommand
 #define callbackRemoteCommand xtn_callbackRemoteCommand
+#define callbackFireGrenade xtn_callbackFireGrenade
 #define configstrings xtn_configstrings
 #define GScr_seconds xtn_GScr_seconds
 #define Scr_FreeThread xtn_Scr_FreeThread

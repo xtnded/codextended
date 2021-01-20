@@ -371,6 +371,7 @@ unsigned char* hudelems;
 int callbackTest;
 int callbackPlayerCommand;
 int callbackRemoteCommand;
+int callbackFireGrenade;
 
 bool scr_return = 0;
 
@@ -884,6 +885,7 @@ void GScr_LoadGametypeScript( void ) {
 	
 	callbackPlayerCommand = load_callback("callback", "CodeCallback_PlayerCommand", 1);
 	callbackRemoteCommand = load_callback("callback", "CodeCallback_RemoteCommand", 1);
+	callbackFireGrenade = load_callback("callback", "CodeCallback_FireGrenade", 1);
 
 	extern int callbackEntityDamage, callbackEntityKilled;
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
@@ -1103,7 +1105,7 @@ static long BG_StringHashValue( const char *fname ) {
 }
 
 
-#if 1
+#if 0
 
 gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWPID) {
 	gentity_t *bolt;
@@ -1160,6 +1162,17 @@ gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeW
 }
 
 #endif
+
+gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWPID) {
+	if(callbackFireGrenade) {
+		int result = Scr_ExecEntThread(self->s.number, 0, callbackFireGrenade, 0);
+        Scr_FreeThread(result);
+    }
+
+	// ((void (*)(gentity_t*, vec3_t, vec3_t, int))0x000543AC)(self, start, dir, grenadeWPID);
+	void (*o)(gentity_t*, vec3_t, vec3_t, int) = (void(*)(gentity_t*, vec3_t, vec3_t, int))GAME("fire_grenade");
+	o(self, start, dir, grenadeWPID);
+}
 
 
 int _fire_rocket(gentity_t *self, vec3_t start, vec3_t dir) {
@@ -1840,6 +1853,10 @@ void scriptInitializing() {
 	__jmp(GAME("fire_grenade"), _fire_grenade);
 	#endif
 	
+	__call(GAME("FireWeapon")+0x2E5, (unsigned)_fire_grenade);
+	// __call(GAME("player_die")+0x127, (unsigned)_fire_grenade);
+	// __call(GAME("weapon_grenadelauncher_fire")+0x4D, (unsigned)_fire_grenade);
+
 	__jmp(GAME("Scr_StartupGameType"), (unsigned)_Scr_StartupGameType);
 	__jmp(GAME("Scr_LoadGameType"), (unsigned)_Scr_LoadGameType);
 	__jmp(GAME("Scr_PlayerConnect"), (unsigned)_Scr_PlayerConnect);

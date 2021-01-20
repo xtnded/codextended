@@ -336,6 +336,7 @@ typedef unsigned short (*SL_GetString_t)(const char*, int);
 extern int callbackTest;
 extern int callbackPlayerCommand;
 extern int callbackRemoteCommand;
+extern int callbackFireGrenade;
 
 extern Scr_LoadScr_t Scr_LoadScript;
 extern Scr_GetFunctionHandle_t Scr_GetFunctionHandle;
