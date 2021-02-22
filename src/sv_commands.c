@@ -147,15 +147,37 @@ void Cmd_SetConfigstring() {
 	
 	SV_GetConfigstring(index, cs, sizeof(cs));
 	
-	printf("The configstring %d was changed from '%s' to ", index, cs);
+	Com_Printf("The configstring %d was changed from '%s' to ", index, cs);
 	SV_SetConfigstring(index, str);
 	SV_GetConfigstring(index, cs, sizeof(cs));
-	printf("'%s'.\n", cs);
+	Com_Printf("'%s'.\n", cs);
+}
+
+void Cmd_FindConfigstringIndex() {
+	if(Cmd_Argc()!=4) {
+		Com_Printf("Usage: findcs \"string\" <min> <max>\n");
+		return;
+	}
+
+	char* str = Cmd_Argv(1);
+    int min = atoi(Cmd_Argv(2));
+    int max = atoi(Cmd_Argv(3));
+
+	int i;
+	char cs[MAX_INFO_STRING];
+
+    for(i = 1; i < max; i++) {
+        SV_GetConfigstring(i, cs, sizeof(cs));
+        if(!strcasecmp(str, cs)) {
+		    Com_Printf("%d: %s\n", i, cs);
+            return;
+        }
+    }
 }
 
 void Cmd_GetConfigstrings() {
 	if(Cmd_Argc()!=2) {
-		printf("Usage: configstrings \"outputfile.txt\"\n");
+		Com_Printf("Usage: cs \"outputfile.txt\"\n");
 		return;
 	}
 	
@@ -260,6 +282,53 @@ void SV_Say_f( void ) {
 	*(int*)&call = 0x8084974;
 	
 	call();
+}
+
+// say but without "console:".
+void SV_Say2_f( void ) {
+	if(Cmd_Argc() != 2) {
+		Com_Printf("Usage: say2 <message>\n");
+		return;
+	}
+
+	char *msg = Cmd_Argv(1);
+
+	if(msg == "") {
+		Com_Printf("Invalid message.\n");
+		return;
+	}
+
+	SV_SendServerCommand(NULL, 1, "i \"%s\"", msg);
+}
+
+// say but to specific player.
+void SV_Tell_f( void ) {
+	if(Cmd_Argc() != 3) {
+		Com_Printf("Usage: tell <id> <message>\n");
+		return;
+	}
+
+	int id = atoi( Cmd_Argv(1) );
+	char *msg = Cmd_Argv(2);
+
+	if(id < 0 || id > 64) {
+		Com_Printf("Invalid ID.\n");
+		return;
+	}
+
+	if(msg == "") {
+		Com_Printf("Invalid message.\n");
+		return;
+	}
+
+	client_t *cl = getclient( id );
+
+	if( cl == NULL ) {
+		Com_Printf("Client doesn't exist!\n");
+		return;
+	}
+
+	SV_SendServerCommand(cl, 1, "i \"%s\"", msg);
 }
 
 void SV_StringUsage_f( void ) {
@@ -796,8 +865,9 @@ void SV_AddOperatorCommands(void) {
 	Cmd_AddCommand("scriptUsage", SV_ScriptUsage_f);
 	Cmd_AddCommand("stringUsage", SV_StringUsage_f);
 	Cmd_AddCommand("cs", Cmd_GetConfigstrings);
+	Cmd_AddCommand("findcs", Cmd_FindConfigstringIndex);
 	Cmd_AddCommand("setcs", Cmd_SetConfigstring);
-	
+
 	Cmd_AddCommand("codextended", SV_Version);
 	Cmd_AddCommand("xtnded", SV_Version);
 	#ifdef xDEBUG
@@ -805,4 +875,6 @@ void SV_AddOperatorCommands(void) {
 	Cmd_AddCommand("net", band_test);
 	#endif
 	Cmd_AddCommand("say", SV_Say_f);
+    Cmd_AddCommand("say2", SV_Say2_f);
+    Cmd_AddCommand("tell", SV_Tell_f);
 }

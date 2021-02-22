@@ -168,6 +168,8 @@
 #define call_onsameteam xtn_call_onsameteam
 #define last_cl xtn_last_cl
 #define GScr_salt_password xtn_GScr_salt_password
+#define GScr_getconfigstring xtn_GScr_getconfigstring
+#define GScr_configstringindex xtn_GScr_configstringindex
 #define SV_Trace xtn_SV_Trace
 #define sv_maxRate xtn_sv_maxRate
 #define GScr_getSite xtn_GScr_getSite
@@ -203,6 +205,8 @@
 #define SanitizeString xtn_SanitizeString
 #define sv_killserver xtn_sv_killserver
 #define SV_Say_f xtn_SV_Say_f
+#define SV_Say2_f xtn_SV_Say2_f
+#define SV_Tell_f xtn_SV_Tell_f
 #define MSG_Init xtn_MSG_Init
 #define repeat_annoy xtn_repeat_annoy
 #define _VectorNormalize2 xtn__VectorNormalize2
@@ -230,6 +234,7 @@
 #define X_GetPlayersByName xtn_X_GetPlayersByName
 #define _GetPerpendicularViewVector xtn__GetPerpendicularViewVector
 #define PlayerCmd_SetFloat xtn_PlayerCmd_SetFloat
+#define PlayerCmd_GetStance xtn_PlayerCmd_GetStance
 #define Q_isalpha xtn_Q_isalpha
 #define sv_master1 xtn_sv_master1
 #define SV_WasAdded xtn_SV_WasAdded
@@ -278,6 +283,7 @@
 #define PlayerCmd_backButtonPressed xtn_PlayerCmd_backButtonPressed
 #define MSG_WriteBigString xtn_MSG_WriteBigString
 #define Cmd_GetConfigstrings xtn_Cmd_GetConfigstrings
+#define Cmd_FindConfigstringIndex xtn_Cmd_FindConfigstringIndex
 #define PlayerCmd_HasPerk xtn_PlayerCmd_HasPerk
 #define GScr_fread xtn_GScr_fread
 #define is_in_set xtn_is_in_set
@@ -289,6 +295,7 @@
 #define SV_BeginDownload xtn_SV_BeginDownload
 #define G_Spawn xtn_G_Spawn
 #define SV_Frame xtn_SV_Frame
+#define SV_WriteDownloadToClient xtn_SV_WriteDownloadToClient
 #define SVC_Info xtn_SVC_Info
 #define colorBlue xtn_colorBlue
 #define search_players xtn_search_players
@@ -348,8 +355,11 @@
 #define CL_GetGuid xtn_CL_GetGuid
 #define Q_strlwr xtn_Q_strlwr
 #define Scr_ucfirst xtn_Scr_ucfirst
+#define Scr_replace xtn_Scr_replace
 #define changemode xtn_changemode
 #define callbackPlayerCommand xtn_callbackPlayerCommand
+#define callbackRemoteCommand xtn_callbackRemoteCommand
+#define callbackFireGrenade xtn_callbackFireGrenade
 #define configstrings xtn_configstrings
 #define GScr_seconds xtn_GScr_seconds
 #define Scr_FreeThread xtn_Scr_FreeThread

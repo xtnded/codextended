@@ -291,6 +291,18 @@ void PlayerCmd_SetFloat(int self) {
 	*(float*)(base + off) = value;
 }
 
+void PlayerCmd_GetStance(int self) {
+	gentity_t *ent = &g_entities[self];
+	int base = (int)ent;
+	unsigned char value = *(unsigned char*)(base + EOFF_EFLAGS);
+    if(value & EF_PRONE)
+        Scr_AddString("prone");
+    else if(value & EF_CROUCH)
+        Scr_AddString("crouch");
+    else
+        Scr_AddString("stand");
+}
+
 void PlayerCmd_forwardButtonPressed(int a1) {
     client_t *cl = getclient(a1);
     if(cl) {

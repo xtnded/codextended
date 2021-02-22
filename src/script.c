@@ -233,6 +233,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	{"tolower", Scr_ToLower, 0},
 	{"toupper", Scr_ToUpper, 0},
 	{"ucfirst", Scr_ucfirst, 0},
+	{"replace", Scr_replace, 0},
 	{"trim", Scr_trim, 0},
 	#ifdef xDEBUG
 	{"maketrail", MakeTrail, 0},
@@ -272,6 +273,8 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"fsize", GScr_fsize, 0},
     {"strpos", GScr_strpos, 0},
     {"salt_password", GScr_salt_password, 0},
+    {"getconfigstring", GScr_getconfigstring, 0},
+    {"configstringindex", GScr_configstringindex, 0},
 	{NULL, NULL, 0}
 };
 
@@ -331,6 +334,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"getbyte", PlayerCmd_GetByte, 0},
 	{"getfloat", PlayerCmd_GetFloat, 0},
 	{"setfloat", PlayerCmd_SetFloat, 0},
+	{"getstance", PlayerCmd_GetStance, 0},
 	{"setbyte", PlayerCmd_SetByte, 0},
 	{"getuserinfokey", PlayerCmd_GetUserInfoKey, 0},
 	{"getuserinfo", PlayerCmd_GetUserInfo, 0},
@@ -366,6 +370,8 @@ unsigned char* hudelems;
 
 int callbackTest;
 int callbackPlayerCommand;
+int callbackRemoteCommand;
+int callbackFireGrenade;
 
 bool scr_return = 0;
 
@@ -551,6 +557,34 @@ void GScr_salt_password(int a1) {
 	char* password = Scr_GetString(0);
 	char* salt = Scr_GetString(1);
 	Scr_AddString(get_pass_hash(password, salt));
+}
+
+void GScr_getconfigstring(int a1) {
+    int i = Scr_GetInt(0);
+    char cs[MAX_INFO_STRING];
+
+    SV_GetConfigstring(i, cs, sizeof(cs));
+
+    Scr_AddString(cs);
+}
+
+void GScr_configstringindex(int a1) {
+    char* str = Scr_GetString(0);
+    int min = Scr_GetInt(1);
+    int max = Scr_GetInt(2);
+
+    int i;
+    char cs[MAX_INFO_STRING];
+
+    for(i = 1; i < max; i++) {
+        SV_GetConfigstring(i, cs, sizeof(cs));
+        if(!strcasecmp(str, cs)) {
+            Scr_AddInt(i);
+            return;
+        }
+    }
+
+    Scr_AddInt(0);
 }
 
 void GScr_strpos(int a1) {
@@ -850,7 +884,9 @@ void GScr_LoadGametypeScript( void ) {
 	g_scr_data->playerkilled = load_callback("maps/mp/gametypes/_callbacksetup", "CodeCallback_PlayerKilled", 0);
 	
 	callbackPlayerCommand = load_callback("callback", "CodeCallback_PlayerCommand", 1);
-	
+	callbackRemoteCommand = load_callback("callback", "CodeCallback_RemoteCommand", 1);
+	callbackFireGrenade = load_callback("callback", "CodeCallback_FireGrenade", 1);
+
 	extern int callbackEntityDamage, callbackEntityKilled;
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
 	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);
@@ -1069,7 +1105,7 @@ static long BG_StringHashValue( const char *fname ) {
 }
 
 
-#if 1
+#if 0
 
 gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWPID) {
 	gentity_t *bolt;
@@ -1126,6 +1162,17 @@ gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeW
 }
 
 #endif
+
+gentity_t *_fire_grenade(gentity_t *self, vec3_t start, vec3_t dir, int grenadeWPID) {
+	if(callbackFireGrenade) {
+		int result = Scr_ExecEntThread(self->s.number, 0, callbackFireGrenade, 0);
+        Scr_FreeThread(result);
+    }
+
+	// ((void (*)(gentity_t*, vec3_t, vec3_t, int))0x000543AC)(self, start, dir, grenadeWPID);
+	void (*o)(gentity_t*, vec3_t, vec3_t, int) = (void(*)(gentity_t*, vec3_t, vec3_t, int))GAME("fire_grenade");
+	o(self, start, dir, grenadeWPID);
+}
 
 
 int _fire_rocket(gentity_t *self, vec3_t start, vec3_t dir) {
@@ -1806,6 +1853,10 @@ void scriptInitializing() {
 	__jmp(GAME("fire_grenade"), _fire_grenade);
 	#endif
 	
+	__call(GAME("FireWeapon")+0x2E5, (unsigned)_fire_grenade);
+	// __call(GAME("player_die")+0x127, (unsigned)_fire_grenade);
+	// __call(GAME("weapon_grenadelauncher_fire")+0x4D, (unsigned)_fire_grenade);
+
 	__jmp(GAME("Scr_StartupGameType"), (unsigned)_Scr_StartupGameType);
 	__jmp(GAME("Scr_LoadGameType"), (unsigned)_Scr_LoadGameType);
 	__jmp(GAME("Scr_PlayerConnect"), (unsigned)_Scr_PlayerConnect);

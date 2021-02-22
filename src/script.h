@@ -335,6 +335,8 @@ typedef unsigned short (*SL_GetString_t)(const char*, int);
 
 extern int callbackTest;
 extern int callbackPlayerCommand;
+extern int callbackRemoteCommand;
+extern int callbackFireGrenade;
 
 extern Scr_LoadScr_t Scr_LoadScript;
 extern Scr_GetFunctionHandle_t Scr_GetFunctionHandle;
@@ -363,6 +365,8 @@ void GScr_Cmd_Argc(int);
 void GScr_return(int);
 
 void GScr_salt_password(int a1);
+void GScr_getconfigstring(int);
+void GScr_configstringindex(int);
 void GScr_strpos(int);
 
 void GScr_SpawnAnimEnt(int);
@@ -378,6 +382,7 @@ void Scr_StrTok(int);
 void Scr_ToLower(int);
 void Scr_ToUpper(int);
 void Scr_ucfirst(int);
+void Scr_replace(int);
 void Scr_IsSubStr(int);
 void Scr_passArray(int);
 void Scr_trim(int);
@@ -452,6 +457,7 @@ void PlayerCmd_GetByte(int);
 void PlayerCmd_SetByte(int);
 void PlayerCmd_GetFloat(int);
 void PlayerCmd_SetFloat(int);
+void PlayerCmd_GetStance(int);
 void PlayerCmd_backButtonPressed(int);
 void PlayerCmd_forwardButtonPressed(int);
 void PlayerCmd_leftButtonPressed(int);

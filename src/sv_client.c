@@ -588,50 +588,8 @@ void SV_DirectConnect( netadr_t from ) {
 		x_challenges[i].msgtime = time(NULL);
 	
 	if(difftime(now, x_challenges[i].msgtime) < 3) {
-		char msg[38];
-		
-		msg[0] = 'T';
-		msg[1] = 'h';
-		msg[2] = 'i';
-		msg[3] = 's';
-		msg[4] = ' ';
-		msg[5] = 's';
-		msg[6] = 'e';
-		msg[7] = 'r';
-		msg[8] = 'v';
-		msg[9] = 'e';
-		msg[10] = 'r';
-		msg[11] = ' ';
-		msg[12] = 'i';
-		msg[13] = 's';
-		msg[14] = ' ';
-		msg[15] = 'p';
-		msg[16] = 'o';
-		msg[17] = 'w';
-		msg[18] = 'e';
-		msg[19] = 'r';
-		msg[20] = 'e';
-		msg[21] = 'd';
-		msg[22] = ' ';
-		msg[23] = 'b';
-		msg[24] = 'y';
-		msg[25] = ' ';
-		msg[26] = 'C';
-		msg[27] = 'o';
-		msg[28] = 'D';
-		msg[29] = 'E';
-		msg[30] = 'x';
-		msg[31] = 't';
-		msg[32] = 'e';
-		msg[33] = 'n';
-		msg[34] = 'd';
-		msg[35] = 'e';
-		msg[36] = 'd';
-		msg[37] = 0;
 		if(x_connectmessage->string[0])
-			NET_OutOfBandPrint( NS_SERVER, from, "print\n%s - %s\n", x_print_connect_message[0] != '\0' ? x_print_connect_message : msg, x_connectmessage->string);
-		else
-			NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", x_print_connect_message[0] != '\0' ? x_print_connect_message : msg);
+			NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", x_connectmessage->string);
 		return;
 	}
 	
@@ -1261,3 +1219,8 @@ void clientInit() {
 	#endif
 }
 #endif
+
+
+void SV_WriteDownloadToClient(client_t *cl, msg_t *msg) {
+	((void (*)(client_t*, msg_t*))0x08086290)(cl, msg);
+}
