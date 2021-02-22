@@ -1219,8 +1219,3 @@ void clientInit() {
 	#endif
 }
 #endif
-
-
-void SV_WriteDownloadToClient(client_t *cl, msg_t *msg) {
-	((void (*)(client_t*, msg_t*))0x08086290)(cl, msg);
-}

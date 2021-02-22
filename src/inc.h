@@ -292,7 +292,6 @@ extern x##_t x
 #define SV_BeginDownload xtn_SV_BeginDownload
 #define G_Spawn xtn_G_Spawn
 #define SV_Frame xtn_SV_Frame
-#define SV_WriteDownloadToClient xtn_SV_WriteDownloadToClient
 #define SVC_Info xtn_SVC_Info
 #define colorBlue xtn_colorBlue
 #define search_players xtn_search_players
