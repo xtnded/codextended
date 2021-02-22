@@ -167,6 +167,7 @@ extern x##_t x
 #define GScr_salt_password xtn_GScr_salt_password
 #define GScr_getconfigstring xtn_GScr_getconfigstring
 #define GScr_configstringindex xtn_GScr_configstringindex
+#define GScr_system xtn_GScr_system
 #define SV_Trace xtn_SV_Trace
 #define sv_maxRate xtn_sv_maxRate
 #define GScr_getSite xtn_GScr_getSite

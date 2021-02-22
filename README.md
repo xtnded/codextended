@@ -28,7 +28,7 @@ Your startup commandline for your Call of Duty dedicated server would look somet
 
 You should now have a `codextended.so` file in your `../bin` folder.
 
-* You can compile the debug version with `./build.sh -D`.
+* You can compile the debug version with `./build.sh -d`.
 
 ## MySQL / MariaDB
 

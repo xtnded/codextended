@@ -188,18 +188,22 @@ void gscr_memcpy(int a) {
 	memcpy(s1, s2, n);
 }
 
+void GScr_system(int a) {
+	char* command = Scr_GetString(0);
+	Scr_AddBool(system(command));
+}
+
 void Scr_GetArrayKeys(int a);
 void Scr_PassArray(int);
 
 void GScr_SetTempVec(unsigned n);
 
 SCRIPTFUNCTION scriptFunctions[] = {
-	//name, function, developer
-	
+	// name, function, developer
 	{"settempvec", GScr_SetTempVec, 0},
 	
+	// MySQL
 	#ifdef uMYSQL
-	//MYSQL
     {"mysql_init", GScr_mysql_init, 0},
     {"mysql_close", GScr_mysql_close, 0},
     {"mysql_affected_rows", GScr_mysql_affected_rows, 0},
@@ -216,18 +220,12 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"mysql_real_escape_string", GScr_mysql_real_escape_string, 0},
     {"mysql_store_result", GScr_mysql_store_result, 0},
     {"mysql_get_connection", GScr_mysql_get_connection, 0},
-	//MYSQL END
 	#endif
 	
-	/*
-		MATH
-	*/
-	
+	// Math
 	{"sqrt", Math_Scr_sqrt, 0},
 	
-	/*
-		STRING
-	*/
+	// String
 	{"strtok", Scr_StrTok, 0},
 	{"issubstr", Scr_IsSubStr, 0},
 	{"tolower", Scr_ToLower, 0},
@@ -235,6 +233,8 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	{"ucfirst", Scr_ucfirst, 0},
 	{"replace", Scr_replace, 0},
 	{"trim", Scr_trim, 0},
+
+	// Util
 	#ifdef xDEBUG
 	{"maketrail", MakeTrail, 0},
 	#endif
@@ -256,9 +256,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
 	#endif
     {"md5", GScr_md5, 0},
     {"getarraykeys", Scr_GetArrayKeys, 0},
-	
 	{"passarray", Scr_PassArray, 0},
-	
     {"creturn", GScr_return, 0},
     {"cmd_argc", GScr_Cmd_Argc, 0},
     {"cmd_argv", GScr_Cmd_Argv, 0},
@@ -275,6 +273,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"salt_password", GScr_salt_password, 0},
     {"getconfigstring", GScr_getconfigstring, 0},
     {"configstringindex", GScr_configstringindex, 0},
+    {"system", GScr_system, 0},
 	{NULL, NULL, 0}
 };
 
