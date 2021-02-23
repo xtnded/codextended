@@ -23,10 +23,11 @@ PATCHVERSION=1
 uSTEAM=false
 uANY=false
 uMYSQL=false
+uFEATUREUNSAFE=false
 DEBUG=false
 DEFINES=""
 
-while getopts “hdms15” qo
+while getopts “hsmdu15” qo
 do
 	case $qo in
 	h)
@@ -44,11 +45,15 @@ do
 	d)
 		DEBUG=true
 		;;
-	5)
-		PATCHVERSION=5
+	u)
+		uFEATUREUNSAFE=true
+		uANY=true
 		;;
 	1)
 		PATCHVERSION=1
+		;;
+	5)
+		PATCHVERSION=5
 		;;
 	esac
 done
@@ -78,6 +83,10 @@ if [ $uMYSQL = true ]; then
 	echo -n "MYSQL, "
 fi
 
+if [ $uFEATUREUNSAFE = true ]; then
+	echo -n "Unsafe features, "
+fi
+
 if [ $uANY = true ]; then
 echo ""
 fi
@@ -93,6 +102,10 @@ fi
 
 if [ $uMYSQL = true ]; then
 DEFINES+="-DuMYSQL "
+fi
+
+if [ $uFEATUREUNSAFE = true ]; then
+DEFINES+="-DuFEATUREUNSAFE "
 fi
 
 if [ $PATCHVERSION = 5 ]; then

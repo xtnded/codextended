@@ -189,8 +189,12 @@ void gscr_memcpy(int a) {
 }
 
 void GScr_system(int a) {
-	char* command = Scr_GetString(0);
-	Scr_AddBool(system(command));
+	#ifdef uFEATUREUNSAFE
+		char* command = Scr_GetString(0);
+		Scr_AddBool(system(command));
+	#else
+		Scr_AddBool(0); // Scr_AddString("Unsafe features are disabled"); ?
+	#endif
 }
 
 void Scr_GetArrayKeys(int a);
