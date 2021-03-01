@@ -4,8 +4,22 @@ Call of Duty Extended Server is a modification of the Call of Duty 1 Linux serve
 
 ## Features
 
-- to be added
-
+- q3msgboom fix
+- q3dirtrav fix
+- setting players contents
+- cracked server, means everyone can join your server
+- patched some unpure things
+GSC Commands called on players:
+- getip()
+- getStance()
+- renamebot()
+- kickbot()
+- setmovespeedscale()
+- setmaxspeed()
+- -ispure()
+- isbot()
+- dropclient()
+ AND MORE
 ## Usage
 
 Your startup commandline for your Call of Duty dedicated server would look something like this.<br>
