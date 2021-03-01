@@ -661,7 +661,7 @@ void SV_DirectConnect( netadr_t from ) {
 		cl = getclient(i);
 		if(cl->state == CS_FREE)
 			continue;
-		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress) && cl->netchan.qport == qport) {
+		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress)) {
 			cprintf(PRINT_UNDERLINE | PRINT_DEBUG, "Client (%s) is reconnecting\n", NET_AdrToString(from));
 			if(cl->state > 1)
 				SV_FreeClient(cl);
