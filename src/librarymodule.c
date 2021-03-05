@@ -39,10 +39,7 @@ void G_SetPlayerContents(int a1) {
 }
 
 int StuckInPlayer(int a1) {
-	if(x_stuck->integer == 1)
-	    return true;
-    else
-		return false;
+   return false;
 }
 
 gentity_t* mySpawnPlayerClone();
