@@ -276,6 +276,7 @@ extern x##_t x
 #define scriptMethods xtn_scriptMethods
 #define GScr_LoadGametypeScript xtn_GScr_LoadGametypeScript
 #define x_contents xtn_x_contents
+#define x_stuck xtn_x_stuck
 #define Scr_AllocString xtn_Scr_AllocString
 #define SV_StringUsage_f xtn_SV_StringUsage_f
 #define PlayerCmd_backButtonPressed xtn_PlayerCmd_backButtonPressed

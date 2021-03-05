@@ -204,6 +204,7 @@ extern cvar_t *sv_disableClientConsole;
 extern cvar_t *x_globalbans;
 extern cvar_t *x_bannedmessage;
 extern cvar_t *x_contents;
+extern cvar_t *x_stuck;
 extern cvar_t *x_deadchat;
 extern cvar_t *x_authorize;
 extern cvar_t *x_spectator_noclip;

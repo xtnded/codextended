@@ -170,8 +170,9 @@ void SV_Init( void ) {
 	#endif
 	
 	x_authorize = Cvar_Get("x_authorize", "0", 0);
-	
+	/*Both needed for deathrun server to prevent players from blocking each other*/
 	x_contents = Cvar_Get("x_contents", "-1", 0);
+	x_stuck = Cvar_Get("x_stuck", "0", 0); 
 	
 	Cvar_Get("codextended", va("CoDExtended v%d", CURRENTBUILD), CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
 	//Cvar_Get("codextended", "This server is powered by CoDExtended.", CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);

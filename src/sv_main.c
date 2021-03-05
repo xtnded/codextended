@@ -67,6 +67,7 @@ cvar_t *sv_disableClientConsole;
 cvar_t *x_globalbans;
 cvar_t *x_bannedmessage;
 cvar_t *x_contents;
+cvar_t *x_stuck;
 cvar_t *x_spectator_noclip;
 cvar_t *x_authorize;
 cvar_t *x_deadchat;
