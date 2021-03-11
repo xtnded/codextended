@@ -656,7 +656,7 @@ void SV_DirectConnect( netadr_t from ) {
 	
 	newcl = &temp;
 	memset(newcl, 0, sizeof(client_t));
-	
+	/* Removed method that is recognizing if client did reconnect due to problems with it
 	for(i = 0, cl = getclient(0); i < sv_maxclients->integer; i++) {
 		cl = getclient(i);
 		if(cl->state == CS_FREE)
@@ -670,7 +670,7 @@ void SV_DirectConnect( netadr_t from ) {
 			goto gotnewcl;
 		}
 	}
-	
+	*/
 	int startIndex;
 	
 	char *password = Info_ValueForKey( userinfo, "password" );
