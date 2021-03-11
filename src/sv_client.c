@@ -510,7 +510,7 @@ void SV_NextDownload_f(client_t *cl) {
 	#endif
 }
 
-void SV_DirectConnect( netadr_t from ) {
+void SV_DirectConnect( netadr_t from ) { //UGH something is doing illegible server message if 1 same player is connected and 2nd same player is 999 ping
 	void (*call)(netadr_t);
 	#if CODPATCH == 1
 	*(int*)&call = 0x8085498;
@@ -656,12 +656,12 @@ void SV_DirectConnect( netadr_t from ) {
 	
 	newcl = &temp;
 	memset(newcl, 0, sizeof(client_t));
-	/* Removed method that is recognizing if client did reconnect due to problems with it
+	
 	for(i = 0, cl = getclient(0); i < sv_maxclients->integer; i++) {
 		cl = getclient(i);
 		if(cl->state == CS_FREE)
 			continue;
-		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress)) {
+		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress) || from.port == cl->netchan.remoteAddress.port ) {
 			cprintf(PRINT_UNDERLINE | PRINT_DEBUG, "Client (%s) is reconnecting\n", NET_AdrToString(from));
 			if(cl->state > 1)
 				SV_FreeClient(cl);
@@ -670,7 +670,6 @@ void SV_DirectConnect( netadr_t from ) {
 			goto gotnewcl;
 		}
 	}
-	*/
 	int startIndex;
 	
 	char *password = Info_ValueForKey( userinfo, "password" );
