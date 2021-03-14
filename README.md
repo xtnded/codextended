@@ -36,6 +36,11 @@ Your startup commandline for your Call of Duty dedicated server would look somet
 
 ## Building
 
+**Note: ** Your own build will not be the same as the officialy released patch! This will allow people with custom versions of client Extended to join your server, which may lead to an increased number of cheaters.
+
+If you want to add new features, rather create a pull request so we add them in the official release.
+
+
 `$ git clone https://github.com/riicchhaarrd/codextended`<br>
 `$ cd codextended/src`<br>
 `$ ./build.sh`<br>
