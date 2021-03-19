@@ -325,6 +325,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"setvelocity", PlayerCmd_SetVelocity, 0},
 	{"getvelocity", PlayerCmd_GetVelocity, 0},
 	{"getplayerangles", PlayerCmd_getPlayerAngles, 0},
+	{"getspectatorclient", PlayerCmd_getSpectatorClient, 0},
 	{"getip", PlayerCmd_getip, 0},
 	{"ispure", PlayerCmd_ispure, 0},
 	{"sendconnectionlesspacket", PlayerCmd_SendConnectionlessPacket, 0},

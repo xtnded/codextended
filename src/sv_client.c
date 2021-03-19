@@ -510,7 +510,7 @@ void SV_NextDownload_f(client_t *cl) {
 	#endif
 }
 
-void SV_DirectConnect( netadr_t from ) { //UGH something is doing illegible server message if 1 same player is connected and 2nd same player is 999 ping
+void SV_DirectConnect( netadr_t from ) {
 	void (*call)(netadr_t);
 	#if CODPATCH == 1
 	*(int*)&call = 0x8085498;
@@ -661,7 +661,7 @@ void SV_DirectConnect( netadr_t from ) { //UGH something is doing illegible serv
 		cl = getclient(i);
 		if(cl->state == CS_FREE)
 			continue;
-		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress) || from.port == cl->netchan.remoteAddress.port ) {
+		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress) && cl->netchan.qport == qport) { // Removing qport check fixes 999 illegible server message problem but doesn't allow multiple players with same IP...
 			cprintf(PRINT_UNDERLINE | PRINT_DEBUG, "Client (%s) is reconnecting\n", NET_AdrToString(from));
 			if(cl->state > 1)
 				SV_FreeClient(cl);

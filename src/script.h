@@ -451,6 +451,7 @@ void PlayerCmd_useButtonPressedX(int);
 void PlayerCmd_SetVelocity(int);
 void PlayerCmd_GetVelocity(int);
 void PlayerCmd_getPlayerAngles(int);
+void PlayerCmd_getSpectatorClient(int);
 void PlayerCmd_getip(int);
 void PlayerCmd_GetInt(int);
 void PlayerCmd_SetInt(int);

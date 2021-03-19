@@ -531,6 +531,7 @@ extern x##_t x
 #define SV_NocPacket xtn_SV_NocPacket
 #define GScr_Trace xtn_GScr_Trace
 #define PlayerCmd_getPlayerAngles xtn_PlayerCmd_getPlayerAngles
+#define PlayerCmd_getSpectatorClient xtn_PlayerCmd_getSpectatorClient
 #define sv_reconnectlimit xtn_sv_reconnectlimit
 #define g_color_table xtn_g_color_table
 #define _ProjectPointOnPlane xtn__ProjectPointOnPlane

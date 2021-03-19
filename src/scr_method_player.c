@@ -423,3 +423,13 @@ void PlayerCmd_getPlayerAngles(int self) {
 	VectorCopy((float*)((int)ent->client + POFF_ANGLES), vec);
 	Scr_AddVector(vec);
 }
+
+void PlayerCmd_getSpectatorClient(int self) {
+    gentity_t *ent = &g_entities[self];
+
+	if(ent->client->spectatorClient == -1) {
+		Scr_AddUndefined();
+	} else {
+		Scr_AddEntity(&g_entities[ent->client->spectatorClient]);
+	}
+}
