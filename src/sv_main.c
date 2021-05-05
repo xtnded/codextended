@@ -192,6 +192,17 @@ void SV_PacketEvent( netadr_t from, msg_t *msg ) {
 }
 
 void SVC_Info( netadr_t* from ) {
+	// Prevent using getinfo as an amplifier
+	if(SVC_RateLimitAddress(*from, 10, 1000)) {
+		Com_DPrintf("SVC_Info: rate limit from %s exceeded, dropping request\n", NET_AdrToString(*from));
+		return 0;
+	}
+	// Allow getinfo to be DoSed relatively easily, but prevent excess outbound bandwidth usage when being flooded inbound
+	if(SVC_RateLimit(&outboundLeakyBucket, 10, 100)) {
+		Com_DPrintf("SVC_Info: rate limit exceeded, dropping request\n");
+		return 0;
+	}
+
 	int i, count;
 	char    *gamedir;
 	char infostring[MAX_INFO_STRING];
@@ -250,6 +261,17 @@ void SVC_Info( netadr_t* from ) {
 extern challenge_t *challenges;
 
 void SVC_Status( netadr_t* from ) {
+	// Prevent using getstatus as an amplifier
+	if(SVC_RateLimitAddress(*from, 10, 1000)) {
+		Com_DPrintf("SVC_Status: rate limit from %s exceeded, dropping request\n", NET_AdrToString(*from));
+		return 0;
+	}
+	// Allow getstatus to be DoSed relatively easily, but prevent excess outbound bandwidth usage when being flooded inbound
+	if(SVC_RateLimit(&outboundLeakyBucket, 10, 100)) {
+		Com_DPrintf("SVC_Status: rate limit exceeded, dropping request\n");
+		return 0;
+	}
+
 	char player[1024];
 	char status[MAX_MSGLEN];
 	int i;
@@ -437,6 +459,20 @@ void SVC_Chandelier(netadr_t *from) {
 }
 
 void SVC_RemoteCommand(netadr_t *from, msg_t *msg) {
+	// Prevent using rcon as an amplifier and make dictionary attacks impractical
+	if(SVC_RateLimitAddress(*from, 10, 1000)) {
+		Com_DPrintf("SVC_RemoteCommand: rate limit from %s exceeded, dropping request\n", NET_AdrToString(*from));
+		return 0;
+	}
+	// Make DoS via rcon impractical
+	if(!strlen(rconPassword->string) || strcmp(Cmd_Argv(1), rconPassword->string) != 0) {
+		static leakyBucket_t bucket;
+		if(SVC_RateLimit(&bucket, 10, 1000)) {
+			Com_DPrintf("SVC_RemoteCommand: rate limit exceeded, dropping request\n");
+			return 0;
+		}
+	}
+
 	static time_t lasttime = 0;
 	time_t ttime;
 	
@@ -554,4 +590,123 @@ void SV_Frame(int msec) {
 #ifdef STEAM_SUPPORT
 	CSteamServer_RunFrame();
 #endif	
+}
+
+// RATELIMITER (experimental)
+unsigned long sys_timeBase = 0;
+int Sys_Milliseconds(void) {
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+
+	if (!sys_timeBase)
+	{
+		sys_timeBase = tp.tv_sec;
+		return tp.tv_usec / 1000;
+	}
+
+	curtime = (tp.tv_sec - sys_timeBase) * 1000 + tp.tv_usec / 1000;
+	return curtime;
+}
+
+static long SVC_HashForAddress(netadr_t address) {
+	unsigned char *ip = address.ip;
+	size_t size = 4;
+	int i;
+	long hash = 0;
+
+	for (i = 0; i < size; i++) {
+		hash += (long)(ip[i]) * (i + 119);
+	}
+
+	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+	hash &= (MAX_HASHES - 1);
+
+	return hash;
+}
+
+static leakyBucket_t *SVC_BucketForAddress(netadr_t address, int burst, int period) {
+	leakyBucket_t *bucket = NULL;
+	int i;
+	long hash = SVC_HashForAddress(address);
+	int now = Sys_Milliseconds();
+
+	for(bucket = bucketHashes[hash]; bucket; bucket = bucket->next) {
+		if(memcmp(bucket->_4, address.ip, 4) == 0) {
+			return bucket;
+		}
+	}
+
+	for(i = 0; i < MAX_BUCKETS; i++) {
+		int interval;
+
+		bucket = &buckets[i];
+		interval = now - bucket->lastTime;
+
+		// Reclaim expired buckets
+		if(bucket->lastTime > 0 && (interval > (burst * period) || interval < 0)) {
+			if(bucket->prev != NULL) {
+				bucket->prev->next = bucket->next;
+			} else {
+				bucketHashes[bucket->hash] = bucket->next;
+			}
+
+			if(bucket->next != NULL) {
+				bucket->next->prev = bucket->prev;
+			}
+
+			memset(bucket, 0, sizeof(leakyBucket_t));
+		}
+
+		if(bucket->type == 0) {
+			bucket->type = address.type;
+			memcpy(bucket->_4, address.ip, 4);
+
+			bucket->lastTime = now;
+			bucket->burst = 0;
+			bucket->hash = hash;
+
+			// Add to the head of the relevant hash chain
+			bucket->next = bucketHashes[hash];
+			if(bucketHashes[hash] != NULL) {
+				bucketHashes[hash]->prev = bucket;
+			}
+
+			bucket->prev = NULL;
+			bucketHashes[hash] = bucket;
+
+			return bucket;
+		}
+	}
+
+	// Couldn't allocate a bucket for this address
+	return NULL;
+}
+
+bool SVC_RateLimit(leakyBucket_t *bucket, int burst, int period) {
+	if(bucket != NULL) {
+		int now = Sys_Milliseconds();
+		int interval = now - bucket->lastTime;
+		int expired = interval / period;
+		int expiredRemainder = interval % period;
+
+		if(expired > bucket->burst || interval < 0) {
+			bucket->burst = 0;
+			bucket->lastTime = now;
+		} else {
+			bucket->burst -= expired;
+			bucket->lastTime = now - expiredRemainder;
+		}
+
+		if(bucket->burst < burst) {
+			bucket->burst++;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool SVC_RateLimitAddress(netadr_t from, int burst, int period) {
+	leakyBucket_t *bucket = SVC_BucketForAddress(from, burst, period);
+	return SVC_RateLimit(bucket, burst, period);
 }

@@ -25,6 +25,7 @@
 
 #include "shared.h"
 #include "script.h"
+#include <sys/time.h>
 
 #if CODPATCH == 1
 #define svsclients_ptr 0x83B67AC
@@ -437,4 +438,30 @@ extern SV_Trace_t SV_Trace;
 extern SV_SendServerCommand_t SV_SendServerCommand;
 extern getuserinfo_t getuserinfo;
 extern setuserinfo_t setuserinfo;
+
+// RATELIMITER (experimental)
+unsigned long sys_timeBase;
+int curtime;
+int Sys_Milliseconds(void);
+typedef struct leakyBucket_s leakyBucket_t;
+struct leakyBucket_s
+{
+	netadrtype_t type;
+	unsigned char _4[4];
+	int lastTime;
+	signed char burst;
+	long hash;
+
+	leakyBucket_t *prev, *next;
+};
+#define MAX_BUCKETS 16384
+#define MAX_HASHES 1024
+static leakyBucket_t buckets[MAX_BUCKETS];
+static leakyBucket_t *bucketHashes[MAX_HASHES];
+leakyBucket_t outboundLeakyBucket;
+static long SVC_HashForAddress(netadr_t address);
+static leakyBucket_t *SVC_BucketForAddress(netadr_t address, int burst, int period);
+bool SVC_RateLimit(leakyBucket_t *bucket, int burst, int period);
+bool SVC_RateLimitAddress(netadr_t from, int burst, int period);
+
 #endif // SERVER_H
