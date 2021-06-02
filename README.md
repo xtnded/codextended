@@ -31,6 +31,7 @@ Your startup commandline for your Call of Duty dedicated server would look somet
 `$ sudo apt-get install nasm`<br>
 `$ sudo apt-get install libz-dev:i386`<br>
 `$ sudo apt-get install libssl-dev:i386`<br>
+`$ sudo apt-get install gcc-multilib`<br>
 
 * If you're on x86_64 then you would add :i386 after the library package names
 
