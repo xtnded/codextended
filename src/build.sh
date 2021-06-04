@@ -154,6 +154,7 @@ $compiler $params -c g_utils.c -o obj/g_utils.o
 $compiler $params -c g_spawn.c -o obj/g_spawn.o
 $compiler $params -c g_active.c -o obj/g_active.o
 $compiler $params -c q_math.c -o obj/q_math.o
+$compiler $params -c files.c -o obj/files.o
 echo "[SERVER]"
 nasm -f elf sv_snapshot.asm -o obj/sv_snapshot_asm.o
 $compiler $params -c sv_snapshot.c -o obj/sv_snapshot.o

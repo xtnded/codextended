@@ -379,6 +379,11 @@ void CoDExtended() {
 	//__call(0x80876B1, (int)SV_SendClientGameState);
 	//__call(0x8087447, (int)SV_SendClientGameState);
 	//crashes
+
+	const char *__cdecl FS_ReferencedPakChecksums();
+	const char *__cdecl FS_ReferencedPakNames();
+	__jmp(0x80717A4, (int)FS_ReferencedPakChecksums);
+	__jmp(0x80716CC, (int)FS_ReferencedPakNames);
 	
 	/* sv_snapshot.asm */
 	unsigned TestGetAddr();
