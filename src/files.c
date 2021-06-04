@@ -54,11 +54,11 @@ const char *__cdecl FS_ReferencedPakChecksums() {
         if(search->pak) {
             if(FS_IsServerFile(search->pak->pakBasename))
                 continue;
-            
+
             if(*info)
                 sprintf(info, "%s%s", info, " " );
 
-            if(*(int*)(search->pak + 784) || strcasecmp(search->pak->pakGamename, "main")) {
+            if(FS_IsPakFile(search->pak->pakBasename) || strcasecmp(search->pak->pakGamename, "main") || *(int*)(search->pak + 784)) {
                 sprintf(info, "%s%i", info, search->pak->checksum);
             }
         }
@@ -87,7 +87,7 @@ const char *__cdecl FS_ReferencedPakNames() {
             if(*info)
                 sprintf(info, "%s%s", info, " " );
 
-            if(*(int*)(search->pak + 784) || strcasecmp(search->pak->pakGamename, "main")) {
+            if(FS_IsPakFile(search->pak->pakBasename) || strcasecmp(search->pak->pakGamename, "main") || *(int*)(search->pak + 784)) {
                 sprintf(info, "%s%s", info, search->pak->pakGamename );
                 sprintf(info, "%s%s", info, "/" );
                 sprintf(info, "%s%s", info, search->pak->pakBasename );
