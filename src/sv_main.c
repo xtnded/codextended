@@ -707,6 +707,24 @@ bool SVC_RateLimit(leakyBucket_t *bucket, int burst, int period) {
 }
 
 bool SVC_RateLimitAddress(netadr_t from, int burst, int period) {
+	// If you want to allow certain IPs to bypass ratelimiting.
+	
+	/*
+	const char *ignoredIPs[] = {
+		"127.0.0.1",
+		"69.69.69.69",
+		NULL
+	};
+	int i;
+	for(i = 0; ignoredIPs[i] != NULL; i++) {
+		netadr_t adr;
+		NET_StringToAdr(ignoredIPs[i], &adr);
+		
+		if(NET_CompareBaseAdr(from, adr))
+			return false;
+	}
+	*/
+
 	leakyBucket_t *bucket = SVC_BucketForAddress(from, burst, period);
 	return SVC_RateLimit(bucket, burst, period);
 }
