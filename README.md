@@ -9,6 +9,8 @@ Call of Duty Extended Server is a modification of the Call of Duty 1 Linux serve
 - setting players contents
 - cracked server, means everyone can join your server
 - patched some unpure things
+- rate limiter
+- ignoring server side files like on 1.5
 ## GSC Commands called on players:
 - getip()
 - getStance()
