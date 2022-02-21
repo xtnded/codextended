@@ -486,7 +486,7 @@ void PlayerCmd_HasPerk(int);
 void PlayerCmd_SetMaxSpeed(int);
 void PlayerCmd_GetPing(int);
 void PlayerCmd_SetMoveSpeedScale(int);
-
+void PlayerCmd_FreezeControls(int);
 /*
 =============
 ENTITY METHODS

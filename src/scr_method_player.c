@@ -433,3 +433,20 @@ void PlayerCmd_getSpectatorClient(int self) {
 		Scr_AddEntity(&g_entities[ent->client->spectatorClient]);
 	}
 }
+
+void PlayerCmd_FreezeControls(int self) {
+    gentity_t *e = &g_entities[self];
+    qboolean freeze;
+    
+    if(!e->client) {
+        Scr_Error("entity is not a player");
+        return;
+    }
+
+    freeze = Scr_GetBool(0);
+
+    if (freeze)
+        e->client->ps.pm_flags |= 0x4000;
+    else
+        e->client->ps.pm_flags &= ~0x4000;
+}

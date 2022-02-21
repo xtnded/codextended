@@ -362,6 +362,7 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"getping", PlayerCmd_GetPing, 0},
 	{"setmaxspeed", PlayerCmd_SetMaxSpeed, 0},
 	{"setmovespeedscale", PlayerCmd_SetMoveSpeedScale, 0},
+	{"freeze_controls", PlayerCmd_FreezeControls, 0},
 	{NULL, NULL, 0}
 };
 

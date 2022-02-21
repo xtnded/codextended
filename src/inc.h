@@ -545,3 +545,4 @@ extern x##_t x
 #define sv_master xtn_sv_master
 #define _Q_rand xtn__Q_rand
 #define Cvar_Set xtn_Cvar_Set
+#define PlayerCmd_FreezeControls xtn_PlayerCmd_FreezeControls
