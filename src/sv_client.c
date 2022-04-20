@@ -661,7 +661,7 @@ void SV_DirectConnect( netadr_t from ) {
 		cl = getclient(i);
 		if(cl->state == CS_FREE)
 			continue;
-		if(NET_CompareBaseAdr(from, cl->netchan.remoteAddress) && cl->netchan.qport == qport) { // Removing qport check fixes 999 illegible server message problem but doesn't allow multiple players with same IP...
+		if ( NET_CompareBaseAdr( from, cl->netchan.remoteAddress ) && ( cl->netchan.qport == qport || from.port == cl->netchan.remoteAddress.port ) ) {
 			cprintf(PRINT_UNDERLINE | PRINT_DEBUG, "Client (%s) is reconnecting\n", NET_AdrToString(from));
 			if(cl->state > 1)
 				SV_FreeClient(cl);
