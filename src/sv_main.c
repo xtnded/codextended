@@ -215,7 +215,7 @@ void SVC_Info( netadr_t* from ) {
 	g_password = Cvar_VariableString("g_password");
 	// don't count privateclients
 	count = 0;
-	for ( i = sv_privateClients->integer ; i < sv_maxclients->integer ; i++ ) {
+	for ( i = 0; i < sv_maxclients->integer ; i++ ) {
 		if ( getclient(i)->state >= CS_CONNECTED ) {
 			count++;
 		}
