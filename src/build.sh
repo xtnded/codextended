@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cc="gcc -include inc.h -I./include"
+cc="gcc -fcommon -include inc.h -I./include"
 #LINK_LIBS="$(/usr/bin/curl-config --static-libs --cflags)";
 LINK_LIBS=""
 STEAM_INCLUDE=""
