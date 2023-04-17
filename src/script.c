@@ -197,6 +197,10 @@ void GScr_system(int a) {
 	#endif
 }
 
+void GScr_getUnixTime() {
+	Scr_AddInt(time(NULL));
+}
+
 void Scr_GetArrayKeys(int a);
 void Scr_PassArray(int);
 
@@ -278,6 +282,7 @@ SCRIPTFUNCTION scriptFunctions[] = {
     {"getconfigstring", GScr_getconfigstring, 0},
     {"configstringindex", GScr_configstringindex, 0},
     {"system", GScr_system, 0},
+	{"getunixtime", GScr_getUnixTime, 0},
 	{NULL, NULL, 0}
 };
 
