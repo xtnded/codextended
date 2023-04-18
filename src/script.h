@@ -368,6 +368,7 @@ void GScr_salt_password(int a1);
 void GScr_getconfigstring(int);
 void GScr_configstringindex(int);
 void GScr_system(int);
+void GScr_getUnixTime();
 void GScr_strpos(int);
 
 void GScr_SpawnAnimEnt(int);
