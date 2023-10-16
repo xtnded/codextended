@@ -368,8 +368,11 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"setmaxspeed", PlayerCmd_SetMaxSpeed, 0},
 	{"setmovespeedscale", PlayerCmd_SetMoveSpeedScale, 0},
 	{"freeze_controls", PlayerCmd_FreezeControls, 0},
+<<<<<<< HEAD
 	{"enableweapon", PlayerCmd_EnableWeapon, 0},
 	{"disableweapon", PlayerCmd_DisableWeapon, 0},
+=======
+>>>>>>> parent of 6241665 (A bit of formatting code, removal of the duplicate GScr_getUnixTime function)
 	{NULL, NULL, 0}
 };
 
