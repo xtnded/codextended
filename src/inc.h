@@ -1,9 +1,9 @@
 #define DECLARE_F(x, addr) \
-    x##_t x = (x##_t)(addr)
+x##_t x = (x##_t)(addr)
 
-#define DEFINE_F(return_type, x, ...)          \
-    typedef return_type (*x##_t)(__VA_ARGS__); \
-    extern x##_t x
+#define DEFINE_F(return_type, x, ...) \
+typedef return_type (*x##_t)(__VA_ARGS__); \
+extern x##_t x
 
 #define VectorLength xtn_VectorLength
 #define ProjectPointOnPlane xtn_ProjectPointOnPlane
@@ -360,6 +360,7 @@
 #define callbackRemoteCommand xtn_callbackRemoteCommand
 #define callbackFireGrenade xtn_callbackFireGrenade
 #define configstrings xtn_configstrings
+#define GScr_seconds xtn_GScr_seconds
 #define Scr_FreeThread xtn_Scr_FreeThread
 #define SV_SendServerCommand xtn_SV_SendServerCommand
 #define Scr_LoadScript xtn_Scr_LoadScript
@@ -546,3 +547,5 @@
 #define _Q_rand xtn__Q_rand
 #define Cvar_Set xtn_Cvar_Set
 #define PlayerCmd_FreezeControls xtn_PlayerCmd_FreezeControls
+#define PlayerCmd_EnableWeapon xtn_PlayerCmd_EnableWeapon
+#define PlayerCmd_DisableWeapon xtn_PlayerCmd_DisableWeapon

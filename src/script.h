@@ -1,18 +1,18 @@
 /*
 	This file is part of CoDExtended.
 
-	CoDExtended is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+    CoDExtended is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-	CoDExtended is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    CoDExtended is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with CoDExtended.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef SCRIPT_H
@@ -23,8 +23,7 @@
 #include "bg_public.h"
 #include <math.h>
 
-typedef struct
-{
+typedef struct {
 	int map_main;
 	int idk;
 	int gametype_main;
@@ -37,8 +36,7 @@ typedef struct
 
 extern game_script_data *g_scr_data;
 
-typedef struct
-{
+typedef struct {
 	short active;
 	short air_strike;
 	short allies;
@@ -169,12 +167,11 @@ typedef struct
 	short manual_change;
 } scr_const_t;
 
-typedef struct
-{
+typedef struct {
 	short texturename;
 	short contents;
-
-	// assumingly from perk > MAX_PERKS
+	
+	//assumingly from perk > MAX_PERKS
 	short perks[MAX_PERKS];
 } xscr_const_t;
 
@@ -185,46 +182,43 @@ extern scr_const_t *scr_const;
 	A pointer type their variable type is always 7 [object]
 */
 
-typedef enum
-{
-	VT_UNDEFINED,		 // 0
-	VT_STRING,			 // 1
-	VT_LOCALIZED_STRING, // 2
-	VT_VECTOR,			 // 3
-	VT_FLOAT,			 // 4
-	VT_INT,				 // 5
-	VT_CODEPOS,			 // 6
-	VT_OBJECT,			 // 7
-	VT_KEY_VALUE,		 // 8
-	VT_FUNCTION,		 // 9
-	VT_STACK,			 // 10
-	VT_ANIMATION,		 // 11
-	VT_THREAD,			 // 12
-	VT_ENTITY,			 // 13
-	VT_STRUCT,			 // 14
-	VT_ARRAY,			 // 16
-	VT_DEAD_THREAD,		 // 15
-	VT_DEAD_ENTITY,		 // 17
-	VT_DEAD_OBJECT		 // 18
+typedef enum {
+	VT_UNDEFINED, //0
+	VT_STRING, //1
+	VT_LOCALIZED_STRING, //2
+	VT_VECTOR, //3
+	VT_FLOAT, //4
+	VT_INT, //5
+	VT_CODEPOS, //6
+	VT_OBJECT, //7
+	VT_KEY_VALUE, //8
+	VT_FUNCTION, //9
+	VT_STACK, //10
+	VT_ANIMATION, //11
+	VT_THREAD, //12
+	VT_ENTITY, //13
+	VT_STRUCT, //14
+	VT_ARRAY, //16
+	VT_DEAD_THREAD, //15
+	VT_DEAD_ENTITY, //17
+	VT_DEAD_OBJECT //18
 } script_variable_type;
 
-typedef void(__cdecl *SCRIPTFUNCTIONCALL)(int);
+typedef void (__cdecl *SCRIPTFUNCTIONCALL)(int);
 
-typedef struct
-{
-	const char *name;
+typedef struct {
+	const char* name;
 	SCRIPTFUNCTIONCALL call;
 	int developer;
 } SCRIPTFUNCTION;
 
-typedef SCRIPTFUNCTIONCALL (*Scr_GetFunction_t)(const char **, int *);
-typedef SCRIPTFUNCTIONCALL (*Scr_GetMethod_t)(const char **, int *);
+typedef SCRIPTFUNCTIONCALL (*Scr_GetFunction_t)(const char**, int*);
+typedef SCRIPTFUNCTIONCALL (*Scr_GetMethod_t)(const char**, int*);
 
-typedef struct
-{
+typedef struct {
 	char *var;
-	int structure_offset;	   // Some offset in the state for getting generic fields.
-	int structure_offset_type; // script type e.g "string", "int"
+	int structure_offset; //Some offset in the state for getting generic fields.
+	int structure_offset_type; //script type e.g "string", "int"
 	void (*set)(int);
 	void (*get)(int);
 	/*
@@ -232,32 +226,31 @@ typedef struct
 	*/
 } scr_memberfield;
 
-typedef struct
-{
+typedef struct {
 	char *name;
 	int offset;
 	int type;
-	void (*set)(gentity_t *);
+	void (*set)(gentity_t*);
 } scr_entityfield_t;
 
 /*
 	Works just like builtin functions only difference is the assignment or getting part.
-	e.g instead of
+	e.g instead of 
 	<obj> setorigin( org );
 	<obj>.origin = org;
 	IF both cases were linked to the same function they'd do the same thing.
 	this applies for
 	org = <obj> getorigin();
 	org = <obj>.origin;
-
+	
 	- Richard
 */
 
 extern Scr_GetFunction_t Scr_GetFunction;
 extern Scr_GetMethod_t Scr_GetMethod;
 
-SCRIPTFUNCTIONCALL Scr_GetCustomFunction(const char **, int *);
-SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char **, int *);
+SCRIPTFUNCTIONCALL Scr_GetCustomFunction(const char**, int*);
+SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char**, int*);
 
 typedef int (*Scr_GetNumParam_t)();
 typedef int (*Scr_GetPointerType_t)(int);
@@ -266,34 +259,34 @@ typedef int (*Scr_GetType_t)(int);
 typedef void (*Scr_MakeArray_t)();
 typedef void (*Scr_AddArray_t)();
 typedef void (*Scr_AddArrayStringIndexed_t)(short);
-typedef void (*Scr_Error_t)(const char *);
+typedef void (*Scr_Error_t)(const char*);
 
 typedef int (*Scr_AddFloat_t)(float);
 typedef int (*Scr_AddInt_t)(int);
 typedef int (*Scr_AddBool_t)(bool);
-typedef int (*Scr_AddString_t)(char *);
-typedef int (*Scr_AddIString_t)(char *);
+typedef int (*Scr_AddString_t)(char*);
+typedef int (*Scr_AddIString_t)(char*);
 typedef int (*Scr_AddVector_t)(vec3_t);
 typedef int (*Scr_AddUndefined_t)();
-typedef void (*Scr_AddEntity_t)(int *);
+typedef void (*Scr_AddEntity_t)(int*);
 
 typedef bool (*Scr_GetBool_t)(int);
 typedef int (*Scr_GetInt_t)(int);
-typedef void (*Scr_GetAnim_t)(int, int, int);
+typedef void (*Scr_GetAnim_t)(int,int,int);
 typedef int (*Scr_GetAnimsIndex_t)(int);
 typedef float (*Scr_GetFloat_t)(int);
 typedef int (*Scr_GetVector_t)(int, vec3_t);
-typedef char *(*Scr_GetString_t)(int);
+typedef char* (*Scr_GetString_t)(int);
 typedef int (*Scr_GetFunc_t)(int);
-typedef short (*Scr_GetOffset_t)(unsigned, const char *);
+typedef short (*Scr_GetOffset_t)(unsigned, const char*);
 typedef gentity_t *(*Scr_GetEntity_t)(int);
 extern Scr_GetEntity_t Scr_GetEntity;
 
 typedef int (*Scr_GetConstString_t)(int);
-typedef void (*Scr_SetString_t)(int *, unsigned short);
-typedef short (*Scr_AllocString_t)(const char *, int);
+typedef void (*Scr_SetString_t)(int*, unsigned short);
+typedef short (*Scr_AllocString_t)(const char*, int);
 
-typedef int (*oBG_AnimationIndexForString_t)(const char *);
+typedef int (*oBG_AnimationIndexForString_t)(const char*);
 extern oBG_AnimationIndexForString_t oBG_AnimationIndexForString;
 
 typedef qboolean (*CallSpawnEntity_t)(int);
@@ -331,14 +324,14 @@ extern Scr_GetString_t Scr_GetString;
 extern Scr_GetFunc_t Scr_GetFunc;
 extern Scr_GetOffset_t Scr_GetOffset;
 
-typedef int (*Scr_LoadScr_t)(const char *);
-typedef int (*Scr_GetFunctionHandle_t)(const char *, const char *);
+typedef int (*Scr_LoadScr_t)(const char*);
+typedef int (*Scr_GetFunctionHandle_t)(const char*, const char*);
 typedef unsigned short (*Scr_ExecThread_t)(int, int);
 typedef unsigned short (*Scr_ExecEntThread_t)(int, int, int, int);
 typedef int (*Scr_FreeThread_t)(unsigned short);
 
-typedef char *(*SL_ConvertToString_t)(unsigned int);
-typedef unsigned short (*SL_GetString_t)(const char *, int);
+typedef char* (*SL_ConvertToString_t)(unsigned int);
+typedef unsigned short (*SL_GetString_t)(const char*, int);
 
 extern int callbackTest;
 extern int callbackPlayerCommand;
@@ -354,7 +347,7 @@ extern SL_ConvertToString_t SL_ConvertToString;
 extern SL_GetString_t SL_GetString;
 
 void scriptInitializing();
-char *Scr_GetVariableType(int type);
+char* Scr_GetVariableType(int type);
 
 /*
 =============
@@ -495,6 +488,8 @@ void PlayerCmd_SetMaxSpeed(int);
 void PlayerCmd_GetPing(int);
 void PlayerCmd_SetMoveSpeedScale(int);
 void PlayerCmd_FreezeControls(int);
+void PlayerCmd_DisableWeapon(int);
+void PlayerCmd_EnableWeapon(int);
 /*
 =============
 ENTITY METHODS
@@ -547,6 +542,6 @@ void GScr_mysql_real_connect(int);
 void GScr_mysql_real_escape_string(int);
 void GScr_mysql_store_result(int);
 
-#endif // uMYSQL
+#endif //uMYSQL
 
 #endif // SCRIPT_H

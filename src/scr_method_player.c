@@ -450,3 +450,23 @@ void PlayerCmd_FreezeControls(int self) {
     else
         e->client->ps.pm_flags &= ~0x4000;
 }
+
+void PlayerCmd_EnableWeapon(int self) {
+    gentity_t *e = &g_entities[self];
+    
+    if(!e->client) {
+        Scr_Error("entity is not a player");
+        return;
+    }
+    e->client->ps.pm_flags &= ~0x100000;
+}
+
+void PlayerCmd_DisableWeapon(int self) {
+    gentity_t *e = &g_entities[self];
+    
+    if(!e->client) {
+        Scr_Error("entity is not a player");
+        return;
+    }
+    e->client->ps.pm_flags |= 0x100000;
+}
