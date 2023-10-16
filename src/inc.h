@@ -547,3 +547,5 @@ extern x##_t x
 #define _Q_rand xtn__Q_rand
 #define Cvar_Set xtn_Cvar_Set
 #define PlayerCmd_FreezeControls xtn_PlayerCmd_FreezeControls
+#define PlayerCmd_EnableWeapon xtn_PlayerCmd_EnableWeapon
+#define PlayerCmd_DisableWeapon xtn_PlayerCmd_DisableWeapon

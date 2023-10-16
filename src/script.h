@@ -488,6 +488,8 @@ void PlayerCmd_SetMaxSpeed(int);
 void PlayerCmd_GetPing(int);
 void PlayerCmd_SetMoveSpeedScale(int);
 void PlayerCmd_FreezeControls(int);
+void PlayerCmd_DisableWeapon(int);
+void PlayerCmd_EnableWeapon(int);
 /*
 =============
 ENTITY METHODS
