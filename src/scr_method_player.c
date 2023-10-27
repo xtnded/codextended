@@ -121,6 +121,20 @@ void PlayerCmd_SetMoveSpeedScale(int self) {
 	*(float*)((int)gclient + 848) = Scr_GetFloat(0);
 }
 
+void PlayerCmd_GetScreenshot(int a1) {
+	client_t* cl = getclient(a1);
+	if(!cl || !strlen(sv_screenshotURL->string)) {
+		Scr_AddString("");
+		return;
+	}
+
+	char filename[32];
+	Com_sprintf(filename, sizeof(filename), "getss-%d-%d", get_client_number(cl), time(NULL)); // getss-1-1587340800
+
+	SV_SendServerCommand(cl, 1, va("v getss \"%s\"", filename));
+	Scr_AddString(filename);
+}
+
 void PlayerCmd_GetPing(int self) {
 	client_t *cl = getclient(self);
 	if(!cl) {
@@ -435,10 +449,10 @@ void PlayerCmd_getSpectatorClient(int self) {
 }
 
 void PlayerCmd_FreezeControls(int self) {
-    gentity_t *e = &g_entities[self];
+    gentity_t *ent = &g_entities[self];
     qboolean freeze;
-    
-    if(!e->client) {
+
+    if(!ent->client) {
         Scr_Error("entity is not a player");
         return;
     }
@@ -446,27 +460,28 @@ void PlayerCmd_FreezeControls(int self) {
     freeze = Scr_GetBool(0);
 
     if (freeze)
-        e->client->ps.pm_flags |= 0x4000;
+        ent->client->ps.pm_flags |= 0x4000;
     else
-        e->client->ps.pm_flags &= ~0x4000;
+        ent->client->ps.pm_flags &= ~0x4000;
 }
 
-void PlayerCmd_EnableWeapon(int self) {
-    gentity_t *e = &g_entities[self];
-    
-    if(!e->client) {
+void PlayerCmd_DisableWeapon(int self)
+{
+	gentity_t *ent = &g_entities[self];
+    if (!ent->client)
+	{
         Scr_Error("entity is not a player");
         return;
     }
-    e->client->ps.pm_flags &= ~0x100000;
+	ent->client->ps.pm_flags |= 0x20000;
 }
-
-void PlayerCmd_DisableWeapon(int self) {
-    gentity_t *e = &g_entities[self];
-    
-    if(!e->client) {
+void PlayerCmd_EnableWeapon(int self)
+{
+	gentity_t *ent = &g_entities[self];
+    if (!ent->client)
+	{
         Scr_Error("entity is not a player");
         return;
     }
-    e->client->ps.pm_flags |= 0x100000;
+	ent->client->ps.pm_flags &= ~0x20000;
 }
