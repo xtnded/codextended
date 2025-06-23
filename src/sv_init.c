@@ -143,7 +143,8 @@ void SV_Init( void ) {
 	protocol = Cvar_Get("protocol", "1", 68);
 	shortversion = Cvar_Get("shortversion", "1.1", 68);
 	dedicated = Cvar_Get("dedicated", "2", 64);
-	
+	sv_fastDownload = Cvar_Get("sv_fastDownload", "0", CVAR_ARCHIVE);
+	sv_downloadNotifications = Cvar_Get("sv_downloadNotifications", "0", CVAR_ARCHIVE);
 	x_globalbans = Cvar_Get("x_globalbans", "1", 0);
 	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", CVAR_ARCHIVE);
 	x_connectmessage = Cvar_Get("x_connectmessage", "", CVAR_ARCHIVE);

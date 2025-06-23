@@ -383,6 +383,33 @@ typedef struct
     int	ucompNum;
 } server_t; 
 
+#define svs (*((serverStatic_t*)(0x083b67a0)))Add commentMore actions
+#define sv (*((server_t*)(0x08355260)))
+
+typedef struct
+{
+    qboolean initialized;
+    int time;
+    int snapFlagServerBit;
+    client_t *clients;
+    int numSnapshotEntities;
+    int numSnapshotClients;
+    int nextSnapshotEntities;
+    int nextSnapshotClients;
+    byte gap[0x34];
+    int nextHeartbeatTime;
+    challenge_t challenges[MAX_CHALLENGES];
+    netadr_t redirectAddress;
+    netadr_t authorizeAddress;
+    int sv_lastTimeMasterServerCommunicated;
+} serverStatic_t;
+
+enum svscmd_type
+{
+    SV_CMD_CAN_IGNORE = 0x0,
+    SV_CMD_RELIABLE = 0x1,
+};
+
 typedef void (*Netchan_Setup_t)( netsrc_t sock, netchan_t* chan, netadr_t adr, int qport );
 extern Netchan_Setup_t Netchan_Setup;
 
@@ -396,42 +423,6 @@ typedef struct animation_s {
 	int f; //16
 	int g; //0
 } animation_t;
-
-/*
-from 1.5
-
-typedef enum {
-  UCMD_BUTTONS = 8, //for messagemode/console, cl_run (+speed) (aim down the sight)
-  UCMD_WBUTTONS, //+reload, +leanright +leanleft
-  UCMD_FORWARDMOVE = 23,
-  UCMD_RIGHTMOVE,
-  UCMD_UPMOVE
-} usercmd_offset;
-
-
-typedef struct usercmd_s {
-	int serverTime;
-	byte buttons;
-	byte wbuttons;
-	byte weapon;
-	byte flags;
-    byte unknown1[13];
-    / *
-        forward = 127
-        back = 129
-        right = 127
-        left = 129
-        up = 127
-        prone = 129
-    * /
-	signed char forwardmove, rightmove, upmove;
-	byte doubleTap;             // Arnout: only 3 bits used
-
-	// rain - in ET, this can be any entity, and it's used as an array
-	// index, so make sure it's unsigned
-	byte identClient;           // NERVE - SMF
-} usercmd_t;
-*/
 
 typedef struct {
 	char mUID[33];
@@ -464,6 +455,38 @@ typedef struct {
 	bool bAuthRequested;
 	time_t msgtime;
 } x_challenge;
+
+/*
+==============
+SYS
+==============
+*/
+typedef qboolean (*Sys_IsLANAddress_t)(netadr_t adr);
+extern Sys_IsLANAddress_t Sys_IsLANAddress;
+
+/*
+==============
+SV
+==============
+*/
+
+typedef qboolean (*SV_Netchan_Transmit_t)(client_t *client, byte *data, int length);
+typedef void (*SV_Netchan_TransmitNextFragment_t)(netchan_t *chan);
+
+extern SV_Netchan_Transmit_t SV_Netchan_Transmit;
+extern SV_Netchan_TransmitNextFragment_t SV_Netchan_TransmitNextFragment;
+/*
+==============
+FS
+==============
+*/
+
+typedef int (*FS_iwPak_t)(char *pak, const char *base);
+extern FS_iwPak_t FS_iwPak;
+typedef long (*FS_SV_FOpenFileRead_t)(const char *filename, fileHandle_t *fp);
+extern FS_SV_FOpenFileRead_t FS_SV_FOpenFileRead;
+typedef int (*FS_Read_t)(void *buffer, int len, fileHandle_t f);
+extern FS_Read_t FS_Read;
 
 extern x_challenge x_challenges[MAX_CHALLENGES];
 extern xtnded_client xtnded_clients[64];
