@@ -379,6 +379,9 @@ void CoDExtended() {
 	SV_ExecuteClientMessage = custom_SV_ExecuteClientMessage;
 	__jmp(0x80872EC, (int)SV_ExecuteClientMessage);
 
+	void custom_SV_WriteDownloadToClient(client_t *cl, msg_t *msg);
+	__jmp(0x8086290, (int)custom_SV_WriteDownloadToClient);
+
 	const char *__cdecl FS_ReferencedPakChecksums();
 	const char *__cdecl FS_ReferencedPakNames();
 

@@ -207,7 +207,6 @@ extern x##_t x
 #define SV_Say2_f xtn_SV_Say2_f
 #define SV_Tell_f xtn_SV_Tell_f
 #define MSG_Init xtn_MSG_Init
-#define repeat_annoy xtn_repeat_annoy
 #define _VectorNormalize2 xtn__VectorNormalize2
 #define BigFloat xtn_BigFloat
 #define FS_UpdateChecksum xtn_FS_UpdateChecksum
@@ -547,3 +546,6 @@ extern x##_t x
 #define _Q_rand xtn__Q_rand
 #define Cvar_Set xtn_Cvar_Set
 #define PlayerCmd_FreezeControls xtn_PlayerCmd_FreezeControls
+#define sv_fastDownload xtn_sv_fastDownloadAdd commentMore actions
+#define sv_downloadNotifications xtn_sv_downloadNotifications
+#define MSG_WriteBitsCompress xtn_MSG_WriteBitsCompress

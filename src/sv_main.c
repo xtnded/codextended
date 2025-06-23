@@ -18,8 +18,6 @@
 #include "server.h"
 #include "steamwrapper.h"
 
-#define MAX_MSGLEN 32000
-
 vm_t *gvm = (vm_t*)0x80E30C4;
 
 cvar_t *sv_maxclients;
@@ -59,6 +57,8 @@ cvar_t *shortversion;
 cvar_t *dedicated;
 cvar_t *sv_running;
 cvar_t *sv_master[MAX_MASTER_SERVERS];
+cvar_t *sv_fastDownload;
+cvar_t *sv_downloadNotifications;
 
 #if CODPATCH == 5
 cvar_t *sv_disableClientConsole;

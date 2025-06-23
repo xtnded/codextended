@@ -131,6 +131,17 @@ typedef vec_t vec5_t[5];
 #define qfalse 0
 
 #define MAX_MSGLEN 0x4000
+#define MAX_STRINGLENGTH            1024
+#define MAX_RELIABLE_COMMANDS       64
+#define MAX_DOWNLOAD_WINDOW         8
+#define PACKET_BACKUP 32
+#define PACKET_MASK (PACKET_BACKUP - 1)
+#define MAX_DOWNLOAD_BLKSIZE        2048
+#define MAX_DOWNLOAD_BLKSIZE_FAST   0x2000 // See https://github.com/ibuddieat/zk_libcod/blob/dff123fad25d7b46d65685e9bca2111c8946a36e/code/declarations.hpp#L60
+#define MAX_CONFIGSTRINGS           2048
+#define MAX_BPS_WINDOW              20
+#define MAX_OBJECTIVES              16
+#define MAX_WEAPONS                 64
 
 typedef int clipHandle_t;
 
@@ -280,7 +291,7 @@ typedef struct {
 
 // rain - increased to 36 to match MAX_NETNAME, fixes #13 - UI stuff breaks
 // with very long names
-#define MAX_NAME_LENGTH     36      // max length of a client name
+#define MAX_NAME_LENGTH     32      // max length of a client name
 
 #define MAX_SAY_TEXT        150
 

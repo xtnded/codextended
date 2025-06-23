@@ -35,16 +35,6 @@ void _Scr_SetAngles(gentity_t *self) {
 	G_SetAngle(self, angles);
 }
 
-void _Scr_SetHealth(gentity_t *self) {
-	int health = Scr_GetInt(0);
-	self->health = health;
-	if(self->client)
-		self->client->ps.health = health;
-	else
-		self->maxhealth = health;
-		
-}
-
 scr_entityfield_t scr_entityfields[] = {
 	{"classname", 374, 3, Scr_ReadOnlyEntityMemberfield},
 	{"origin", 308, 4, _Scr_SetOrigin},
@@ -59,7 +49,7 @@ scr_entityfield_t scr_entityfields[] = {
 	{"wait", 616, 1, 0},
 	{"random", 620, 1, 0},
 	{"count", 592, 0, 0},
-	{"health", 560, 0, _Scr_SetHealth},
+	{"health", 560, 0, 0},
 	{"light", 0, 9, 0},
 	{"dmg", 568, 0, 0},
 	{"angles", 320, 4, _Scr_SetAngles},

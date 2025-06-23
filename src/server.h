@@ -197,6 +197,8 @@ extern cvar_t *shortversion;
 extern cvar_t *protocol;
 extern cvar_t* dedicated;
 extern cvar_t* sv_running;
+extern cvar_t *sv_fastDownload;
+extern cvar_t *sv_downloadNotifications;
 
 #if CODPATCH == 5
 extern cvar_t *sv_disableClientConsole;
@@ -239,14 +241,6 @@ extern NET_SendPacket_t NET_SendPacket;
 extern netadr_t authorizeAddress;
 extern netadr_t masterAddress;
 
-typedef enum {
-	CS_FREE,        // can be reused for a new connection
-	CS_ZOMBIE,      // client has been disconnected, but don't reuse connection for a couple seconds
-	CS_CONNECTED,   // has been assigned to a client_t, but no gamestate yet
-	CS_PRIMED,      // gamestate has been sent, but client hasn't sent a usercmd
-	CS_ACTIVE       // client is fully in game
-} clientState_t;
-
 typedef struct { //usercmd_s i defined in server.h mmmmmmm
 	playerState_t *ps;
 	usercmd_t cmd;
@@ -257,51 +251,137 @@ extern pmove_t *pm;
 
 #define iprintln(m) SV_SendServerCommand(NULL, 0, "e \"%s\"", m)
 
-typedef struct {
-	netsrc_t sock;
-	int dropped;
-	netadr_t remoteAddress;
-	int qport;
-	/* lot more bs here */
+typedef void netProfileInfo_t;
+typedef struct
+{
+    netsrc_t sock;
+    int dropped;
+    netadr_t remoteAddress;
+    int qport;
+    int incomingSequence;
+    int outgoingSequence;
+    int fragmentSequence;
+    int fragmentLength;
+    byte fragmentBuffer[MAX_MSGLEN];
+    qboolean unsentFragments;
+    int unsentFragmentStart;
+    int unsentLength;
+    byte unsentBuffer[MAX_MSGLEN];
+    netProfileInfo_t *netProfile;
 } netchan_t;
 
-typedef struct client_s {
-  int state;
-  int unknown4;
-  int unknown8;
-  char userinfo[1024];
-  char field_40C;
-  char gap_40D[66047];
-  int reliableSequence;
-  int reliableAcknowledge;
-  char gap_10614;
-  char gap_10615[7];
-  int gamestateMessageNum;
-  int challenge;
-  usercmd_t lastUsercmd;
-  int lastClientCommand;
-  char lastClientCommandString[1024];
-  unsigned int gentity;
-  char name[32];
-  char downloadName[64];
-  int download;
-  int downloadSize;
-  int downloadCount;
-  int junk;
-  int gap_10AB4;
-  char gap_10AB8[84];
-  int lastPacketTime;
-  int lastConnectTime;
-  int nextSnapshotTime;
-  char gap_10B18[269704];
-  int ping;
-  int rate;
-  int snapshotMsec;
-  int pureAuthentic;
-  netchan_t netchan;
-  char lazy_to_figure_out_so_fill_it_up[32812];
+typedef enumAdd commentMore actions
+{
+    CS_FREE,
+    CS_ZOMBIE,
+    CS_CONNECTED,
+    CS_PRIMED,
+    CS_ACTIVE
+} clientConnectState_t;
+
+typedef struct
+{
+    char command[MAX_STRINGLENGTH];
+    int cmdTime;
+    int cmdType;
+} reliableCommands_t;
+
+typedef struct
+{
+    playerState_t ps;
+    int num_entities;
+    int num_clients;
+    int first_entity;
+    int first_client;
+    unsigned int messageSent;
+    unsigned int messageAcked;
+    int messageSize;
+} clientSnapshot_t;
+
+typedef int fileHandle_t;
+
+typedef struct client_s
+{
+    clientConnectState_t state;
+    qboolean sendAsActive;
+    const char *dropReason;
+    char userinfo[MAX_INFO_STRING];
+    reliableCommands_t reliableCommands[MAX_RELIABLE_COMMANDS];
+    int reliableSequence;
+    int reliableAcknowledge;
+    int reliableSent;
+    int messageAcknowledge;
+    int gamestateMessageNum;
+    int challenge;
+    usercmd_t lastUsercmd;
+    int lastClientCommand;
+    char lastClientCommandString[MAX_STRINGLENGTH];
+    gentity_t *gentity;
+    char name[MAX_NAME_LENGTH];
+    char downloadName[MAX_QPATH];
+    fileHandle_t download;
+    int downloadSize;
+    int downloadCount;
+    int downloadClientBlock;
+    int downloadCurrentBlock;
+    int downloadXmitBlock;
+    unsigned char *downloadBlocks[MAX_DOWNLOAD_WINDOW];
+    int downloadBlockSize[MAX_DOWNLOAD_WINDOW];
+    qboolean downloadEOF;
+    int downloadSendTime;
+    int deltaMessage;
+    int nextReliableTime;
+    int lastPacketTime;
+    int lastConnectTime;
+    int nextSnapshotTime;
+    qboolean rateDelayed;
+    int timeoutCount;
+    clientSnapshot_t frames[PACKET_BACKUP];
+    int ping;
+    int rate;
+    int snapshotMsec;
+    int pureAuthentic;
+    netchan_t netchan;
+    unsigned short clscriptid;
+    int bIsTestClient;
+    int serverId;
+    byte gap_0x364[2];
 } client_t;
 
+typedef enum
+{
+    SS_DEAD,
+    SS_LOADING,
+    SS_GAME
+} serverState_t;
+
+typedef struct
+{
+    serverState_t state;
+    qboolean restarting;
+    int start_frameTime;
+    int	checksumFeed;
+    int timeResidual;
+    byte gap[0x404];
+    char *configstrings[MAX_CONFIGSTRINGS];
+    byte pad[0x60FFC];
+    char *entityParsePoint;
+    gentity_t *gentities;
+    int gentitySize;
+    int	num_entities;
+    playerState_t *gameClients;
+    int gameClientSize;
+    int skelTimeStamp;
+    int	bpsWindow[MAX_BPS_WINDOW];
+    int	bpsWindowSteps;
+    int	bpsTotalBytes;
+    int	bpsMaxBytes;
+    int	ubpsWindow[MAX_BPS_WINDOW];
+    int	ubpsTotalBytes;
+    int	ubpsMaxBytes;
+    float ucompAve;
+    int	ucompNum;
+} server_t; 
 
 typedef void (*Netchan_Setup_t)( netsrc_t sock, netchan_t* chan, netadr_t adr, int qport );
 extern Netchan_Setup_t Netchan_Setup;
