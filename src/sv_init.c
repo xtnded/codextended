@@ -176,7 +176,7 @@ void SV_Init( void ) {
 	x_stuck = Cvar_Get("x_stuck", "0", 0); 
 	
 	Cvar_Get("codextended", va("CoDExtended v%d", CURRENTBUILD), CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
-	//Cvar_Get("codextended", "This server is powered by CoDExtended.", CVAR_SERVERINFO | CVAR_ROM | CVAR_NORESTART);
+	Cvar_Get("xtnded_date", __DATE__, CVAR_SERVERINFO | CVAR_ROM);
 	
 	x_bannedmessage = Cvar_Get("x_bannedmsg", "You have been banned from this server.", 0);
 	
