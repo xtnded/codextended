@@ -549,3 +549,5 @@ extern x##_t x
 #define sv_fastDownload xtn_sv_fastDownloadAdd commentMore actions
 #define sv_downloadNotifications xtn_sv_downloadNotifications
 #define MSG_WriteBitsCompress xtn_MSG_WriteBitsCompress
+#define sv_debugRate xtn_sv_debugRate
+#define sv_showAverageBPS xtn_sv_showAverageBPS

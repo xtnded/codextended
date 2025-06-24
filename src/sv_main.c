@@ -59,6 +59,8 @@ cvar_t *sv_running;
 cvar_t *sv_master[MAX_MASTER_SERVERS];
 cvar_t *sv_fastDownload;
 cvar_t *sv_downloadNotifications;
+cvar_t *sv_debugRate;
+cvar_t *sv_showAverageBPS;
 
 #if CODPATCH == 5
 cvar_t *sv_disableClientConsole;

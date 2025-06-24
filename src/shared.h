@@ -142,6 +142,7 @@ typedef vec_t vec5_t[5];
 #define MAX_BPS_WINDOW              20
 #define MAX_OBJECTIVES              16
 #define MAX_WEAPONS                 64
+#define HEADER_RATE_BYTES 48
 
 typedef int clipHandle_t;
 
@@ -1259,6 +1260,7 @@ typedef cvar_t* (*Cvar_FindVar_t)(const char*);
 typedef void (*Cvar_Set_t)(const char*, const char*);
 typedef cvar_t* (*Cvar_Get_t)( const char *var_name, const char *var_value, int flags );
 
+extern Cvar_FindVar_t Cvar_FindVar;
 extern Cvar_Set_t Cvar_Set;
 extern Cvar_Get_t Cvar_Get;
 

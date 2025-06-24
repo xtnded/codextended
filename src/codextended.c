@@ -379,6 +379,10 @@ void CoDExtended() {
 	SV_ExecuteClientMessage = custom_SV_ExecuteClientMessage;
 	__jmp(0x80872EC, (int)SV_ExecuteClientMessage);
 
+	void custom_SV_SendMessageToClient(msg_t *msg, client_t *client);Add commentMore actions
+	__jmp(0x808f680, (int)custom_SV_SendMessageToClient);
+	void custom_SV_SendClientMessages(void);
+	__jmp(0x0809045c, (int)custom_SV_SendClientMessages);
 	void custom_SV_WriteDownloadToClient(client_t *cl, msg_t *msg);
 	__jmp(0x8086290, (int)custom_SV_WriteDownloadToClient);
 

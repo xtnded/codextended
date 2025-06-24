@@ -199,6 +199,8 @@ extern cvar_t* dedicated;
 extern cvar_t* sv_running;
 extern cvar_t *sv_fastDownload;
 extern cvar_t *sv_downloadNotifications;
+extern cvar_t *sv_debugRate;
+extern cvar_t *sv_showAverageBPS;
 
 #if CODPATCH == 5
 extern cvar_t *sv_disableClientConsole;
