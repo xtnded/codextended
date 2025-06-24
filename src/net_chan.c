@@ -26,8 +26,6 @@ NET_OutOfBandPrint_t NET_OutOfBandPrint = (NET_OutOfBandPrint_t)0x8080920;
 #endif
 NET_SendPacket_t NET_SendPacket = (NET_SendPacket_t)0x8080D28;
 
-#define MAX_MSGLEN              32768
-
 /*
 ===============
 NET_OutOfBandPrint

@@ -21,6 +21,8 @@
 MSG_BeginReading_t MSG_BeginReading = (MSG_BeginReading_t)0x807F174;
 MSG_ReadLong_t MSG_ReadLong = (MSG_ReadLong_t)0x807F2F0;
 MSG_ReadStringLine_t MSG_ReadStringLine = (MSG_ReadStringLine_t)0x807F3FC;
+MSG_WriteBitsCompress_t MSG_WriteBitsCompress = (MSG_WriteBitsCompress_t)0x0807f03c;
+MSG_WriteData_t MSG_WriteData = (MSG_WriteData_t)0x0807eef0;
 #else
 MSG_BeginReading_t MSG_BeginReading = (MSG_BeginReading_t)0x807F96B;
 MSG_ReadLong_t MSG_ReadLong = (MSG_ReadLong_t)0x80800E8;

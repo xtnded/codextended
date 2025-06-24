@@ -174,7 +174,6 @@ extern x##_t x
 #define GScr_getSite xtn_GScr_getSite
 #define GScr_Cmd_Argv xtn_GScr_Cmd_Argv
 #define call_cmd_callvote xtn_call_cmd_callvote
-#define SV_CoDExtended_f xtn_SV_CoDExtended_f
 #define Scr_Continue xtn_Scr_Continue
 #define _ColorBytes3 xtn__ColorBytes3
 #define pml xtn_pml
@@ -207,7 +206,6 @@ extern x##_t x
 #define SV_Say2_f xtn_SV_Say2_f
 #define SV_Tell_f xtn_SV_Tell_f
 #define MSG_Init xtn_MSG_Init
-#define repeat_annoy xtn_repeat_annoy
 #define _VectorNormalize2 xtn__VectorNormalize2
 #define BigFloat xtn_BigFloat
 #define FS_UpdateChecksum xtn_FS_UpdateChecksum
@@ -547,3 +545,8 @@ extern x##_t x
 #define _Q_rand xtn__Q_rand
 #define Cvar_Set xtn_Cvar_Set
 #define PlayerCmd_FreezeControls xtn_PlayerCmd_FreezeControls
+#define sv_fastDownload xtn_sv_fastDownloadAdd
+#define sv_downloadNotifications xtn_sv_downloadNotifications
+#define MSG_WriteBitsCompress xtn_MSG_WriteBitsCompress
+#define sv_debugRate xtn_sv_debugRate
+#define sv_showAverageBPS xtn_sv_showAverageBPS

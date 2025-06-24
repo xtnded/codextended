@@ -177,7 +177,6 @@
 #define GScr_getSite xtn_GScr_getSite
 #define GScr_Cmd_Argv xtn_GScr_Cmd_Argv
 #define call_cmd_callvote xtn_call_cmd_callvote
-#define SV_CoDExtended_f xtn_SV_CoDExtended_f
 #define Scr_Continue xtn_Scr_Continue
 #define _ColorBytes3 xtn__ColorBytes3
 #define pml xtn_pml

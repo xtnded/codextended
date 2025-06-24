@@ -381,11 +381,18 @@ void CoDExtended() {
 
 	const char *__cdecl FS_ReferencedPakChecksums();
 	const char *__cdecl FS_ReferencedPakNames();
-
-	#ifdef uFEATUREUNSAFE
 	__jmp(0x80717A4, (int)FS_ReferencedPakChecksums);
 	__jmp(0x80716CC, (int)FS_ReferencedPakNames);
-	#endif
+
+	void custom_SV_SendMessageToClient(msg_t *msg, client_t *client);
+	__jmp(0x808f680, (int)custom_SV_SendMessageToClient);
+	void custom_SV_SendClientMessages(void);
+	__jmp(0x0809045c, (int)custom_SV_SendClientMessages);
+	void custom_SV_WriteDownloadToClient(client_t *cl, msg_t *msg);
+	__jmp(0x8086290, (int)custom_SV_WriteDownloadToClient);
+
+	const char *__cdecl FS_ReferencedPakChecksums();
+	const char *__cdecl FS_ReferencedPakNames();
 
 	/* sv_snapshot.asm */
 	unsigned TestGetAddr();

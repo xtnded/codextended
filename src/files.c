@@ -38,8 +38,18 @@ typedef struct searchpath_s {
 
 static searchpath_t *fs_searchpaths = (searchpath_t*)0x80DD590;
 
+bool FS_IsServerFile(char* basename) {
+	if(strstr(basename, "srv") != NULL)
+		return 1;
+	if(strstr(basename, "svr") != NULL)
+		return 1;
+	if(strstr(basename, "server") != NULL)
+		return 1;
+	return 0;
+}
+
 const char *__cdecl FS_ReferencedPakChecksums() {
-    static char info[8192];
+    static char info[BIG_INFO_STRING];
     info[0] = 0;
     searchpath_t *search;
     char fs_game[256];
@@ -52,11 +62,12 @@ const char *__cdecl FS_ReferencedPakChecksums() {
     
     for(search = fs_searchpaths->next; search; search = search->next) {
         if(search->pak) {
+
             if(FS_IsServerFile(search->pak->pakBasename))
                 continue;
-
+            
             if(*info)
-                sprintf(info, "%s%s", info, " " );
+                sprintf(info, "%s%s", info, " ");
 
             sprintf(info, "%s%i", info, search->pak->checksum);
         }
@@ -66,7 +77,7 @@ const char *__cdecl FS_ReferencedPakChecksums() {
 }
 
 const char *__cdecl FS_ReferencedPakNames() {
-    static char info[8192];
+    static char info[BIG_INFO_STRING];
     info[0] = 0;
     searchpath_t *search;
     char fs_game[256];
@@ -83,11 +94,11 @@ const char *__cdecl FS_ReferencedPakNames() {
                 continue;
 
             if(*info)
-                sprintf(info, "%s%s", info, " " );
+                sprintf(info, "%s%s", info, " ");
 
-            sprintf(info, "%s%s", info, search->pak->pakGamename );
-            sprintf(info, "%s%s", info, "/" );
-            sprintf(info, "%s%s", info, search->pak->pakBasename );
+            sprintf(info, "%s%s", info, search->pak->pakGamename);
+            sprintf(info, "%s%s", info, "/");
+            sprintf(info, "%s%s", info, search->pak->pakBasename);
         }
     }
 
