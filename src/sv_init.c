@@ -111,7 +111,8 @@ void SV_Init( void ) {
 	g_gametype = Cvar_Get("g_gametype", "dm", 36);
 	mapname = Cvar_Get("mapname", "nomap", 68);
 	sv_hostname = Cvar_Get("sv_hostname", "CoDExtendedHost", 5);
-	sv_maxRate = Cvar_Get("sv_maxRate", "0", 5);
+	//sv_maxRate = Cvar_Get("sv_maxRate", "0", 5);
+	sv_maxRate = Cvar_FindVar("sv_maxRate");
 	sv_maxPing = Cvar_Get("sv_maxPing", "0", 5);
 	sv_minPing = Cvar_Get("sv_minPing", "0", 5);
 	sv_floodProtect = Cvar_Get("sv_floodProtect", "1", 5);
@@ -145,6 +146,7 @@ void SV_Init( void ) {
 	dedicated = Cvar_Get("dedicated", "2", 64);
 	sv_fastDownload = Cvar_Get("sv_fastDownload", "0", CVAR_ARCHIVE);
 	sv_downloadNotifications = Cvar_Get("sv_downloadNotifications", "0", CVAR_ARCHIVE);
+	sv_debugRate = Cvar_Get("sv_debugRate", "0", CVAR_ARCHIVE);
 	x_globalbans = Cvar_Get("x_globalbans", "1", 0);
 	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", CVAR_ARCHIVE);
 	x_connectmessage = Cvar_Get("x_connectmessage", "", CVAR_ARCHIVE);

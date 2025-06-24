@@ -383,7 +383,7 @@ extern MSG_ReadStringLine_t MSG_ReadStringLine;
 extern MSG_ReadLong_t MSG_ReadLong;
 extern MSG_BeginReading_t MSG_BeginReading;
 extern MSG_ReadString_t MSG_ReadString;
-extern MSG_WriteBitsCompress_t MSG_WriteBitsCompress;Add commentMore actions
+extern MSG_WriteBitsCompress_t MSG_WriteBitsCompress;
 extern MSG_WriteData_t MSG_WriteData;
 
 typedef enum {
@@ -630,7 +630,7 @@ typedef struct entityState_s {
 	int animMovetype; //224
 } entityState_t;
 
-typedef enumAdd commentMore actions
+typedef enum
 {
     WEAPON_READY = 0x0,
     WEAPON_RAISING = 0x1,

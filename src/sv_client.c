@@ -56,7 +56,6 @@ typedef struct {
 //static ucmd_t* ucmds = (ucmd_t*)0x80E2F4C;
 
 void SV_BeginDownload(client_t*);
-void SV_CoDExtended_f(client_t*);
 
 #ifdef xDEBUG
 void sv_sprint( client_t *cl ) {
@@ -113,8 +112,6 @@ static ucmd_t ucmds[] = {
 	{"stopdl", (void*)0x8087960},
 	{"donedl", (void*)0x80879FC},
 	{"retransdl", (void*)0x8087A2C},
-	
-	{"codextended", SV_CoDExtended_f},
 	#ifdef xDEBUG
 	{"asc", ucmd_ascii},
 	{"sprint", sv_sprint},
@@ -1097,16 +1094,6 @@ int FS_IsPakFile(char *name) {
 	if(strstr(name, "pak") != NULL)
 		return 1;
 	if(strstr(name, "localized") != NULL)
-		return 1;
-	return 0;
-}
-
-bool FS_IsServerFile(char* basename) {
-	if(strstr(basename, "srv") != NULL)
-		return 1;
-	if(strstr(basename, "svr") != NULL)
-		return 1;
-	if(strstr(basename, "server") != NULL)
 		return 1;
 	return 0;
 }

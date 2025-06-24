@@ -379,7 +379,12 @@ void CoDExtended() {
 	SV_ExecuteClientMessage = custom_SV_ExecuteClientMessage;
 	__jmp(0x80872EC, (int)SV_ExecuteClientMessage);
 
-	void custom_SV_SendMessageToClient(msg_t *msg, client_t *client);Add commentMore actions
+	const char *__cdecl FS_ReferencedPakChecksums();
+	const char *__cdecl FS_ReferencedPakNames();
+	__jmp(0x80717A4, (int)FS_ReferencedPakChecksums);
+	__jmp(0x80716CC, (int)FS_ReferencedPakNames);
+
+	void custom_SV_SendMessageToClient(msg_t *msg, client_t *client);
 	__jmp(0x808f680, (int)custom_SV_SendMessageToClient);
 	void custom_SV_SendClientMessages(void);
 	__jmp(0x0809045c, (int)custom_SV_SendClientMessages);
@@ -388,11 +393,6 @@ void CoDExtended() {
 
 	const char *__cdecl FS_ReferencedPakChecksums();
 	const char *__cdecl FS_ReferencedPakNames();
-
-	#ifdef uFEATUREUNSAFE
-	__jmp(0x80717A4, (int)FS_ReferencedPakChecksums);
-	__jmp(0x80716CC, (int)FS_ReferencedPakNames);
-	#endif
 
 	/* sv_snapshot.asm */
 	unsigned TestGetAddr();

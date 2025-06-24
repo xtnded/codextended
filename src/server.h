@@ -272,7 +272,7 @@ typedef struct
     netProfileInfo_t *netProfile;
 } netchan_t;
 
-typedef enumAdd commentMore actions
+typedef enum
 {
     CS_FREE,
     CS_ZOMBIE,
@@ -385,7 +385,7 @@ typedef struct
     int	ucompNum;
 } server_t; 
 
-#define svs (*((serverStatic_t*)(0x083b67a0)))Add commentMore actions
+#define svs (*((serverStatic_t*)(0x083b67a0)))
 #define sv (*((server_t*)(0x08355260)))
 
 typedef struct
@@ -474,9 +474,12 @@ SV
 
 typedef qboolean (*SV_Netchan_Transmit_t)(client_t *client, byte *data, int length);
 typedef void (*SV_Netchan_TransmitNextFragment_t)(netchan_t *chan);
+typedef void (*SV_SendClientSnapshot_t)(client_t *cl);
 
 extern SV_Netchan_Transmit_t SV_Netchan_Transmit;
 extern SV_Netchan_TransmitNextFragment_t SV_Netchan_TransmitNextFragment;
+extern SV_SendClientSnapshot_t SV_SendClientSnapshot;
+
 /*
 ==============
 FS

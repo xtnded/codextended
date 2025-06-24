@@ -271,7 +271,6 @@ void BG_Link() {
 	//sub_37488
 	//GAME("PM_InteruptWeaponWithProneMove");
 	
-	PM_SetReloadingState2 = (void(*)())GAME("PM_InteruptWeaponWithProneMove") + 0x434;
 	PM_SetWeaponReloadAddAmmoDelay = (void(*)())GAME("PM_InteruptWeaponWithProneMove") + 0x330;
 	
 	#ifdef xDEBUG
