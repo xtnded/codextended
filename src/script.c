@@ -320,6 +320,20 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"setlight", ScriptEnt_SetLight, 0},
 	{"showtoplayer", Ent_ShowToPlayer, 0},
 		
+	/*
+	======
+	BOT
+	======
+	*/
+    {"setWalkValues", gsc_bots_setwalkvalues, 0},
+    {"setwalkdir", gsc_bots_setwalkdir, 0},
+    {"setbotstance", gsc_bots_setbotstance, 0},
+    {"setlean", gsc_bots_setlean, 0},
+    {"setaim", gsc_bots_setaim, 0},
+    {"fireweapon", gsc_bots_fireweapon, 0},
+    {"meleeweapon", gsc_bots_meleeweapon, 0},
+    {"reloadweapon", gsc_bots_reloadweapon, 0},
+    {"switchtoweaponid", gsc_bots_switchtoweaponid, 0},
 	
 	/*
 	======
@@ -368,6 +382,8 @@ SCRIPTFUNCTION scriptMethods[] = {
 	{"setmaxspeed", PlayerCmd_SetMaxSpeed, 0},
 	{"setmovespeedscale", PlayerCmd_SetMoveSpeedScale, 0},
 	{"freeze_controls", PlayerCmd_FreezeControls, 0},
+	{"setspeed", gsc_player_setspeed, 0},
+	{"setping", gsc_player_setping, 0},
 	{NULL, NULL, 0}
 };
 
@@ -462,6 +478,8 @@ Scr_GetVector_t Scr_GetVector;
 Scr_GetString_t Scr_GetString;
 Scr_GetFunc_t Scr_GetFunc;
 Scr_GetOffset_t Scr_GetOffset;
+Scr_IsSystemActive_t Scr_IsSystemActive;
+trap_SendServerCommand_t trap_SendServerCommand;
 
 SCRIPTFUNCTIONCALL Scr_GetCustomFunction(const char** fname, int* fdev) {
     SCRIPTFUNCTIONCALL m = Scr_GetFunction(fname, fdev);
@@ -897,9 +915,10 @@ void GScr_LoadGametypeScript( void ) {
 	callbackRemoteCommand = load_callback("callback", "CodeCallback_RemoteCommand", 1);
 	callbackFireGrenade = load_callback("callback", "CodeCallback_FireGrenade", 1);
 
-	extern int callbackEntityDamage, callbackEntityKilled;
+	extern int callbackEntityDamage, callbackEntityKilled, codecallback_error;
 	callbackEntityDamage = load_callback("callback", "EntityDamage", 1);
 	callbackEntityKilled = load_callback("callback", "EntityDeath", 1);
+	codecallback_error = load_callback("callback", "CodeCallback_Error", true);
 	
 	Scr_LoadConsts();
 }
@@ -1720,6 +1739,66 @@ void Scr_PassArray(int n) {
 	}
 }
 
+int codecallback_error = 0;
+int scr_errors_index = 0;
+scr_error_t scr_errors[MAX_ERROR_BUFFER];
+void Scr_CodeCallback_Error(qboolean terminal, qboolean emit, const char *internal_function, char *message)
+{
+    if (codecallback_error && Scr_IsSystemActive() && !com_errorEntered)
+    {
+        if (!strncmp(message, "exceeded maximum number of script variables", 43))
+        {
+            /* Since we cannot allocate more script variables, further
+             execution of scripts or script callbacks could lead to an
+             undefined state (in script) or endless error loops, so we stop */
+            Com_Error(ERR_DROP, "\x15%s", "exceeded maximum number of script variables");
+        }
+
+        if (terminal || emit)
+        {
+            Scr_AddString(message);
+            Scr_AddString(internal_function);
+            Scr_AddInt(terminal);
+            short ret = Scr_ExecThread(codecallback_error, 3);
+            Scr_FreeThread(ret);
+        }
+        else
+        {
+            /* If the error is non-critical (not stopping the server), save it
+             so we can emit it later at G_RunFrame which is a rather safe
+             spot compared to if we emit it directly here within the
+             internals of the scripting engine where we risk crashing it
+             with a segmentation fault */
+            if (scr_errors_index < MAX_ERROR_BUFFER)
+            {
+                strncpy(scr_errors[scr_errors_index].internal_function, internal_function, sizeof(scr_errors[scr_errors_index].internal_function));
+                strncpy(scr_errors[scr_errors_index].message, message, sizeof(scr_errors[scr_errors_index].message));
+                scr_errors_index++;
+            }
+            else
+            {
+                printf("Warning: Errors buffer full, not calling CodeCallback_Error for '%s'\n", message);
+            }
+        }
+    }
+}
+
+void stackError(const char *format, ...)
+{
+    char s[MAX_STRINGLENGTH];
+    int len = 0;
+    va_list va;
+
+    va_start(va, format);
+    vsnprintf(s, sizeof(s) - 1, format, va);
+    va_end(va);
+
+    len = strlen(s);
+    s[len] = '\n';
+    s[len + 1] = '\0';
+   	Com_PrintMessage(0, s);
+    Scr_CodeCallback_Error(qfalse, qfalse, "stackError", s);
+}
 
 void Scr_GetArrayKeys(int a) {
 	unsigned short arrIndex = Scr_GetArray(0);
@@ -1963,4 +2042,6 @@ void scriptInitializing() {
 	SL_ConvertToString = (SL_ConvertToString_t)GAME("SL_ConvertToString");
 	Scr_GetFunctionHandle = (Scr_GetFunctionHandle_t)GAME("Scr_GetFunctionHandle");
 	Scr_LoadScript = (Scr_LoadScr_t)GAME("Scr_LoadScript");
+	Scr_IsSystemActive = (Scr_IsSystemActive_t)dlsym(gamelib, "Scr_IsSystemActive");
+	trap_SendServerCommand = (trap_SendServerCommand_t)dlsym(gamelib, "trap_SendServerCommand");
 }

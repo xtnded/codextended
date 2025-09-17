@@ -47,6 +47,10 @@
 #define svs_time (*(int*)0x83CCD88)
 #endif
 
+#define svs (*((serverStatic_t*)(0x083b67a0)))
+#define sv (*((server_t*)(0x08355260)))
+#define com_errorEntered (*((int*)(0x0833efdc)))
+
 extern int clientversion;
 
 typedef enum {
@@ -88,16 +92,13 @@ typedef enum {
 	NS_SERVER
 } netsrc_t;
 
-typedef struct {
-	netadrtype_t type;
-	union {
-		byte ip[4];
-		unsigned int _ip;
-	};
-	byte ipx[10];
-
-	unsigned short port;
-} netadr_t; //size = 0x14 (20)
+typedef struct
+{
+    netadrtype_t type;
+    byte ip[4];
+    byte ipx[10];
+    unsigned short port;
+} netadr_t;
 
 typedef enum {
 	MUIDBAN,
@@ -200,7 +201,7 @@ extern cvar_t* sv_running;
 extern cvar_t *sv_fastDownload;
 extern cvar_t *sv_downloadNotifications;
 extern cvar_t *sv_debugRate;
-extern cvar_t *sv_showAverageBPS;
+extern cvar_t *g_resetSlide;
 
 #if CODPATCH == 5
 extern cvar_t *sv_disableClientConsole;
@@ -228,11 +229,12 @@ extern NET_OutOfBandPrint_t NET_OutOfBandPrint;
 
 typedef qboolean (*NET_StringToAdr_t)( const char *s, netadr_t *a );
 extern NET_StringToAdr_t NET_StringToAdr;
+typedef qboolean (*NET_CompareBaseAdr_t)(netadr_t a, netadr_t b );
+extern NET_CompareBaseAdr_t NET_CompareBaseAdr;
 
 const char  *NET_BaseAdrToString (netadr_t a);
 const char  *NET_AdrToString (netadr_t a);
 qboolean    NET_CompareAdr( netadr_t a, netadr_t b );
-qboolean    NET_CompareBaseAdr( netadr_t a, netadr_t b );
 bool	   NET_IsLocalAddress( netadr_t adr );
 
 typedef void (*NET_SendPacket_t)( netsrc_t sock, int length, const void *data, netadr_t to );
@@ -385,9 +387,6 @@ typedef struct
     int	ucompNum;
 } server_t; 
 
-#define svs (*((serverStatic_t*)(0x083b67a0)))
-#define sv (*((server_t*)(0x08355260)))
-
 typedef struct
 {
     qboolean initialized;
@@ -405,12 +404,6 @@ typedef struct
     netadr_t authorizeAddress;
     int sv_lastTimeMasterServerCommunicated;
 } serverStatic_t;
-
-enum svscmd_type
-{
-    SV_CMD_CAN_IGNORE = 0x0,
-    SV_CMD_RELIABLE = 0x1,
-};
 
 typedef void (*Netchan_Setup_t)( netsrc_t sock, netchan_t* chan, netadr_t adr, int qport );
 extern Netchan_Setup_t Netchan_Setup;
@@ -475,10 +468,14 @@ SV
 typedef qboolean (*SV_Netchan_Transmit_t)(client_t *client, byte *data, int length);
 typedef void (*SV_Netchan_TransmitNextFragment_t)(netchan_t *chan);
 typedef void (*SV_SendClientSnapshot_t)(client_t *cl);
+typedef playerState_t* (*SV_GameClientNum_t)(int num);
+typedef gentity_t* (*SV_ClientThink_t)(client_t *cl, usercmd_t *cmd);
 
 extern SV_Netchan_Transmit_t SV_Netchan_Transmit;
 extern SV_Netchan_TransmitNextFragment_t SV_Netchan_TransmitNextFragment;
 extern SV_SendClientSnapshot_t SV_SendClientSnapshot;
+extern SV_GameClientNum_t SV_GameClientNum;
+extern SV_ClientThink_t SV_ClientThink;
 
 /*
 ==============
