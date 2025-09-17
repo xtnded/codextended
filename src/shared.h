@@ -143,6 +143,48 @@ typedef vec_t vec5_t[5];
 #define MAX_OBJECTIVES              16
 #define MAX_WEAPONS                 64
 #define HEADER_RATE_BYTES 48
+#define MAX_ERROR_BUFFER 64
+
+#define KEY_MASK_NONE           0
+#define KEY_MASK_FORWARD        127
+#define KEY_MASK_BACK           -127
+#define KEY_MASK_MOVERIGHT      127
+#define KEY_MASK_MOVELEFT       -127
+#define KEY_MASK_JUMP           127 // upmove. prone and jump = -KEY_MASK_JUMP
+#define KEY_MASK_FIRE           0x1
+#define KEY_MASK_RELOAD         0x8
+#define KEY_MASK_LEANLEFT       0x10
+#define KEY_MASK_ADS_MODE       0x10
+#define KEY_MASK_LEANRIGHT      0x20
+#define KEY_MASK_MELEE          0x20
+#define KEY_MASK_USE            0x40
+#define KEY_MASK_PRONE          0x40 // wbuttons
+#define KEY_MASK_CROUCH         0x80 // wbuttons
+
+#define STACK_UNDEFINED 0
+#define STACK_OBJECT 1
+#define STACK_STRING 2
+#define STACK_LOCALIZED_STRING 3
+#define STACK_VECTOR 4
+#define STACK_FLOAT 5
+#define STACK_INT 6
+#define STACK_CODEPOS 7
+#define STACK_PRECODEPOS 8
+#define STACK_FUNCTION 9
+#define STACK_STACK 10
+#define STACK_ANIMATION 11
+#define STACK_DEVELOPER_CODEPOS 12
+#define STACK_INCLUDE_CODEPOS 13
+#define STACK_THREAD_LIST 14
+#define STACK_THREAD_1 15
+#define STACK_THREAD_2 16
+#define STACK_THREAD_3 17
+#define STACK_THREAD_4 18
+#define STACK_STRUCT 19
+#define STACK_REMOVED_ENTITY 20
+#define STACK_ENTITY 21
+#define STACK_ARRAY 22
+#define STACK_REMOVED_THREAD 23
 
 typedef int clipHandle_t;
 
@@ -297,6 +339,12 @@ typedef struct {
 #define MAX_SAY_TEXT        150
 
 #define MAX_BINARY_MESSAGE  32768   // max length of binary message
+#define MAX_NETNAME                 36
+
+#define PMF_PRONE       0x1
+#define PMF_CROUCH      0x2
+#define PMF_LADDER      0x10
+#define PMF_SLIDING     0x100
 
 typedef struct cplane_s {
 	vec3_t	normal;
@@ -437,18 +485,6 @@ typedef struct {
 	vec3_t trDelta;             // velocity, etc
 //----(SA)	removed
 } trajectory_t;
-
-#pragma pack(1)
-typedef struct {
-    byte unk[480];
-    int maxclients;
-    int frameNum;
-    int time;
-    int previousTime;
-    int startTime; //?idk
-} level_locals_t;
-#pragma pack(push, 1)
-extern level_locals_t *level;
 
 //gentity->eFlags
 #define EF_DEAD 0x1
@@ -786,30 +822,89 @@ typedef struct usercmd_s
     byte unknown;
 } usercmd_t;
 
-#pragma pack(push, 1)
+typedef enum
+{
+    STATE_PLAYING,
+    STATE_DEAD,
+    STATE_SPECTATOR,
+    STATE_INTERMISSION
+} sessionState_t;
+
+typedef enum
+{
+    CON_DISCONNECTED,
+    CON_CONNECTING,
+    CON_CONNECTED
+} clientConnected_t;
+
+typedef struct
+{
+    sessionState_t sessionState;
+    int forceSpectatorClient;
+    int statusIcon;
+    int archiveTime;
+    int score;
+    int deaths;
+    byte gap[4];
+    clientConnected_t connected;
+    usercmd_t cmd;
+    usercmd_t oldcmd;
+    qboolean localClient;
+    byte gap2[8];
+    char netname[MAX_NETNAME];
+    int maxHealth;
+    byte gap3[128];
+} clientSession_t;
+
 struct gclient_s
 {
-  playerState_t ps;
-  int ab;
-  int cb;
-  int spectatorClient;
-  int idklell;
-  int archivetime;
-  char gap_20E0[16];
-  usercmd_t cmd;
-  char gap_2109[204];
-  int forceSpectatorClient;
-  char gap_21D8[4];
-  int noclip;
-  char bs;
-  char gap_21E1[43];
-  int field_220C;
-  int field_2210;
-  char gap_2214[8140];
-  int end;
+    playerState_t ps;
+    clientSession_t sess;
+    int spectatorClient;
+    qboolean noclip;
+    qboolean ufo;
+    byte gap2[228];
 };
-#pragma pack(pop)
 
+typedef enum
+{
+    TEAM_FREE = 0x0,
+    TEAM_NONE = 0x0,
+    TEAM_BAD = 0x0,
+    TEAM_AXIS = 0x1,
+    TEAM_ALLIES = 0x2,
+    TEAM_SPECTATOR = 0x3,
+    TEAM_NUM_TEAMS = 0x4,
+} team_t;
+
+typedef int fileHandle_t;
+typedef struct
+{
+    gclient_t *clients;
+    gentity_t *gentities;
+    int gentitySize;
+    int num_entities;
+    gentity_t *firstFreeEnt;
+    gentity_t *lastFreeEnt;
+    fileHandle_t logFile;
+    int initializing;
+    byte gap[0x1C0];
+    int maxclients;
+    int framenum;
+    int time;
+    int previousTime;
+    int frameTime;
+    int startTime;
+    int teamScores[TEAM_NUM_TEAMS];
+    int lastTeammateHealthTime;
+    qboolean bUpdateScoresForIntermission;
+    int manualNameChange;
+    int numConnectedClients;
+    int sortedClients[MAX_CLIENTS];
+    char voteString[1024];
+    //...
+} level_locals_t;
+extern level_locals_t *level;
 
 typedef enum {
 	PERK_QUICK_RELOAD
@@ -928,6 +1023,44 @@ struct gentity_s {
   char rest[44];
 };
 #pragma pack(push, 1)
+
+typedef struct scr_entref_s
+{
+    uint16_t entnum;
+    uint16_t classnum;
+} scr_entref_t;
+
+typedef struct customPlayerState_s
+{
+    //// Bots    
+    int botButtons;
+    int botWButtons;
+    int botWeapon;
+    char botForwardMove;
+    char botRightMove;
+    char botUpMove;
+    ////
+    int speed;
+    int gravity;
+    int fps;
+    int frames;
+    uint64_t frameTime;
+    bool overrideJumpHeight;
+    int jumpHeight;
+    int airJumpsAvailable;
+    bool overrideJumpHeight_air;
+    bool sprintActive;
+    bool sprintRequestPending;
+    int sprintTimer;
+    bool noAutoPickup;
+    bool hiddenFromScoreboard;
+    qboolean overridePing;
+    int ping;
+    qboolean overrideStatusPing;
+    int statusPing;
+} customPlayerState_t;
+
+extern customPlayerState_t customPlayerState[MAX_CLIENTS];
 
 extern gentity_t *g_entities;
 /*
@@ -1140,6 +1273,12 @@ typedef enum {
     */
 } gameImport_t;
 
+typedef struct src_error_s
+{
+    char internal_function[64];
+    char message[1024];
+} scr_error_t;
+
 #define LEVELTIME (*(int*)&level[488])
 //#define g_entities(x) ((gentity_t*)( (int)g_entities + GENTITY_SIZE * x )) //no linking issues since it's a macro <3 - Richard
 //#define level.num_entities (*(int*)&level[12])
@@ -1249,6 +1388,9 @@ typedef int (QDECL *VM_Call_t)( int, int callnum, ... );
 extern VM_Call_t VM_Call;
 
 extern vm_t *gvm;
+
+typedef void (*Com_PrintMessage_t)(int channel, const char *message);
+extern Com_PrintMessage_t Com_PrintMessage;
 
 /*
 ================

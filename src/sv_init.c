@@ -151,12 +151,13 @@ void SV_Init( void ) {
 	x_spectator_noclip = Cvar_Get("x_spectator_noclip", "0", CVAR_ARCHIVE);
 	x_connectmessage = Cvar_Get("x_connectmessage", "", CVAR_ARCHIVE);
 	cl_allowDownload = Cvar_Get("cl_allowDownload", "0", CVAR_SYSTEMINFO);
+	g_resetSlide = Cvar_Get("g_resetSlide", "0", CVAR_ARCHIVE);
 	
 	Cvar_Get("rate", "25000", CVAR_SYSTEMINFO);
 	Cvar_Get("snaps", "40", CVAR_SYSTEMINFO);
 	
 	extern cvar_t *x_cl_adsair;
-	x_cl_adsair = Cvar_Get("x_cl_adsair", "1", 0);
+	x_cl_adsair = Cvar_Get("x_cl_adsair", "0", 0);
 	
 	cvar_t *x_nopbots = Cvar_Get("x_nopbots", "0", 0);
 	/*

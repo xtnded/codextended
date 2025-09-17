@@ -23,6 +23,12 @@
 #include "bg_public.h"
 #include <math.h>
 
+typedef enum 
+{
+    SV_CMD_CAN_IGNORE = 0x0,
+    SV_CMD_RELIABLE = 0x1,
+}svscmd_type;
+
 typedef struct {
 	int map_main;
 	int idk;
@@ -254,7 +260,7 @@ SCRIPTFUNCTIONCALL Scr_GetCustomMethod(const char**, int*);
 
 typedef int (*Scr_GetNumParam_t)();
 typedef int (*Scr_GetPointerType_t)(int);
-typedef int (*Scr_GetType_t)(int);
+typedef int (*Scr_GetType_t)(unsigned int);
 
 typedef void (*Scr_MakeArray_t)();
 typedef void (*Scr_AddArray_t)();
@@ -329,9 +335,11 @@ typedef int (*Scr_GetFunctionHandle_t)(const char*, const char*);
 typedef unsigned short (*Scr_ExecThread_t)(int, int);
 typedef unsigned short (*Scr_ExecEntThread_t)(int, int, int, int);
 typedef int (*Scr_FreeThread_t)(unsigned short);
+typedef int (*Scr_IsSystemActive_t)();
 
 typedef char* (*SL_ConvertToString_t)(unsigned int);
 typedef unsigned short (*SL_GetString_t)(const char*, int);
+typedef void (*trap_SendServerCommand_t)(int, svscmd_type, const char *);
 
 extern int callbackTest;
 extern int callbackPlayerCommand;
@@ -345,6 +353,8 @@ extern Scr_ExecEntThread_t Scr_ExecEntThread;
 extern Scr_FreeThread_t Scr_FreeThread;
 extern SL_ConvertToString_t SL_ConvertToString;
 extern SL_GetString_t SL_GetString;
+extern Scr_IsSystemActive_t Scr_IsSystemActive;
+extern trap_SendServerCommand_t trap_SendServerCommand;
 
 void scriptInitializing();
 char* Scr_GetVariableType(int type);
@@ -411,6 +421,13 @@ void GScr_xor(int);
 void GScr_rshift(int);
 void GScr_lshift(int);
 void GScr_not(int);
+
+/*
+=============
+IW1X
+=============
+*/
+void stackError(const char *format, ...);
 
 /*
 ======
@@ -488,6 +505,24 @@ void PlayerCmd_SetMaxSpeed(int);
 void PlayerCmd_GetPing(int);
 void PlayerCmd_SetMoveSpeedScale(int);
 void PlayerCmd_FreezeControls(int);
+void gsc_player_setspeed(scr_entref_t ref);
+void gsc_player_setping(scr_entref_t ref);
+
+/*
+=============
+BOTS
+=============
+*/
+void gsc_bots_setwalkvalues(scr_entref_t id);
+void gsc_bots_setwalkdir(scr_entref_t id);
+void gsc_bots_setbotstance(scr_entref_t id);
+void gsc_bots_setlean(scr_entref_t id);
+void gsc_bots_setaim(scr_entref_t id);
+void gsc_bots_fireweapon(scr_entref_t id);
+void gsc_bots_meleeweapon(scr_entref_t id);
+void gsc_bots_reloadweapon(scr_entref_t id);
+void gsc_bots_switchtoweaponid(scr_entref_t id);
+
 /*
 =============
 ENTITY METHODS

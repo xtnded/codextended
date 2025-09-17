@@ -391,8 +391,8 @@ void CoDExtended() {
 	void custom_SV_WriteDownloadToClient(client_t *cl, msg_t *msg);
 	__jmp(0x8086290, (int)custom_SV_WriteDownloadToClient);
 
-	const char *__cdecl FS_ReferencedPakChecksums();
-	const char *__cdecl FS_ReferencedPakNames();
+	void custom_SV_BotUserMove(client_t *client);
+	__jmp(0x0808cccc, (int)custom_SV_BotUserMove);
 
 	/* sv_snapshot.asm */
 	unsigned TestGetAddr();

@@ -24,7 +24,7 @@ int base;
 char (*pml)[140];
 
 level_locals_t *level;
-
+customPlayerState_t customPlayerState[MAX_CLIENTS];
 gentity_t *g_entities;
 
 char* modNames[] = {
@@ -66,6 +66,7 @@ Cmd_Argc_t Cmd_Argc = (Cmd_Argc_t)0x805B24C;
 Cmd_ArgvBuffer_t Cmd_ArgvBuffer = (Cmd_ArgvBuffer_t)0x805B27C;
 Cmd_TokenizeString_t Cmd_TokenizeString = (Cmd_TokenizeString_t)0x805B398;
 VM_Call_t VM_Call = (VM_Call_t)0x8092158;
+Com_PrintMessage_t Com_PrintMessage = (Com_PrintMessage_t)0x806b530;
 #else 
 _Cmd_AddCommand_t _Cmd_AddCommand = (_Cmd_AddCommand_t)0x806043E;
 Com_Printf_t Com_Printf = (Com_Printf_t)0x806FC10;

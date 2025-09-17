@@ -60,7 +60,7 @@ cvar_t *sv_master[MAX_MASTER_SERVERS];
 cvar_t *sv_fastDownload;
 cvar_t *sv_downloadNotifications;
 cvar_t *sv_debugRate;
-cvar_t *sv_showAverageBPS;
+cvar_t *g_resetSlide;
 
 #if CODPATCH == 5
 cvar_t *sv_disableClientConsole;
@@ -282,7 +282,7 @@ void SVC_Status( netadr_t* from ) {
 	int statusLength;
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
-	
+	int ping;	
 	int custom_mod = 0;
 	char *fs_game = Cvar_VariableString("fs_game");
 	
@@ -303,12 +303,18 @@ void SVC_Status( netadr_t* from ) {
 	statusLength = 0;
 
 	for ( i = 0 ; i < sv_maxclients->integer ; i++ ) {
-		cl = getclient(i);
+		cl = &svs.clients[i];
+
+			/* New code start: Custom ping value for status responses */
+			ping = cl->ping;
+			if ( customPlayerState[i].overrideStatusPing )
+				ping = customPlayerState[i].statusPing;
+			/* New code end */
 		
 		if ( cl->state >= CS_CONNECTED ) {
 			//ps = SV_GameClientNum( i );
 			Com_sprintf( player, sizeof( player ), "%i %i \"%s\"\n",
-						 SV_GetClientScore(cl), cl->ping, cl->name );
+						 SV_GetClientScore(cl), ping, cl->name );
 			playerLength = strlen( player );
 			if ( statusLength + playerLength >= sizeof( status ) ) {
 				break;      // can't hold any more
@@ -729,4 +735,49 @@ bool SVC_RateLimitAddress(netadr_t from, int burst, int period) {
 
 	leakyBucket_t *bucket = SVC_BucketForAddress(from, burst, period);
 	return SVC_RateLimit(bucket, burst, period);
+}
+
+void custom_SV_BotUserMove(client_t *client)
+{   
+    int num;
+    usercmd_t ucmd = {0};
+
+    if(client->gentity == NULL)
+        return;
+
+    num = client - svs.clients;
+    ucmd.serverTime = svs.time;
+
+    playerState_t *ps = SV_GameClientNum(num);
+    gentity_t *ent = &g_entities[num];
+
+    if(customPlayerState[num].botWeapon)
+        ucmd.weapon = (byte)(customPlayerState[num].botWeapon & 0xFF);
+    else
+        ucmd.weapon = (byte)(ps->weapon & 0xFF);
+
+    if(ent->client == NULL)
+        return;
+
+    if (ent->client->sess.archiveTime == 0)
+    {
+        ucmd.buttons = customPlayerState[num].botButtons;
+        ucmd.wbuttons = customPlayerState[num].botWButtons;
+        ucmd.forwardmove = customPlayerState[num].botForwardMove;
+        ucmd.rightmove = customPlayerState[num].botRightMove;
+        ucmd.upmove = customPlayerState[num].botUpMove;
+
+        VectorCopy(ent->client->sess.cmd.angles, ucmd.angles);
+    }
+
+    client->deltaMessage = client->netchan.outgoingSequence - 1;
+    SV_ClientThink(client, &ucmd);
+}
+
+int SV_GetClientPing(int clientNum)
+{
+	if ( customPlayerState[clientNum].overridePing )
+		return customPlayerState[clientNum].ping;
+
+	return svs.clients[clientNum].ping;
 }

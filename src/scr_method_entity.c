@@ -17,7 +17,7 @@
 
 #include "script.h"
 
-int callbackEntityDamage, callbackEntityKilled;
+int callbackEntityDamage, callbackEntityKilled, codecallback_error;
 
 #if 0
 
