@@ -450,3 +450,92 @@ void PlayerCmd_FreezeControls(int self) {
     else
         e->client->ps.pm_flags &= ~0x4000;
 }
+
+void gsc_player_setspeed(scr_entref_t ref)
+{
+    int id = ref.entnum;
+    int speed = Scr_GetInt(0);
+
+    if (id >= MAX_CLIENTS)
+    {
+        stackError("gsc_player_setspeed() entity %i is not a player", id);
+        Scr_AddUndefined();
+        return;
+    }
+
+    if (speed < 0)
+    {
+        stackError("gsc_player_setspeed() param must be equal or above zero");
+        Scr_AddUndefined();
+        return;
+    }
+
+    customPlayerState[id].speed = speed;
+
+    Scr_AddBool(qtrue);
+}
+
+void gsc_player_setping(scr_entref_t ref)
+{
+	int id = ref.entnum;
+
+	if ( id >= MAX_CLIENTS )
+	{
+		stackError("gsc_player_setping() entity %i is not a player", id);
+		Scr_AddUndefined();
+		return;
+	}
+
+	if ( Scr_GetNumParam() > 0 )
+	{
+		if ( Scr_GetType(0) == VT_UNDEFINED )
+		{
+			customPlayerState[id].overridePing = qfalse;
+			customPlayerState[id].ping = 0;
+		}
+		else if ( Scr_GetType(0) == VT_INT )
+		{
+			customPlayerState[id].overridePing = qtrue;
+			customPlayerState[id].ping = Scr_GetInt(0);
+		}
+		else
+		{
+			stackError("gsc_player_setping() first argument has a wrong type");
+			Scr_AddUndefined();
+			return;
+		}
+
+		if ( Scr_GetNumParam() > 1 )
+		{
+			if ( Scr_GetType(1) == VT_UNDEFINED )
+			{
+				customPlayerState[id].overrideStatusPing = qfalse;
+				customPlayerState[id].statusPing = 0;
+			}
+			else if ( Scr_GetType(1) == VT_INT )
+			{
+				customPlayerState[id].overrideStatusPing = qtrue;
+				customPlayerState[id].statusPing = Scr_GetInt(1);
+			}
+			else
+			{
+				stackError("gsc_player_setping() second argument has a wrong type");
+				Scr_AddUndefined();
+				return;
+			}
+		}
+		else
+		{
+			customPlayerState[id].overrideStatusPing = qtrue;
+			customPlayerState[id].statusPing = Scr_GetInt(0);
+		}
+	}
+	else
+	{
+		stackError("gsc_player_setping() needs at least one argument");
+		Scr_AddUndefined();
+		return;
+	}
+
+	Scr_AddBool(qtrue);
+}

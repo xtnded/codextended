@@ -49,6 +49,101 @@ int StuckInPlayer(int a1) {
    return false;
 }
 
+void custom_ClientEndFrame(gentity_t *ent)
+{
+	void (*call)(gentity_t* ent);
+	*(int*)&call=GAME("ClientEndFrame");
+	call(ent);
+    if (ent->client->sess.sessionState == STATE_PLAYING)
+    {
+        int clientNum = ent - g_entities;
+
+        if(customPlayerState[clientNum].speed > 0)
+            ent->client->ps.speed = customPlayerState[clientNum].speed;
+
+        if(customPlayerState[clientNum].gravity > 0)
+            ent->client->ps.gravity = customPlayerState[clientNum].gravity;
+        
+        // Stop slide after fall damage
+        if(g_resetSlide->integer)
+            if(ent->client->ps.pm_flags & PMF_SLIDING)
+                ent->client->ps.pm_flags &= ~PMF_SLIDING;
+    }
+}
+
+void custom_DeathmatchScoreboardMessage(gentity_t *ent)
+{
+    int ping;
+    int clientNum;
+    int numSorted;
+    gclient_t *client;
+    int len;
+    int i;
+    int stringlength;
+    char string[1400];
+    char entry[1024];
+    int visiblePlayers;
+
+    string[0] = 0;
+    stringlength = 0;
+    visiblePlayers = 0;
+
+    numSorted = level->numConnectedClients;
+
+    if(level->numConnectedClients > MAX_CLIENTS)
+        numSorted = MAX_CLIENTS;
+
+    for (i = 0; i < numSorted; i++)
+    {
+        clientNum = level->sortedClients[i];
+        client = &level->clients[clientNum];
+        if(customPlayerState[clientNum].hiddenFromScoreboard)
+            continue;
+        
+        if (client->sess.connected == CON_CONNECTING)
+        {
+            Com_sprintf(
+                entry,
+                0x400u,
+                " %i %i %i %i %i",
+                level->sortedClients[i],
+                client->sess.score,
+                -1,
+                client->sess.deaths,
+                client->sess.statusIcon);
+        }
+        else
+        {
+            /*
+            Send cl->ping instead of cl->ps.ping,
+            to fix the scoreboard showing the ping of the player your are spectating as being your own ping.
+            */
+            ping = SV_GetClientPing(clientNum);
+
+            Com_sprintf(
+                entry,
+                0x400u,
+                " %i %i %i %i %i",
+                level->sortedClients[i],
+                client->sess.score,
+                ping,
+                client->sess.deaths,
+                client->sess.statusIcon);
+        }
+
+        len = strlen(entry);
+
+        if(stringlength + len > 1024)
+            break;
+
+        strcpy(&string[stringlength], entry);
+        stringlength += len;
+        visiblePlayers++;
+    }
+
+    trap_SendServerCommand(ent - g_entities, SV_CMD_RELIABLE, va("b %i %i %i%s", visiblePlayers, level->teamScores[1], level->teamScores[2], string));
+}
+
 gentity_t* mySpawnPlayerClone();
 
 extern int bodyqueindex;
@@ -103,6 +198,13 @@ void set_game_ptr( void *ret ) {
 	
 	int h66 = (int)dlsym(ret, "ClientEndFrame") + 0x173; //patch contents
 	__nop(h66, h66+0xa);
+
+	void custom_ClientEndFrame(gentity_t *ent);
+	__call(GAME("ClientSpawn")  + 0x3e9, (int)custom_ClientEndFrame);
+	__call(GAME("G_RunFrame")  + 0x645, (int)custom_ClientEndFrame);
+
+	void custom_DeathmatchScoreboardMessage(gentity_t *ent);
+	__jmp((int)dlsym(ret, "DeathmatchScoreboardMessage"), (int)custom_DeathmatchScoreboardMessage);
 	
 	#if 0
 	{

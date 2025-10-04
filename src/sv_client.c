@@ -35,6 +35,8 @@ FS_iwPak_t FS_iwPak = (FS_iwPak_t)0x080709c0;
 FS_SV_FOpenFileRead_t FS_SV_FOpenFileRead = (FS_SV_FOpenFileRead_t)0x0806ffb8;
 FS_Read_t FS_Read = (FS_Read_t)0x080628f4;
 SV_SendClientSnapshot_t SV_SendClientSnapshot = (SV_SendClientSnapshot_t)0x808F844;
+SV_GameClientNum_t SV_GameClientNum = (SV_GameClientNum_t)0x08089270;
+SV_ClientThink_t SV_ClientThink = (SV_ClientThink_t)0x0808789c;
 
 int clientversion = 0;
 
