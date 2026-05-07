@@ -2,6 +2,8 @@
 
 Call of Duty Extended Server is a modification of the Call of Duty 1 Linux server. It supports patch 1.1 (with outdated 1.5 support).
 
+There is another project which we have no affiliation with that seems to support 1.5 [VCODLIB](https://github.com/SADMANGaming/vcodlib-1.5)
+
 ## Features
 
 - cracked server with unpure fixes (everyone can join)
